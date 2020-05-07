@@ -100,10 +100,11 @@ def batch_processor(model, datas, train_mode, loss):
     data, label = datas
     data = data.cuda()
     label = label.cuda()
-
     # forward
     output = model(data)
     losses = loss(output, label)
+    # rank = output.argsort()
+    # print(label, output, rank)
 
     # output
     log_vars = dict(loss=losses.item())

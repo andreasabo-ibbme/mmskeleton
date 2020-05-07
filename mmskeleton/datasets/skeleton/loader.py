@@ -3,6 +3,7 @@ import numpy as np
 import json
 import torch
 import csv
+import math
 
 class SkeletonLoader(torch.utils.data.Dataset):
     """ Feeder for skeleton-based action recognition
@@ -122,6 +123,11 @@ class SkeletonLoader(torch.utils.data.Dataset):
                     x = self.missing_joint_val
                     y = self.missing_joint_val
 
+                if math.isnan(conf):
+                    conf = 0
+                if math.isnan(x) or math.isnan(y):
+                    x = self.missing_joint_val
+                    y = self.missing_joint_val
  
                 ts_keypoints.append([x, y, conf])
 
@@ -134,10 +140,11 @@ class SkeletonLoader(torch.utils.data.Dataset):
         outcome_cat = data_struct[self.outcome_label][0]
         try:
             outcome_cat = float(outcome_cat)
+            outcome_cat = int(outcome_cat)   
         except:
             outcome_cat = -1
 
-        outcome_cat = int(outcome_cat)   
+        
         data = {'info': info_struct, 
                      'annotations': annotations,
                      'category_id': outcome_cat}
@@ -162,5 +169,6 @@ class SkeletonLoader(torch.utils.data.Dataset):
             if person_id < self.num_track and frame_index < num_frame:
                 data['data'][:, :, frame_index, person_id] = np.array(
                     a['keypoints']).transpose()
-
+        
+        # print(data['data'])
         return data
