@@ -5,7 +5,7 @@ import torch
 import csv
 import math
 
-class SkeletonLoader(torch.utils.data.Dataset):
+class SkeletonLoaderTRI(torch.utils.data.Dataset):
     """ Feeder for skeleton-based action recognition
     Arguments:
         data_path: the path to data folder
@@ -17,9 +17,7 @@ class SkeletonLoader(torch.utils.data.Dataset):
         self.data_dir = data_dir
         self.num_track = num_track
         self.num_keypoints = num_keypoints
-        self.files = [
-            os.path.join(self.data_dir, f) for f in os.listdir(self.data_dir)
-        ] * repeat
+        self.files = data_dir * repeat
         self.outcome_label = outcome_label
         self.missing_joint_val = missing_joint_val
         self.csv_loader = csv_loader

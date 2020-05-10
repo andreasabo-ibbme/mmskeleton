@@ -88,5 +88,6 @@ processor_cfg:
     checkpoint_config:
       interval: 5
     optimizer_config:
+      grad_clip:
   resume_from:
   load_from:
