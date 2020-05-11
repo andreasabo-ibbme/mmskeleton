@@ -12,6 +12,7 @@ cache/
 checkpoints/*
 save/*
 configs_private/
+wandb/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

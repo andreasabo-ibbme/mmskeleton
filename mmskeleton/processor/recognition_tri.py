@@ -63,6 +63,10 @@ def train(
         cv=5,
 ):
     print("ANDREA - TRI-recognition")
+    id_mapping = {27:25, 33:31, 34:32, 37:35, 39:37,
+                  46:44, 47:45, 48:46, 50:48, 52:50, 
+                  55:53, 57:55, 59:57, 66:63}
+
 
     # prepare data loaders
     if isinstance(dataset_cfg, dict):
@@ -75,13 +79,17 @@ def train(
     all_files = [os.path.join(data_dir, f) for f in os.listdir(data_dir)]
 
     for test_id in test_ids:
+        ambid = id_mapping[test_id]
+
         test_walks = [i for i in all_files if re.search('ID_'+str(test_id), i) ]
         non_test_walks = list(set(all_files).symmetric_difference(set(test_walks)))
     
         datasets = [copy.deepcopy(dataset_cfg[0]), copy.deepcopy(dataset_cfg[0])]
         datasets[0]['data_source']['data_dir'] = non_test_walks
         datasets[1]['data_source']['data_dir'] = test_walks
-        work_dir_amb = work_dir + "/" + str(test_id)
+        work_dir_amb = work_dir + "/" + str(ambid)
+        things_to_log = {'test_AMBID': ambid, 'test_AMBID_num': len(test_walks), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'batch_size': batch_size, 'total_epochs': total_epochs }
+
         train_model(
                 work_dir_amb,
                 model_cfg,
@@ -96,7 +104,8 @@ def train(
                 log_level,
                 workers,
                 resume_from,
-                load_from)
+                load_from, 
+                things_to_log)
 
         continue
         if len(test_walks) == 0:
@@ -148,6 +157,8 @@ def train_model(
         workers=4,
         resume_from=None,
         load_from=None,
+        things_to_log=None,
+        
 ):
     # print(all_files)
     print("==================================")
@@ -159,7 +170,7 @@ def train_model(
                                     batch_size=batch_size,
                                     shuffle=True,
                                     num_workers=workers,
-                                    drop_last=True) for d in datasets
+                                    drop_last=False) for d in datasets
     ]
 
     # put model on gpus
@@ -172,9 +183,10 @@ def train_model(
     model = MMDataParallel(model, device_ids=range(gpus)).cuda()
     loss = call_obj(**loss_cfg)
 
+
     # build runner
     optimizer = call_obj(params=model.parameters(), **optimizer_cfg)
-    runner = Runner(model, batch_processor, optimizer, work_dir, log_level)
+    runner = Runner(model, batch_processor, optimizer, work_dir, log_level, things_to_log=things_to_log)
     runner.register_training_hooks(**training_hooks)
 
     if resume_from:
@@ -201,9 +213,9 @@ def batch_processor(model, datas, train_mode, loss):
 
     # output
     log_vars = dict(loss=losses.item())
-    if not train_mode:
-        log_vars['top1'] = topk_accuracy(output, label)
-        log_vars['top5'] = topk_accuracy(output, label, 5)
+    # if not train_mode:
+    #     log_vars['top1'] = topk_accuracy(output, label)
+    #     log_vars['top5'] = topk_accuracy(output, label, 5)
 
     labels = dict(true=label.data.tolist(), pred=rank[:,-1].data.tolist())
     outputs = dict(loss=losses, log_vars=log_vars, num_samples=len(data.data))

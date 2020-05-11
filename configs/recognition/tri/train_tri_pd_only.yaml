@@ -15,7 +15,7 @@ argparse_cfg:
 processor_cfg:
   type: 'processor.recognition_tri.train'
   workers: 1
-  test_ids: [37]
+  test_ids: [27, 33, 34, 37, 39, 46, 47, 48, 50, 52, 55, 57, 59, 66]
   cv: 5
 
   # model setting
@@ -53,7 +53,7 @@ processor_cfg:
         - {type: "datasets.skeleton.to_tuple"}
 
   # dataloader setting
-  batch_size: 5
+  batch_size: 10
   gpus: 1
 
   # optimizer setting
@@ -75,9 +75,9 @@ processor_cfg:
     log_config:
       interval: 100
       hooks:
-        - type: TextLoggerHook
+        - type: WandbLoggerHook
     checkpoint_config:
-      interval: 1
+      interval: 10
     optimizer_config:
       grad_clip:
   resume_from:
