@@ -8,7 +8,7 @@ from mmcv import Config, ProgressBar
 from mmcv.parallel import MMDataParallel
 import os, re, copy
 from sklearn.model_selection import KFold
-
+import wandb
 
 def test(model_cfg, dataset_cfg, checkpoint, batch_size=64, gpus=1, workers=4):
     dataset = call_obj(**dataset_cfg)
@@ -62,6 +62,8 @@ def train(
         test_ids=None,
         cv=5,
 ):
+
+    wandb_group = wandb.util.generate_id()
     print("ANDREA - TRI-recognition")
     id_mapping = {27:25, 33:31, 34:32, 37:35, 39:37,
                   46:44, 47:45, 48:46, 50:48, 52:50, 
@@ -88,8 +90,8 @@ def train(
         datasets[0]['data_source']['data_dir'] = non_test_walks
         datasets[1]['data_source']['data_dir'] = test_walks
         work_dir_amb = work_dir + "/" + str(ambid)
-        things_to_log = {'test_AMBID': ambid, 'test_AMBID_num': len(test_walks), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'batch_size': batch_size, 'total_epochs': total_epochs }
-
+        things_to_log = {'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'batch_size': batch_size, 'total_epochs': total_epochs }
+        print('size of test set: ', len(test_walks))
         train_model(
                 work_dir_amb,
                 model_cfg,
@@ -172,22 +174,27 @@ def train_model(
                                     num_workers=workers,
                                     drop_last=False) for d in datasets
     ]
+    model_cfg_local = copy.deepcopy(model_cfg)
+    loss_cfg_local = copy.deepcopy(loss_cfg)
+    training_hooks_local = copy.deepcopy(training_hooks)
+    optimizer_cfg_local = copy.deepcopy(optimizer_cfg)
+
 
     # put model on gpus
     if isinstance(model_cfg, list):
-        model = [call_obj(**c) for c in model_cfg]
+        model = [call_obj(**c) for c in model_cfg_local]
         model = torch.nn.Sequential(*model)
     else:
-        model = call_obj(**model_cfg)
+        model = call_obj(**model_cfg_local)
     model.apply(weights_init)
     model = MMDataParallel(model, device_ids=range(gpus)).cuda()
-    loss = call_obj(**loss_cfg)
+    loss = call_obj(**loss_cfg_local)
 
-
+    print('training hooks: ', training_hooks_local)
     # build runner
-    optimizer = call_obj(params=model.parameters(), **optimizer_cfg)
+    optimizer = call_obj(params=model.parameters(), **optimizer_cfg_local)
     runner = Runner(model, batch_processor, optimizer, work_dir, log_level, things_to_log=things_to_log)
-    runner.register_training_hooks(**training_hooks)
+    runner.register_training_hooks(**training_hooks_local)
 
     if resume_from:
         runner.resume(resume_from)

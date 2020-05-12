@@ -15,7 +15,7 @@ argparse_cfg:
 processor_cfg:
   type: 'processor.recognition_tri.train'
   workers: 1
-  test_ids: [27, 33, 34, 37, 39, 46, 47, 48, 50, 52, 55, 57, 59, 66]
+  test_ids: [39, 46, 47, 48, 50, 52, 55, 57, 59, 66, 33, 34, 37]
   cv: 5
 
   # model setting
@@ -67,7 +67,7 @@ processor_cfg:
   # runtime setting
   workflow: [['train', 1], ['val', 1]]
   work_dir: ./work_dir/recognition/tri_pd/dataset_example
-  total_epochs: 150
+  total_epochs: 200
   training_hooks:
     lr_config:
       policy: 'step'
