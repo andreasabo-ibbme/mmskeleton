@@ -211,6 +211,7 @@ def train_model(
 
     model.apply(weights_init)
     model = MMDataParallel(model, device_ids=range(gpus)).cuda()
+    torch.cuda.set_device(0)
     loss = call_obj(**loss_cfg_local)
 
     # print('training hooks: ', training_hooks_local)
@@ -235,24 +236,44 @@ def batch_processor(model, datas, train_mode, loss):
     data, label = datas
     data = data.cuda()
     label = label.cuda()
+
+
+    # Remove the -1 labels
+    y_true = label.data.reshape(-1, 1)
+    # print('before', len(y_true))
+    condition = y_true >= 0.
+    row_cond = condition.all(1)
+    y_true = y_true[row_cond, :]
+    data = data.data[row_cond, :]
+
     # forward
     output = model(data)
 
-    losses = loss(output, label)
+    losses = loss(output, y_true)
     rank = output.argsort()
-    # print(output, rank)
-    labels = label.data.tolist()
+
+    y_true_orig_shape = y_true.reshape(1,-1).squeeze()
+    labels = y_true_orig_shape.data.tolist()
+
+    # Case when we have a single output
+    if type(labels) is not list:
+        labels = [labels]
+
     preds = rank[:,-1].data.tolist()
     # output
+
+
     log_vars = dict(loss=losses.item())
     # if not train_mode:
     #     log_vars['top1'] = topk_accuracy(output, label)
     #     log_vars['top5'] = topk_accuracy(output, label, 5)
     log_vars['mae'] = mean_absolute_error(labels, preds)
 
-    labels = dict(true=labels, pred=preds)
-    outputs = dict(loss=losses, log_vars=log_vars, num_samples=len(data.data))
-    return outputs, labels
+    output_labels = dict(true=labels, pred=preds)
+    outputs = dict(loss=losses, log_vars=log_vars, num_samples=len(labels))
+    # print(type(labels), type(preds))
+    # print('this is what we return: ', output_labels)
+    return outputs, output_labels
 
 
 def topk_accuracy(score, label, k=1):

@@ -15,15 +15,15 @@ argparse_cfg:
 processor_cfg:
   type: 'processor.recognition_tri.train'
   workers: 1
-  test_ids: [39, 46, 47, 48, 50, 52, 55, 57, 59, 66, 33, 34, 37]
+  test_ids: [46, 47, 48, 50, 52, 55, 57, 59, 66, 33, 34, 37, 27, 39 ]
   cv: 5
-  notes: "normalized, not centered"
+  notes: "normalized -shoulder, centered at 100"
 
   # model setting
   model_cfg:
     type: 'models.backbones.ST_GCN_18_ordinal'
     in_channels: 3
-    num_class: 4
+    num_class: 3
     edge_importance_weighting: True
     graph_cfg:
       layout: 'coco_simplified_head'
@@ -42,7 +42,7 @@ processor_cfg:
         num_track: 1
         num_keypoints: 13
         repeat: 1
-        outcome_label: SAS_gait
+        outcome_label: UPDRS_gait
         csv_loader: True
         missing_joint_val: mean
         cache: True
@@ -56,7 +56,7 @@ processor_cfg:
         - {type: "datasets.skeleton.to_tuple"}
 
   # dataloader setting
-  batch_size: 10
+  batch_size: 20
   gpus: 1
 
   # optimizer setting
@@ -74,7 +74,7 @@ processor_cfg:
   training_hooks:
     lr_config:
       policy: 'step'
-      step: [40, 80]
+      step: [40, 80, 120]
     log_config:
       interval: 100
       hooks:
