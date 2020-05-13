@@ -8,7 +8,13 @@ from mmcv import Config, ProgressBar
 from mmcv.parallel import MMDataParallel
 import os, re, copy
 from sklearn.model_selection import KFold
+from sklearn.metrics import mean_absolute_error
 import wandb
+import matplotlib.pyplot as plt
+from spacecutter.models import OrdinalLogisticModel
+import spacecutter
+os.environ['WANDB_MODE'] = 'dryrun'
+
 
 def test(model_cfg, dataset_cfg, checkpoint, batch_size=64, gpus=1, workers=4):
     dataset = call_obj(**dataset_cfg)
@@ -61,10 +67,13 @@ def train(
         load_from=None,
         test_ids=None,
         cv=5,
+        notes=None,
 ):
+    outcome_label = dataset_cfg[0]['data_source']['outcome_label']
+    num_class = model_cfg['num_class']
+    wandb_group = wandb.util.generate_id() + "_" + outcome_label
+    print("ANDREA - TRI-recognition: ", wandb_group)
 
-    wandb_group = wandb.util.generate_id()
-    print("ANDREA - TRI-recognition")
     id_mapping = {27:25, 33:31, 34:32, 37:35, 39:37,
                   46:44, 47:45, 48:46, 50:48, 52:50, 
                   55:53, 57:55, 59:57, 66:63}
@@ -81,6 +90,7 @@ def train(
     all_files = [os.path.join(data_dir, f) for f in os.listdir(data_dir)]
 
     for test_id in test_ids:
+        plt.close('all')
         ambid = id_mapping[test_id]
 
         test_walks = [i for i in all_files if re.search('ID_'+str(test_id), i) ]
@@ -90,7 +100,13 @@ def train(
         datasets[0]['data_source']['data_dir'] = non_test_walks
         datasets[1]['data_source']['data_dir'] = test_walks
         work_dir_amb = work_dir + "/" + str(ambid)
-        things_to_log = {'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'batch_size': batch_size, 'total_epochs': total_epochs }
+        for ds in datasets:
+            ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
+        # x = dataset_cfg[0]['data_source']['outcome_label']
+
+
+        # print(model_cfg['num_class'])
+        things_to_log = {'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
         print('size of test set: ', len(test_walks))
         train_model(
                 work_dir_amb,
@@ -126,6 +142,9 @@ def train(
             datasets = [copy.deepcopy(dataset_cfg[0]), copy.deepcopy(dataset_cfg[0])]
             datasets[0]['data_source']['data_dir'] = train_walks
             datasets[1]['data_source']['data_dir'] = val_walks
+
+            for ds in datasets:
+                ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
 
             train_model(
                     work_dir,
@@ -184,13 +203,17 @@ def train_model(
     if isinstance(model_cfg, list):
         model = [call_obj(**c) for c in model_cfg_local]
         model = torch.nn.Sequential(*model)
+
     else:
-        model = call_obj(**model_cfg_local)
+        model_temp = call_obj(**model_cfg_local)
+        model = OrdinalLogisticModel(model_temp, model_cfg_local['num_class'])
+
+
     model.apply(weights_init)
     model = MMDataParallel(model, device_ids=range(gpus)).cuda()
     loss = call_obj(**loss_cfg_local)
 
-    print('training hooks: ', training_hooks_local)
+    # print('training hooks: ', training_hooks_local)
     # build runner
     optimizer = call_obj(params=model.parameters(), **optimizer_cfg_local)
     runner = Runner(model, batch_processor, optimizer, work_dir, log_level, things_to_log=things_to_log)
@@ -214,17 +237,20 @@ def batch_processor(model, datas, train_mode, loss):
     label = label.cuda()
     # forward
     output = model(data)
+
     losses = loss(output, label)
     rank = output.argsort()
     # print(output, rank)
-
+    labels = label.data.tolist()
+    preds = rank[:,-1].data.tolist()
     # output
     log_vars = dict(loss=losses.item())
     # if not train_mode:
     #     log_vars['top1'] = topk_accuracy(output, label)
     #     log_vars['top5'] = topk_accuracy(output, label, 5)
+    log_vars['mae'] = mean_absolute_error(labels, preds)
 
-    labels = dict(true=label.data.tolist(), pred=rank[:,-1].data.tolist())
+    labels = dict(true=labels, pred=preds)
     outputs = dict(loss=losses, log_vars=log_vars, num_samples=len(data.data))
     return outputs, labels
 

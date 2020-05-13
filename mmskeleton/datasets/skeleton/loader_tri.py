@@ -4,6 +4,8 @@ import json
 import torch
 import csv
 import math
+import pandas as pd
+
 
 class SkeletonLoaderTRI(torch.utils.data.Dataset):
     """ Feeder for skeleton-based action recognition
@@ -13,7 +15,9 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
         pad_value: the values for padding missed joint
         repeat: times of repeating the dataset
     """
-    def __init__(self, data_dir, num_track=1, repeat=1, num_keypoints=-1, outcome_label='UPDRS_gait', missing_joint_val=0, csv_loader=False):
+    def __init__(self, data_dir, num_track=1, repeat=1, num_keypoints=-1, 
+                outcome_label='UPDRS_gait', missing_joint_val=0, csv_loader=False, 
+                cache=False, layout='coco'):
         self.data_dir = data_dir
         self.num_track = num_track
         self.num_keypoints = num_keypoints
@@ -21,6 +25,21 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
         self.outcome_label = outcome_label
         self.missing_joint_val = missing_joint_val
         self.csv_loader = csv_loader
+        self.interpolate_with_mean = False
+        self.layout = layout
+
+        if self.missing_joint_val == 'mean':
+            self.interpolate_with_mean = True
+
+
+        self.cache = cache
+        self.cached_data = {}
+        if self.cache:
+            print("loading data to cache...")
+            for index in range(self.__len__()):
+                self.__getitem__(index)
+
+
     def __len__(self):
         return len(self.files)
 
@@ -47,9 +66,17 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
         # ],
     # "category_id": 0,
 # }
+        if index in self.cached_data:
+            # print("loading from cache: ", self.files[index])
+            return self.cached_data[index]
+        # print("loading the data from file")
         if self.csv_loader:
             # print("getting itemmmmm", self.outcome_label)
             # print(self.files[index])
+            data_struct_interpolated = pd.read_csv(self.files[index])
+            data_struct_interpolated.fillna(data_struct_interpolated.mean(), inplace=True)
+            # print(data_struct_interpolated.head())
+
             data_struct = {} 
             with open(self.files[index]) as f:        
                 data = csv.reader(f)
@@ -68,34 +95,59 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
                             except ValueError as e:
                                 data_struct[colname].append(row[colname])
 
+            if self.layout == 'coco':
+                num_kp = 17
+                order_of_keypoints = {'Nose', 
+                    'LEye', 'REye', 'LEar', 'REar',
+                    'LShoulder', 'RShoulder',
+                    'LElbow', 'RElbow', 
+                    'LWrist', 'RWrist', 
+                    'LHip', 'RHip',
+                    'LKnee', 'RKnee',
+                    'LAnkle', 'RAnkle',
+                    }
+            elif self.layout == 'coco_simplified_head':
+                num_kp = 13
+                order_of_keypoints = {'Nose', 
+                    'LShoulder', 'RShoulder',
+                    'LElbow', 'RElbow', 
+                    'LWrist', 'RWrist', 
+                    'LHip', 'RHip',
+                    'LKnee', 'RKnee',
+                    'LAnkle', 'RAnkle',
+                    }
+            else:
+                raise ValueError(f"The layout {self.layout} does not exist")
 
-            
+            # print(data_struct)
             info_struct = {
                 "video_name": data_struct['walk_name'][0],
                 "resolution": [1920, 1080],
                 "num_frame": len(data_struct['time']),
-                "num_keypoints": 17,
+                "num_keypoints": num_kp,
                 "keypoint_channels": ["x", "y", "score"],
                 "version": "1.0"
             }
 
 
-            order_of_keypoints = {'Nose', 
-                'RShoulder', 'RElbow', 'RWrist', 
-                'LShoulder', 'LElbow', 'LWrist', 
-                'RHip', 'RKnee', 'RAnkle', 
-                'LHip', 'LKnee', 'LAnkle', 
-                'REye', 'LEye', 'REar', 'LEar'}
+            # order_of_keypoints = {'Nose', 
+            #     'RShoulder', 'RElbow', 'RWrist', 
+            #     'LShoulder', 'LElbow', 'LWrist', 
+            #     'RHip', 'RKnee', 'RAnkle', 
+            #     'LHip', 'LKnee', 'LAnkle', 
+            #     'REye', 'LEye', 'REar', 'LEar'}
+
+
 
             annotations = []
+            
             for ts in range(len(data_struct['time'])):
-
                 ts_keypoints = []
                 for kp in order_of_keypoints:
                     if kp == "Neck":
                         RShoulder = [data_struct['RShoulder_x'][ts], data_struct['RShoulder_y'][ts], data_struct['RShoulder_conf'][ts]]   
                         LShoulder = [data_struct['LShoulder_x'][ts], data_struct['LShoulder_y'][ts], data_struct['LShoulder_conf'][ts]]   
-                        print(RShoulder, LShoulder)
+                        # print(RShoulder, LShoulder)
                         x = ( RShoulder[0] +  LShoulder[0] ) / 2
                         y = ( RShoulder[1] +  LShoulder[1] ) / 2
                         try:
@@ -117,16 +169,24 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
                     try:
                         x = float(x)
                         y = float(y)
-                    except:                    
-                        x = self.missing_joint_val
-                        y = self.missing_joint_val
+                    except:
+                        if self.interpolate_with_mean:
+                            x = data_struct_interpolated[kp + '_x'][ts]          
+                            y = data_struct_interpolated[kp + '_y'][ts]          
+                        else:           
+                            x = self.missing_joint_val
+                            y = self.missing_joint_val
 
                     if math.isnan(conf):
                         conf = 0
                     if math.isnan(x) or math.isnan(y):
-                        x = self.missing_joint_val
-                        y = self.missing_joint_val
-    
+                        if self.interpolate_with_mean:
+                            x = data_struct_interpolated[kp + '_x'][ts]          
+                            y = data_struct_interpolated[kp + '_y'][ts]          
+                        else:           
+                            x = self.missing_joint_val
+                            y = self.missing_joint_val
+
                     ts_keypoints.append([x, y, conf])
 
                 cur_ts_struct = {'frame_index': ts,
@@ -135,6 +195,7 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
                                 'keypoints': ts_keypoints}
                 annotations.append(cur_ts_struct)
 
+            # print(annotations) 
             outcome_cat = data_struct[self.outcome_label][0]
             try:
                 outcome_cat = float(outcome_cat)
@@ -172,5 +233,8 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
                 data['data'][:, :, frame_index, person_id] = np.array(
                     a['keypoints']).transpose()
         
+        if self.cache:
+            self.cached_data[index] = data
+
         # print(data['data'])
         return data

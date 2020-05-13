@@ -36,6 +36,8 @@ class Graph():
                                         max_hop=max_hop)
         self.get_adjacency(strategy)
 
+        print("initializing graph: ", layout)
+
     def __str__(self):
         return self.A
 
@@ -80,6 +82,16 @@ class Graph():
                               [6, 12], [7, 13], [6, 7], [8, 6], [9, 7],
                               [10, 8], [11, 9], [2, 3], [2, 1], [3, 1], [4, 2],
                               [5, 3], [4, 6], [5, 7]]
+            neighbor_link = [(i - 1, j - 1) for (i, j) in neighbor_1base]
+            self.edge = self_link + neighbor_link
+            self.center = 0
+
+        elif layout == 'coco_simplified_head':
+            self.num_node = 13
+            self_link = [(i, i) for i in range(self.num_node)]
+            neighbor_1base = [[13, 11], [12, 10], [11, 9], [10, 8], [9, 8],
+                              [8, 2], [9, 3], [3, 2], [2, 4], [3, 5], 
+                              [5, 7], [1, 3], [1, 2]]
             neighbor_link = [(i - 1, j - 1) for (i, j) in neighbor_1base]
             self.edge = self_link + neighbor_link
             self.center = 0

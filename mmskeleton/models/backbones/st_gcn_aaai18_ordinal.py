@@ -6,7 +6,7 @@ from torch.autograd import Variable
 from mmskeleton.ops.st_gcn import ConvTemporalGraphical, Graph
 
 
-class ST_GCN_18(nn.Module):
+class ST_GCN_18_ordinal(nn.Module):
     r"""Spatial temporal graph convolutional networks.
 
     Args:
@@ -34,7 +34,7 @@ class ST_GCN_18(nn.Module):
                  data_bn=True,
                  **kwargs):
         super().__init__()
-        print('In ST_GCN_18: ', graph_cfg)
+        print('In ST_GCN_18 ordinal: ', graph_cfg)
         # load graph
         self.graph = Graph(**graph_cfg)
         A = torch.tensor(
@@ -72,7 +72,7 @@ class ST_GCN_18(nn.Module):
             self.edge_importance = [1] * len(self.st_gcn_networks)
 
         # fcn for prediction
-        self.fcn = nn.Conv2d(256, num_class, kernel_size=1)
+        self.fcn = nn.Conv2d(256, 1, kernel_size=1)
 
     def forward(self, x):
 
