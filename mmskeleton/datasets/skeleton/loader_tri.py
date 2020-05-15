@@ -17,7 +17,7 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
     """
     def __init__(self, data_dir, num_track=1, repeat=1, num_keypoints=-1, 
                 outcome_label='UPDRS_gait', missing_joint_val=0, csv_loader=False, 
-                cache=False, layout='coco'):
+                cache=False, layout='coco', flip_skels=False):
         self.data_dir = data_dir
         self.num_track = num_track
         self.num_keypoints = num_keypoints
@@ -27,6 +27,8 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
         self.csv_loader = csv_loader
         self.interpolate_with_mean = False
         self.layout = layout
+        self.class_dist = {}
+        self.flip_skels = flip_skels
 
         if self.missing_joint_val == 'mean':
             self.interpolate_with_mean = True
@@ -41,7 +43,10 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
 
 
     def __len__(self):
-        return len(self.files)
+        if self.flip_skels:
+            return len(self.files)*2
+        else:
+            return len(self.files)
 
     def __getitem__(self, index):
 # {
@@ -73,12 +78,17 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
         if self.csv_loader:
             # print("getting itemmmmm", self.outcome_label)
             # print(self.files[index])
-            data_struct_interpolated = pd.read_csv(self.files[index])
+            file_index = index
+            if index >= len(self.files):
+                file_index = index - len(self.files)
+
+            data_struct_interpolated = pd.read_csv(self.files[file_index])
             data_struct_interpolated.fillna(data_struct_interpolated.mean(), inplace=True)
+
             # print(data_struct_interpolated.head())
 
             data_struct = {} 
-            with open(self.files[index]) as f:        
+            with open(self.files[file_index]) as f:        
                 data = csv.reader(f)
                 csvreader = csv.DictReader(f)
                 for row in csvreader:
@@ -97,7 +107,7 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
 
             if self.layout == 'coco':
                 num_kp = 17
-                order_of_keypoints = {'Nose', 
+                order_of_keypoints = ['Nose', 
                     'LEye', 'REye', 'LEar', 'REar',
                     'LShoulder', 'RShoulder',
                     'LElbow', 'RElbow', 
@@ -105,17 +115,18 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
                     'LHip', 'RHip',
                     'LKnee', 'RKnee',
                     'LAnkle', 'RAnkle',
-                    }
+                ]
+
             elif self.layout == 'coco_simplified_head':
                 num_kp = 13
-                order_of_keypoints = {'Nose', 
+                order_of_keypoints = ['Nose', 
                     'LShoulder', 'RShoulder',
                     'LElbow', 'RElbow', 
                     'LWrist', 'RWrist', 
                     'LHip', 'RHip',
                     'LKnee', 'RKnee',
                     'LAnkle', 'RAnkle',
-                    }
+                ]
             else:
                 raise ValueError(f"The layout {self.layout} does not exist")
 
@@ -141,9 +152,10 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
 
             annotations = []
             
+
             for ts in range(len(data_struct['time'])):
                 ts_keypoints = []
-                for kp in order_of_keypoints:
+                for kp_num, kp in enumerate(order_of_keypoints):
                     if kp == "Neck":
                         RShoulder = [data_struct['RShoulder_x'][ts], data_struct['RShoulder_y'][ts], data_struct['RShoulder_conf'][ts]]   
                         LShoulder = [data_struct['LShoulder_x'][ts], data_struct['LShoulder_y'][ts], data_struct['LShoulder_conf'][ts]]   
@@ -159,6 +171,18 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
                         y = data_struct[kp + '_y'][ts]          
                         conf = data_struct[kp + '_conf'][ts]      
                     
+                        # Flip the left and right sides (flipping x)
+                        if self.flip_skels and index >= len(self.files) and kp_num >= 1:
+                            cur_side = kp[0]
+                            if cur_side.upper() == "L":
+                                kp_other_side = "R" + kp[1:]
+                            elif cur_side.upper() == "R":
+                                kp_other_side = "L" + kp[1:]
+                            else:
+                                raise ValueError("cant flip: ", kp)
+                            x = data_struct[kp_other_side + '_x'][ts]          
+
+
                     # missing confidence = 0
                     try:
                         conf = float(conf)
@@ -203,7 +227,13 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
             except:
                 outcome_cat = -1
 
-            
+            if outcome_cat in self.class_dist:
+                self.class_dist[outcome_cat] += 1
+            else:
+                self.class_dist[outcome_cat] = 1
+
+            # print("annotations: ",  annotations)
+            # raise ValueError("ok")
             data = {'info': info_struct, 
                         'annotations': annotations,
                         'category_id': outcome_cat}

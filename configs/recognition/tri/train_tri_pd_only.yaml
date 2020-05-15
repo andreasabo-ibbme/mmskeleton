@@ -15,22 +15,27 @@ argparse_cfg:
 processor_cfg:
   type: 'processor.recognition_tri.train'
   workers: 1
-  test_ids: [46, 47, 48, 50, 52, 55, 57, 59, 66, 33, 34, 37, 27, 39 ]
+  test_ids: [48, 34, 37, 27, 39, 47, 46, 50, 52, 55, 57, 59, 66, 33]
   cv: 5
-  notes: "normalized -shoulder, centered at 100"
+  notes: "regression, normalized -shoulder, centered at 100"
+  group_notes: "fix_kp_order_add_labelled_flips"
+  weight_classes: False
 
   # model setting
   model_cfg:
     type: 'models.backbones.ST_GCN_18_ordinal'
     in_channels: 3
-    num_class: 3
+    num_class: 4
     edge_importance_weighting: True
+    dropout: 0.0
     graph_cfg:
       layout: 'coco_simplified_head'
       strategy: 'spatial'
   loss_cfg:
     # type: 'torch.nn.CrossEntropyLoss'
-    type: 'spacecutter.losses.CumulativeLinkLoss'
+    # type: 'spacecutter.losses.CumulativeLinkLoss'
+    type: 'torch.nn.MSELoss'
+    
 
   # dataset setting
   dataset_cfg:
@@ -42,10 +47,11 @@ processor_cfg:
         num_track: 1
         num_keypoints: 13
         repeat: 1
-        outcome_label: UPDRS_gait
+        outcome_label: SAS_gait
         csv_loader: True
         missing_joint_val: mean
         cache: True
+        flip_skels: True
 
       pipeline:
         - {type: "datasets.skeleton.normalize_by_resolution"}
@@ -56,25 +62,25 @@ processor_cfg:
         - {type: "datasets.skeleton.to_tuple"}
 
   # dataloader setting
-  batch_size: 20
+  batch_size: 200
   gpus: 1
 
   # optimizer setting
   optimizer_cfg:
     type: 'torch.optim.SGD'
-    lr: 0.1
+    lr: 0.001
     momentum: 0.9
     nesterov: true
-    weight_decay: 0.0001
+    weight_decay: 0.001
 
   # runtime setting
   workflow: [['train', 1], ['val', 1]]
   work_dir: ./work_dir/recognition/tri_pd/dataset_example
-  total_epochs: 200
+  total_epochs: 2
   training_hooks:
     lr_config:
       policy: 'step'
-      step: [40, 80, 120]
+      step: [20, 80, 120]
     log_config:
       interval: 100
       hooks:
