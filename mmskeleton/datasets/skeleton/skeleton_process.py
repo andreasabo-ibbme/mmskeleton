@@ -19,20 +19,27 @@ from mmskeleton.deprecated.datasets.utils import skeleton as skeleton_aaai18
 #     data = to_tuple(data)
 #     return data
 
+data_fields = ['data', 'data_flipped']
 
 def normalize_by_resolution(data):
-
+    
     resolution = data['info']['resolution']
     channel = data['info']['keypoint_channels']
-    np_array = data['data']
 
-    for i, c in enumerate(channel):
-        if c == 'x':
-            np_array[i] = np_array[i] / resolution[0] - 0.5
-        if c == 'y':
-            np_array[i] = np_array[i] / resolution[1] - 0.5
+    for data_field in data_fields:
+        if data_field not in data.keys():
+            continue
 
-    data['data'] = np_array
+        np_array = data[data_field]
+
+        for i, c in enumerate(channel):
+            if c == 'x':
+                np_array[i] = np_array[i] / resolution[0] - 0.5
+            if c == 'y':
+                np_array[i] = np_array[i] / resolution[1] - 0.5
+    data[data_field] = np_array
+
+
     return data
 
 
@@ -42,17 +49,24 @@ def get_mask(data, mask_channel, mask_threshold=0):
 
 
 def mask(data):
-    data['data'] = data['data'] * data['mask']
+    for data_field in data_fields:
+        if data_field not in data.keys():
+            continue
+        data[data_field] = data[data_field] * data['mask']
     return data
 
 
 def normalize(data, mean, std):
-    np_array = data['data']
-    mean = np.array(mean, dtype=np_array.dtype)
-    std = np.array(std, dtype=np_array.dtype)
-    mean = mean.reshape(mean.shape + (1, ) * (np_array.ndim - mean.ndim))
-    std = std.reshape(std.shape + (1, ) * (np_array.ndim - std.ndim))
-    data['data'] = (np_array - mean) / std
+    for data_field in data_fields:
+        if data_field not in data.keys():
+            continue
+
+        np_array = data[data_field]
+        mean = np.array(mean, dtype=np_array.dtype)
+        std = np.array(std, dtype=np_array.dtype)
+        mean = mean.reshape(mean.shape + (1, ) * (np_array.ndim - mean.ndim))
+        std = std.reshape(std.shape + (1, ) * (np_array.ndim - std.ndim))
+        data[data_field] = (np_array - mean) / std
     return data
 
 
@@ -66,25 +80,40 @@ def normalize_with_mask(data, mean, std, mask_channel, mask_threshold=0):
 def mask_by_visibility(data):
 
     channel = data['info']['keypoint_channels']
-    np_array = data['data']
+    for data_field in data_fields:
+        if data_field not in data.keys():
+            continue
 
-    for i, c in enumerate(channel):
-        if c == 'score' or c == 'visibility':
-            mask = (np_array[i] == 0)
-            for j in range(len(channel)):
-                if c != j:
-                    np_array[j][mask] = 0
+        np_array = data[data_field]
 
-    data['data'] = np_array
+        for i, c in enumerate(channel):
+            if c == 'score' or c == 'visibility':
+                mask = (np_array[i] == 0)
+                for j in range(len(channel)):
+                    if c != j:
+                        np_array[j][mask] = 0
+
+        data[data_field] = np_array
     return data
 
 
-def transpose(data, order, key='data'):
-    data[key] = data[key].transpose(order)
+def transpose(data, order, key=None):
+    if key is not None:
+        data[key] = data[key].transpose(order)
+
+    else:
+        for data_field in data_fields:
+            if data_field not in data.keys():
+                continue
+            data[data_field] = data[data_field].transpose(order)
     return data
 
 
-def to_tuple(data, keys=['data', 'category_id']):
+def to_tuple(data):
+    keys=['data', 'category_id']
+    if 'data_flipped' in data.keys():
+        keys=['data', 'data_flipped',  'category_id']
+
     return tuple([data[k] for k in keys])
 
 
@@ -92,48 +121,60 @@ def temporal_repeat(data, size, random_crop=False):
     """
     repeat on the time axis.
     """
+    for data_field in data_fields:
+        if data_field not in data.keys():
+            continue
 
-    np_array = data['data']
-    T = np_array.shape[2]
 
-    if T >= size:
-        if random_crop:
-            np_array = np_array[:, :, random.randint(0, T -
-                                                     size):][:, :, :size]
+        np_array = data[data_field]
+        T = np_array.shape[2]
+
+        if T >= size:
+            if random_crop:
+                np_array = np_array[:, :, random.randint(0, T -
+                                                        size):][:, :, :size]
+            else:
+                np_array = np_array[:, :, :size]
+
         else:
-            np_array = np_array[:, :, :size]
+            selected_index = np.arange(T)
+            selected_index = np.concatenate(
+                (selected_index, selected_index[1:-1][::-1]))
+            selected_index = np.tile(selected_index,
+                                    size // (2 * T - 2) + 1)[:size]
 
-    else:
-        selected_index = np.arange(T)
-        selected_index = np.concatenate(
-            (selected_index, selected_index[1:-1][::-1]))
-        selected_index = np.tile(selected_index,
-                                 size // (2 * T - 2) + 1)[:size]
+            np_array = np_array[:, :, selected_index]
 
-        np_array = np_array[:, :, selected_index]
-
-    data['data'] = np_array
+        data[data_field] = np_array
     return data
 
 
 def pad_zero(data, size):
-    np_array = data['data']
-    T = np_array.shape[2]
-    if T < size:
-        pad_shape = list(np_array.shape)
-        pad_shape[2] = size
-        np_array_paded = np.zeros(pad_shape, dtype=np_array.dtype)
-        np_array_paded[:, :, :T, :] = np_array
-        data['data'] = np_array_paded
+    for data_field in data_fields:
+        if data_field not in data.keys():
+            continue
+
+        np_array = data[data_field]
+        T = np_array.shape[2]
+        if T < size:
+            pad_shape = list(np_array.shape)
+            pad_shape[2] = size
+            np_array_paded = np.zeros(pad_shape, dtype=np_array.dtype)
+            np_array_paded[:, :, :T, :] = np_array
+            data[data_field] = np_array_paded
     return data
 
 
 def random_crop(data, size):
-    np_array = data['data']
-    T = np_array.shape[2]
-    if T > size:
-        begin = random.randint(0, T - size)
-        data['data'] = np_array[:, :, begin:begin + size, :]
+    for data_field in data_fields:
+        if data_field not in data.keys():
+            continue
+
+        np_array = data[data_field]
+        T = np_array.shape[2]
+        if T > size:
+            begin = random.randint(0, T - size)
+            data[data_field] = np_array[:, :, begin:begin + size, :]
     return data
 
 
@@ -148,46 +189,51 @@ def simulate_camera_moving(data,
         raise NotImplementedError(
             'The first two channels of keypoints should be ["x", "y"]')
 
-    np_array = data['data']
-    T = np_array.shape[2]
+    for data_field in data_fields:
+        if data_field not in data.keys():
+            continue
 
-    move_time = random.choice(move_time_candidate)
-    node = np.arange(0, T, T * 1.0 / move_time).round().astype(int)
-    node = np.append(node, T)
-    num_node = len(node)
 
-    A = np.random.choice(angle_candidate, num_node)
-    S = np.random.choice(scale_candidate, num_node)
-    T_x = np.random.choice(transform_candidate, num_node)
-    T_y = np.random.choice(transform_candidate, num_node)
+        np_array = data[data_field]
+        T = np_array.shape[2]
 
-    a = np.zeros(T)
-    s = np.zeros(T)
-    t_x = np.zeros(T)
-    t_y = np.zeros(T)
+        move_time = random.choice(move_time_candidate)
+        node = np.arange(0, T, T * 1.0 / move_time).round().astype(int)
+        node = np.append(node, T)
+        num_node = len(node)
 
-    # linspace for parameters of affine transformation
-    for i in range(num_node - 1):
-        a[node[i]:node[i + 1]] = np.linspace(
-            A[i], A[i + 1], node[i + 1] - node[i]) * np.pi / 180
-        s[node[i]:node[i + 1]] = np.linspace(S[i], S[i + 1],
-                                             node[i + 1] - node[i])
-        t_x[node[i]:node[i + 1]] = np.linspace(T_x[i], T_x[i + 1],
-                                               node[i + 1] - node[i])
-        t_y[node[i]:node[i + 1]] = np.linspace(T_y[i], T_y[i + 1],
-                                               node[i + 1] - node[i])
+        A = np.random.choice(angle_candidate, num_node)
+        S = np.random.choice(scale_candidate, num_node)
+        T_x = np.random.choice(transform_candidate, num_node)
+        T_y = np.random.choice(transform_candidate, num_node)
 
-    theta = np.array([[np.cos(a) * s, -np.sin(a) * s],
-                      [np.sin(a) * s, np.cos(a) * s]])
+        a = np.zeros(T)
+        s = np.zeros(T)
+        t_x = np.zeros(T)
+        t_y = np.zeros(T)
 
-    # perform transformation
-    for i_frame in range(T):
-        xy = np_array[0:2, :, i_frame]
-        new_xy = np.dot(theta[:, :, i_frame], xy.reshape(2, -1))
-        new_xy[0] += t_x[i_frame]
-        new_xy[1] += t_y[i_frame]
-        np_array[0:2, :, i_frame] = new_xy.reshape(*(
-            np_array[0:2, :, i_frame].shape))
+        # linspace for parameters of affine transformation
+        for i in range(num_node - 1):
+            a[node[i]:node[i + 1]] = np.linspace(
+                A[i], A[i + 1], node[i + 1] - node[i]) * np.pi / 180
+            s[node[i]:node[i + 1]] = np.linspace(S[i], S[i + 1],
+                                                node[i + 1] - node[i])
+            t_x[node[i]:node[i + 1]] = np.linspace(T_x[i], T_x[i + 1],
+                                                node[i + 1] - node[i])
+            t_y[node[i]:node[i + 1]] = np.linspace(T_y[i], T_y[i + 1],
+                                                node[i + 1] - node[i])
 
-    data['data'] = np_array
+        theta = np.array([[np.cos(a) * s, -np.sin(a) * s],
+                        [np.sin(a) * s, np.cos(a) * s]])
+
+        # perform transformation
+        for i_frame in range(T):
+            xy = np_array[0:2, :, i_frame]
+            new_xy = np.dot(theta[:, :, i_frame], xy.reshape(2, -1))
+            new_xy[0] += t_x[i_frame]
+            new_xy[1] += t_y[i_frame]
+            np_array[0:2, :, i_frame] = new_xy.reshape(*(
+                np_array[0:2, :, i_frame].shape))
+
+        data[data_field] = np_array
     return data

@@ -17,8 +17,9 @@ processor_cfg:
   workers: 1
   test_ids: [48, 47, 34, 37, 27, 39, 46, 50, 52, 55, 57, 59, 66, 33]
   cv: 5
-  notes: "regression, normalized -shoulder, centered at 100"
-  group_notes: "val_set"
+  exclude_cv: True
+  notes: "add unlabelled"
+  group_notes: "with_unlabelled"
   weight_classes: False
 
   # model setting
@@ -27,7 +28,7 @@ processor_cfg:
     in_channels: 3
     num_class: 4
     edge_importance_weighting: True
-    dropout: 0.1
+    dropout: 0.0
     graph_cfg:
       layout: 'coco_simplified_head'
       strategy: 'spatial'
@@ -43,7 +44,7 @@ processor_cfg:
     - type: "datasets.DataPipeline"
       data_source:
         type: "datasets.SkeletonLoaderTRI"
-        data_dir: /home/saboa/TRI_data_output/all_walks_v2/stgcn_normalized_100_center_pd_shoulder_norm/openpose/filtered #/home/saboa/TRI_data_output/all_walks_v2/PD_featureset_may7_ml/openpose/filtered
+        data_dir: /home/saboa/TRI_data_output/all_walks_v2/stgcn_normalized_100_center_all_shoulder_norm/openpose/filtered #/home/saboa/TRI_data_output/all_walks_v2/PD_featureset_may7_ml/openpose/filtered
         num_track: 1
         num_keypoints: 13
         repeat: 1
@@ -62,7 +63,7 @@ processor_cfg:
         - {type: "datasets.skeleton.to_tuple"}
 
   # dataloader setting
-  batch_size: 20
+  batch_size: 10
   gpus: 1
 
   # optimizer setting
@@ -75,7 +76,7 @@ processor_cfg:
 
   # runtime setting
   workflow: [['train', 1], ['val', 1], ['test', 1]]
-  work_dir: ./work_dir/recognition/tri_pd/dataset_example
+  work_dir: ./work_dir/recognition/tri_all/dataset_example
   total_epochs: 200
   training_hooks:
     lr_config:

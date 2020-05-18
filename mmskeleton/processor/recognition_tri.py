@@ -71,6 +71,7 @@ def train(
         load_from=None,
         test_ids=None,
         cv=5,
+        exclude_cv=False,
         notes=None,
         weight_classes=False,
         group_notes='',
@@ -107,36 +108,10 @@ def train(
         non_test_walks = list(set(all_files).symmetric_difference(set(test_walks)))
     
         datasets = [copy.deepcopy(dataset_cfg[0]) for i in range(len(workflow))]
-        print('the length is', len(datasets))
         # datasets = [copy.deepcopy(dataset_cfg[0]), copy.deepcopy(dataset_cfg[0])]
         work_dir_amb = work_dir + "/" + str(ambid)
         for ds in datasets:
             ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
-        # x = dataset_cfg[0]['data_source']['outcome_label']
-   
-
-        # # print(model_cfg['num_class'])
-        # things_to_log = {'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
-        # print('size of test set: ', len(test_walks))
-        # train_model(
-        #         work_dir_amb,
-        #         model_cfg,
-        #         loss_cfg,
-        #         datasets,
-        #         optimizer_cfg,
-        #         batch_size,
-        #         total_epochs,
-        #         training_hooks,
-        #         workflow,
-        #         gpus,
-        #         log_level,
-        #         workers,
-        #         resume_from,
-        #         load_from, 
-        #         things_to_log)
-
-        # continue
-
 
 
         if len(test_walks) == 0:
@@ -161,17 +136,24 @@ def train(
             test_walks = [i for i in all_files if re.search('ID_'+str(test_id), i) ]
             non_test_walks = list(set(all_files).symmetric_difference(set(test_walks)))
         
-            datasets[0]['data_source']['data_dir'] = train_walks
-            datasets[1]['data_source']['data_dir'] = val_walks
-            datasets[2]['data_source']['data_dir'] = test_walks
+            if exclude_cv: 
+                workflow = [workflow[0], workflow[2]]
+                datasets = [copy.deepcopy(dataset_cfg[0]) for i in range(len(workflow))]
+                datasets[0]['data_source']['data_dir'] = non_test_walks
+                datasets[1]['data_source']['data_dir'] = test_walks
+            else:
+                datasets[0]['data_source']['data_dir'] = train_walks
+                datasets[1]['data_source']['data_dir'] = val_walks
+                datasets[2]['data_source']['data_dir'] = test_walks
             work_dir_amb = work_dir + "/" + str(ambid)
             for ds in datasets:
                 ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
             # x = dataset_cfg[0]['data_source']['outcome_label']
     
-
+            print(workflow)
             # print(model_cfg['num_class'])
             things_to_log = {'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
+            print('size of train set: ', len(datasets[0]['data_source']['data_dir']))
             print('size of test set: ', len(test_walks))
             train_model(
                     work_dir_amb,
@@ -306,37 +288,67 @@ def train_model(
 
 # process a batch of data
 def batch_processor(model, datas, train_mode, loss):
+    torch.cuda.empty_cache()
     mse_loss = torch.nn.MSELoss()
-    data, label = datas
-    data = data.cuda()
+    model_2 = copy.deepcopy(model)
+    have_flips = 0
+    try:
+        data, label = datas
+    except:
+        data, data_flipped, label = datas
+        have_flips = 1
+
+    data_all = data.cuda()
     label = label.cuda()
 
     # Remove the -1 labels
     y_true = label.data.reshape(-1, 1).float()
-    # print('before', len(y_true))
     condition = y_true >= 0.
     row_cond = condition.all(1)
     y_true = y_true[row_cond, :]
-    data = data.data[row_cond, :]
+    data = data_all.data[row_cond, :]
     num_valid_samples = data.shape[0]
 
+
+    if have_flips:
+        data_all = data_all.data
+        data_all_flipped = data_flipped.cuda()
+        data_all_flipped = data_all_flipped.data
+        # print('input_flipped', torch.sum(torch.isnan(data_all_flipped)))     
+        # print('raw', torch.sum(torch.isnan(data_all)))   
+        output_all_flipped = model_2(data_all_flipped)
+
+
+    # Get predictions from the model
+    output_all = model(data_all)
+    output = output_all[row_cond]
+    loss_flip_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
+
+    if have_flips:
+        loss_flip_tensor = my_loss(output_all_flipped, output_all)
+        if loss_flip_tensor.data > 10:
+            pass
+            # print('output_all_flipped', output_all_flipped, 'output_all', output_all)
+
+
+    # if we don't have any valid labels for this batch...
     if num_valid_samples < 1:
         labels = []
         preds = []
         raw_preds = []
-        loss_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
+        # loss_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
         # loss_tensor = loss_tensor.cuda()
 
-        log_vars = dict(loss=loss_tensor)
+        log_vars = dict(loss=loss_flip_tensor)
         log_vars['mae_raw'] = 0
         log_vars['mae_rounded'] = 0
         output_labels = dict(true=labels, pred=preds, raw_preds=raw_preds)
-        outputs = dict(loss=loss_tensor, log_vars=log_vars, num_samples=0)
+        outputs = dict(loss=loss_flip_tensor, log_vars=log_vars, num_samples=0)
 
         return outputs, output_labels
     
-    # Get predictions from the model
-    output = model(data)
+
+
     y_true_orig_shape = y_true.reshape(1,-1).squeeze()
     losses = loss(output, y_true)
 
@@ -373,17 +385,27 @@ def batch_processor(model, datas, train_mode, loss):
         print(labels)
         print(preds)
 
+    overall_loss = losses + loss_flip_tensor
+    log_vars = dict(loss_label=losses.item(), loss_flip = loss_flip_tensor.item(), loss_all=overall_loss.item())
+    # print('l1', losses, 'l2', loss_flip_tensor)
 
-    log_vars = dict(loss=losses.item())
-
-
-    log_vars['mae_raw'] = mean_absolute_error(labels, output)
+    try:
+        log_vars['mae_raw'] = mean_absolute_error(labels, output)
+    except:
+        print("labels: ", labels, "output", output)
+        print('input', torch.sum(torch.isnan(data_all)))
+        print('output_all', output_all, 'output_all_flipped', output_all_flipped)
+        raise ValueError('stop')
     log_vars['mae_rounded'] = mean_absolute_error(labels, preds)
     output_labels = dict(true=labels, pred=preds, raw_preds=output_list)
-    outputs = dict(loss=losses, log_vars=log_vars, num_samples=len(labels))
+    outputs = dict(loss=overall_loss, log_vars=log_vars, num_samples=len(labels))
     # print(type(labels), type(preds))
     # print('this is what we return: ', output_labels)
     return outputs, output_labels
+
+def my_loss(output, target):
+    loss = torch.mean((output - target)**2)
+    return loss
 
 #https://discuss.pytorch.org/t/how-to-implement-weighted-mean-square-error/2547
 def weighted_mse_loss(input, target, weights):

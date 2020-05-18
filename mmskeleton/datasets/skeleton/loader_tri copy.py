@@ -32,7 +32,6 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
 
         if self.missing_joint_val == 'mean':
             self.interpolate_with_mean = True
-            self.missing_joint_val = 0
 
 
         self.cache = cache
@@ -44,7 +43,10 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
 
 
     def __len__(self):
-        return len(self.files)
+        if self.flip_skels:
+            return len(self.files)*2
+        else:
+            return len(self.files)
 
     def __getitem__(self, index):
 # {
@@ -129,18 +131,16 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
                 raise ValueError(f"The layout {self.layout} does not exist")
 
             # print(data_struct)
-            try:
-                info_struct = {
-                    "video_name": data_struct['walk_name'][0],
-                    "resolution": [1920, 1080],
-                    "num_frame": len(data_struct['time']),
-                    "num_keypoints": num_kp,
-                    "keypoint_channels": ["x", "y", "score"],
-                    "version": "1.0"
-                }
-            except:
-                print('data_struct', data_struct)            
-                raise ValueError("something is wrong with the data struct", self.files[file_index])
+            info_struct = {
+                "video_name": data_struct['walk_name'][0],
+                "resolution": [1920, 1080],
+                "num_frame": len(data_struct['time']),
+                "num_keypoints": num_kp,
+                "keypoint_channels": ["x", "y", "score"],
+                "version": "1.0"
+            }
+
+
             # order_of_keypoints = {'Nose', 
             #     'RShoulder', 'RElbow', 'RWrist', 
             #     'LShoulder', 'LElbow', 'LWrist', 
@@ -151,10 +151,10 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
 
 
             annotations = []
-            annotations_flipped = []
+            
 
             for ts in range(len(data_struct['time'])):
-                ts_keypoints, ts_keypoints_flipped = [], []
+                ts_keypoints = []
                 for kp_num, kp in enumerate(order_of_keypoints):
                     if kp == "Neck":
                         RShoulder = [data_struct['RShoulder_x'][ts], data_struct['RShoulder_y'][ts], data_struct['RShoulder_conf'][ts]]   
@@ -171,76 +171,16 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
                         y = data_struct[kp + '_y'][ts]          
                         conf = data_struct[kp + '_conf'][ts]      
                     
-
-                        # missing actual joint coordinates
-                        try:
-                            x = float(x)
-                            y = float(y)
-                        except:
-                            if self.interpolate_with_mean:
-                                x = data_struct_interpolated[kp + '_x'][ts]          
-                                y = data_struct_interpolated[kp + '_y'][ts]          
-                            else:           
-                                x = self.missing_joint_val
-                                y = self.missing_joint_val
-                            
-                            if isinstance(x, str):
-                                x = self.missing_joint_val
-
-                            if isinstance(y, str):
-                                y = self.missing_joint_val
-
-                        if math.isnan(x) or math.isnan(y):
-                            x = self.missing_joint_val
-                            y = self.missing_joint_val
-                            # if self.interpolate_with_mean:
-                            #     x = data_struct_interpolated[kp + '_x'][ts]          
-                            #     y = data_struct_interpolated[kp + '_y'][ts]          
-                            # else:           
-                            #     x = self.missing_joint_val
-                            #     y = self.missing_joint_val
-
-
-                        # print("kp, x, y, x is nan", kp, type(x), y)
-                        # print('isnan',  math.isnan(x))
-
                         # Flip the left and right sides (flipping x)
-                        if self.flip_skels:
-                            if kp_num == 0: # Nose isn't flipped
-                                x_flipped = x
+                        if self.flip_skels and index >= len(self.files) and kp_num >= 1:
+                            cur_side = kp[0]
+                            if cur_side.upper() == "L":
+                                kp_other_side = "R" + kp[1:]
+                            elif cur_side.upper() == "R":
+                                kp_other_side = "L" + kp[1:]
                             else:
-                                cur_side = kp[0]
-                                if cur_side.upper() == "L":
-                                    kp_other_side = "R" + kp[1:]
-                                elif cur_side.upper() == "R":
-                                    kp_other_side = "L" + kp[1:]
-                                else:
-                                    raise ValueError("cant flip: ", kp)
-                                x_flipped = data_struct[kp_other_side + '_x'][ts]  
-
-                                # missing actual joint coordinates
-                                try:
-                                    x_flipped = float(x_flipped)
-                                except:
-                                    if self.interpolate_with_mean:
-                                        x_flipped = data_struct_interpolated[kp_other_side + '_x'][ts]          
-                                    else:           
-                                        x_flipped = self.missing_joint_val
-
-
-
-
-                                if math.isnan(x_flipped):
-                                    x_flipped = self.missing_joint_val
-                                    # print("what is happening?")
-                                    # if self.interpolate_with_mean:
-                                    #     x_flipped = data_struct_interpolated[kp_other_side + '_x'][ts]       
-                                    #     print(kp_other_side)  
-                                    #     print(data_struct_interpolated[kp_other_side + '_x'])
-                                    #     print(self.files[file_index])
-                                    # else:           
-                                    #     x_flipped = self.missing_joint_val
-                                    # raise ValueError("x_flipped", x_flipped)
+                                raise ValueError("cant flip: ", kp)
+                            x = data_struct[kp_other_side + '_x'][ts]          
 
 
                     # missing confidence = 0
@@ -249,29 +189,35 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
                     except:                    
                         conf = 0
 
+                    # missing actual joint coordinates
+                    try:
+                        x = float(x)
+                        y = float(y)
+                    except:
+                        if self.interpolate_with_mean:
+                            x = data_struct_interpolated[kp + '_x'][ts]          
+                            y = data_struct_interpolated[kp + '_y'][ts]          
+                        else:           
+                            x = self.missing_joint_val
+                            y = self.missing_joint_val
 
                     if math.isnan(conf):
                         conf = 0
-
- 
-
+                    if math.isnan(x) or math.isnan(y):
+                        if self.interpolate_with_mean:
+                            x = data_struct_interpolated[kp + '_x'][ts]          
+                            y = data_struct_interpolated[kp + '_y'][ts]          
+                        else:           
+                            x = self.missing_joint_val
+                            y = self.missing_joint_val
 
                     ts_keypoints.append([x, y, conf])
-                    if self.flip_skels:
-                        ts_keypoints_flipped.append([x_flipped, y, conf])
 
                 cur_ts_struct = {'frame_index': ts,
                                 'id': 0, 
                                 'person_id': 0,
                                 'keypoints': ts_keypoints}
-
-                cur_ts_struct_flipped = {'frame_index': ts,
-                                'id': 0, 
-                                'person_id': 0,
-                                'keypoints': ts_keypoints_flipped}
-
                 annotations.append(cur_ts_struct)
-                annotations_flipped.append(cur_ts_struct_flipped)
 
             # print(annotations) 
             outcome_cat = data_struct[self.outcome_label][0]
@@ -289,7 +235,7 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
             # print("annotations: ",  annotations)
             # raise ValueError("ok")
             data = {'info': info_struct, 
-                        # 'annotations': annotations,
+                        'annotations': annotations,
                         'category_id': outcome_cat}
         
         else: # original loader 
@@ -298,8 +244,7 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
         # # print("we got: ", data_arr[0])
 
         info = data['info']
-        # annotations = data['annotations']
-        # annotations_flipped = data['annotations_flipped']
+        annotations = data['annotations']
         num_frame = info['num_frame']
         num_keypoints = info[
             'num_keypoints'] if self.num_keypoints <= 0 else self.num_keypoints
@@ -317,27 +262,9 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
             if person_id < self.num_track and frame_index < num_frame:
                 data['data'][:, :, frame_index, person_id] = np.array(
                     a['keypoints']).transpose()
-        if self.flip_skels:      
-            data['data_flipped'] = np.zeros(
-                (num_channel, num_keypoints, num_frame, self.num_track),
-                dtype=np.float32)
-
-
-            for a in annotations_flipped:
-                person_id = a['id'] if a['person_id'] is None else a['person_id']
-                frame_index = a['frame_index']
-                if person_id < self.num_track and frame_index < num_frame:
-                    data['data_flipped'][:, :, frame_index, person_id] = np.array(
-                        a['keypoints']).transpose()
-
+        
         if self.cache:
             self.cached_data[index] = data
 
-
-
         # print(data['data'])
-        # data.pop('annotations', None)
-        # print(data)
-        # raise ValueError("stop")
         return data
-
