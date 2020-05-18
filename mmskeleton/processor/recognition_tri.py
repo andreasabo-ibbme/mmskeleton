@@ -106,36 +106,36 @@ def train(
         test_walks = [i for i in all_files if re.search('ID_'+str(test_id), i) ]
         non_test_walks = list(set(all_files).symmetric_difference(set(test_walks)))
     
-        datasets = [copy.deepcopy(dataset_cfg[0]), copy.deepcopy(dataset_cfg[0])]
-        datasets[0]['data_source']['data_dir'] = non_test_walks
-        datasets[1]['data_source']['data_dir'] = test_walks
+        datasets = [copy.deepcopy(dataset_cfg[0]) for i in range(len(workflow))]
+        print('the length is', len(datasets))
+        # datasets = [copy.deepcopy(dataset_cfg[0]), copy.deepcopy(dataset_cfg[0])]
         work_dir_amb = work_dir + "/" + str(ambid)
         for ds in datasets:
             ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
         # x = dataset_cfg[0]['data_source']['outcome_label']
    
 
-        # print(model_cfg['num_class'])
-        things_to_log = {'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
-        print('size of test set: ', len(test_walks))
-        train_model(
-                work_dir_amb,
-                model_cfg,
-                loss_cfg,
-                datasets,
-                optimizer_cfg,
-                batch_size,
-                total_epochs,
-                training_hooks,
-                workflow,
-                gpus,
-                log_level,
-                workers,
-                resume_from,
-                load_from, 
-                things_to_log)
+        # # print(model_cfg['num_class'])
+        # things_to_log = {'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
+        # print('size of test set: ', len(test_walks))
+        # train_model(
+        #         work_dir_amb,
+        #         model_cfg,
+        #         loss_cfg,
+        #         datasets,
+        #         optimizer_cfg,
+        #         batch_size,
+        #         total_epochs,
+        #         training_hooks,
+        #         workflow,
+        #         gpus,
+        #         log_level,
+        #         workers,
+        #         resume_from,
+        #         load_from, 
+        #         things_to_log)
 
-        continue
+        # continue
 
 
 
@@ -143,24 +143,38 @@ def train(
             continue
         
         # Split the non_test walks into train/val
-        kf = KFold(n_splits=cv, shuffle=True)
+        kf = KFold(n_splits=cv, shuffle=True, random_state=1)
         kf.get_n_splits(non_test_walks)
 
+
+        num_reps = 1
         for train_ids, val_ids in kf.split(non_test_walks):
+            if num_reps > 1:
+                break
+            num_reps += 1
             train_walks = [non_test_walks[i] for i in train_ids]
             val_walks = [non_test_walks[i] for i in val_ids]
 
-            # print(len(train_walks), len(val_walks), len(test_walks))
+            plt.close('all')
+            ambid = id_mapping[test_id]
 
-            datasets = [copy.deepcopy(dataset_cfg[0]), copy.deepcopy(dataset_cfg[0])]
+            test_walks = [i for i in all_files if re.search('ID_'+str(test_id), i) ]
+            non_test_walks = list(set(all_files).symmetric_difference(set(test_walks)))
+        
             datasets[0]['data_source']['data_dir'] = train_walks
             datasets[1]['data_source']['data_dir'] = val_walks
-
+            datasets[2]['data_source']['data_dir'] = test_walks
+            work_dir_amb = work_dir + "/" + str(ambid)
             for ds in datasets:
                 ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
+            # x = dataset_cfg[0]['data_source']['outcome_label']
+    
 
+            # print(model_cfg['num_class'])
+            things_to_log = {'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
+            print('size of test set: ', len(test_walks))
             train_model(
-                    work_dir,
+                    work_dir_amb,
                     model_cfg,
                     loss_cfg,
                     datasets,
@@ -173,13 +187,13 @@ def train(
                     log_level,
                     workers,
                     resume_from,
-                    load_from)
-
+                    load_from, 
+                    things_to_log)
 
 
     # Compute summary statistics (accuracy and confusion matrices)
     final_results_dir = os.path.join(work_dir, 'all_test', wandb_group)
-    wandb.init(name="ALL", project='mmskeleton-tools', group=wandb_group, tags=['summary'], reinit=True)
+    wandb.init(name="ALL", project='mmskel_cv', group=wandb_group, tags=['summary'], reinit=True)
     print(final_results_dir)
     for e in range(0, total_epochs):
         log_vars = {}
