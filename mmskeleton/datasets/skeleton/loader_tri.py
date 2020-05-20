@@ -5,7 +5,7 @@ import torch
 import csv
 import math
 import pandas as pd
-
+import copy
 
 class SkeletonLoaderTRI(torch.utils.data.Dataset):
     """ Feeder for skeleton-based action recognition
@@ -44,6 +44,8 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
 
 
     def __len__(self):
+        if self.flip_skels:
+            return len(self.files)*2
         return len(self.files)
 
     def __getitem__(self, index):
@@ -73,6 +75,16 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
             # print("loading from cache: ", self.files[index])
             return self.cached_data[index]
         # print("loading the data from file")
+
+        if index >= len(self.files):
+            flip_index = index
+            index = index - len(self.files)
+            return_flip = True
+        else:
+            flip_index = index + len(self.files)
+            return_flip = False
+
+
         if self.csv_loader:
             # print("getting itemmmmm", self.outcome_label)
             # print(self.files[index])
@@ -205,42 +217,32 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
                         # print('isnan',  math.isnan(x))
 
                         # Flip the left and right sides (flipping x)
-                        if self.flip_skels:
-                            if kp_num == 0: # Nose isn't flipped
-                                x_flipped = x
+                        if kp_num == 0: # Nose isn't flipped
+                            x_flipped = x
+                        else:
+                            cur_side = kp[0]
+                            if cur_side.upper() == "L":
+                                kp_other_side = "R" + kp[1:]
+                            elif cur_side.upper() == "R":
+                                kp_other_side = "L" + kp[1:]
                             else:
-                                cur_side = kp[0]
-                                if cur_side.upper() == "L":
-                                    kp_other_side = "R" + kp[1:]
-                                elif cur_side.upper() == "R":
-                                    kp_other_side = "L" + kp[1:]
-                                else:
-                                    raise ValueError("cant flip: ", kp)
-                                x_flipped = data_struct[kp_other_side + '_x'][ts]  
+                                raise ValueError("cant flip: ", kp)
+                            x_flipped = data_struct[kp_other_side + '_x'][ts]  
 
-                                # missing actual joint coordinates
-                                try:
-                                    x_flipped = float(x_flipped)
-                                except:
-                                    if self.interpolate_with_mean:
-                                        x_flipped = data_struct_interpolated[kp_other_side + '_x'][ts]          
-                                    else:           
-                                        x_flipped = self.missing_joint_val
-
-
-
-
-                                if math.isnan(x_flipped):
+                            # missing actual joint coordinates
+                            try:
+                                x_flipped = float(x_flipped)
+                            except:
+                                if self.interpolate_with_mean:
+                                    x_flipped = data_struct_interpolated[kp_other_side + '_x'][ts]          
+                                else:           
                                     x_flipped = self.missing_joint_val
-                                    # print("what is happening?")
-                                    # if self.interpolate_with_mean:
-                                    #     x_flipped = data_struct_interpolated[kp_other_side + '_x'][ts]       
-                                    #     print(kp_other_side)  
-                                    #     print(data_struct_interpolated[kp_other_side + '_x'])
-                                    #     print(self.files[file_index])
-                                    # else:           
-                                    #     x_flipped = self.missing_joint_val
-                                    # raise ValueError("x_flipped", x_flipped)
+
+
+
+
+                            if math.isnan(x_flipped):
+                                x_flipped = self.missing_joint_val
 
 
                     # missing confidence = 0
@@ -257,8 +259,7 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
 
 
                     ts_keypoints.append([x, y, conf])
-                    if self.flip_skels:
-                        ts_keypoints_flipped.append([x_flipped, y, conf])
+                    ts_keypoints_flipped.append([x_flipped, y, conf])
 
                 cur_ts_struct = {'frame_index': ts,
                                 'id': 0, 
@@ -317,24 +318,31 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
             if person_id < self.num_track and frame_index < num_frame:
                 data['data'][:, :, frame_index, person_id] = np.array(
                     a['keypoints']).transpose()
-        if self.flip_skels:      
-            data['data_flipped'] = np.zeros(
+        data['data_flipped'] = np.zeros(
                 (num_channel, num_keypoints, num_frame, self.num_track),
                 dtype=np.float32)
 
+        for a in annotations_flipped:
+            person_id = a['id'] if a['person_id'] is None else a['person_id']
+            frame_index = a['frame_index']
+            if person_id < self.num_track and frame_index < num_frame:
+                data['data_flipped'][:, :, frame_index, person_id] = np.array(
+                    a['keypoints']).transpose()
 
-            for a in annotations_flipped:
-                person_id = a['id'] if a['person_id'] is None else a['person_id']
-                frame_index = a['frame_index']
-                if person_id < self.num_track and frame_index < num_frame:
-                    data['data_flipped'][:, :, frame_index, person_id] = np.array(
-                        a['keypoints']).transpose()
-
+          
+        flipped_data = copy.deepcopy(data)
+        temp_flipped = flipped_data['data_flipped']
+        flipped_data['data_flipped'] = flipped_data['data']
+        flipped_data['data'] = temp_flipped
         if self.cache:
             self.cached_data[index] = data
 
+            if self.flip_skels:    
+                self.cached_data[flip_index] = flipped_data
 
 
+        if self.flip_skels and return_flip:
+            return flipped_data
         # print(data['data'])
         # data.pop('annotations', None)
         # print(data)

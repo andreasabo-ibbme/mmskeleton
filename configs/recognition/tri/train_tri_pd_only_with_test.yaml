@@ -18,9 +18,10 @@ processor_cfg:
   test_ids: [48, 47, 34, 37, 27, 39, 46, 50, 52, 55, 57, 59, 66, 33]
   cv: 5
   exclude_cv: True
-  notes: "add unlabelled"
-  group_notes: "with_unlabelled"
+  notes: "two_part_loss"
+  group_notes: "labelled_with_flip_two_part_loss"
   weight_classes: False
+  flip_loss: True
 
   # model setting
   model_cfg:
@@ -44,7 +45,7 @@ processor_cfg:
     - type: "datasets.DataPipeline"
       data_source:
         type: "datasets.SkeletonLoaderTRI"
-        data_dir: /home/saboa/TRI_data_output/all_walks_v2/stgcn_normalized_100_center_all_shoulder_norm/openpose/filtered #/home/saboa/TRI_data_output/all_walks_v2/PD_featureset_may7_ml/openpose/filtered
+        data_dir: /home/saboa/TRI_data_output/all_walks_v2/stgcn_normalized_100_center_pd_shoulder_norm/openpose/filtered #/home/saboa/TRI_data_output/all_walks_v2/PD_featureset_may7_ml/openpose/filtered
         num_track: 1
         num_keypoints: 13
         repeat: 1
@@ -63,7 +64,7 @@ processor_cfg:
         - {type: "datasets.skeleton.to_tuple"}
 
   # dataloader setting
-  batch_size: 10
+  batch_size: 20
   gpus: 1
 
   # optimizer setting

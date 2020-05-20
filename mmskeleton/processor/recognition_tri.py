@@ -19,6 +19,7 @@ import pandas as pd
 num_class = 3
 balance_classes = False
 class_weights_dict = {}
+flip_loss_bool = False
 
 def test(model_cfg, dataset_cfg, checkpoint, batch_size=64, gpus=1, workers=4):
     dataset = call_obj(**dataset_cfg)
@@ -73,9 +74,14 @@ def train(
         cv=5,
         exclude_cv=False,
         notes=None,
+        flip_loss=False,
         weight_classes=False,
         group_notes='',
 ):
+
+    global flip_loss_bool
+    flip_loss_bool = flip_loss
+
     global balance_classes
     balance_classes = weight_classes
 
@@ -99,7 +105,7 @@ def train(
     assert len(dataset_cfg) == 1
     data_dir = dataset_cfg[0]['data_source']['data_dir']
     all_files = [os.path.join(data_dir, f) for f in os.listdir(data_dir)]
-
+    workflow_orig = copy.deepcopy(workflow)
     for test_id in test_ids:
         plt.close('all')
         ambid = id_mapping[test_id]
@@ -137,7 +143,7 @@ def train(
             non_test_walks = list(set(all_files).symmetric_difference(set(test_walks)))
         
             if exclude_cv: 
-                workflow = [workflow[0], workflow[2]]
+                workflow = [workflow_orig[0], workflow_orig[2]]
                 datasets = [copy.deepcopy(dataset_cfg[0]) for i in range(len(workflow))]
                 datasets[0]['data_source']['data_dir'] = non_test_walks
                 datasets[1]['data_source']['data_dir'] = test_walks
@@ -240,6 +246,7 @@ def train_model(
 
     global balance_classes
     global class_weights_dict
+
     if balance_classes:
         dataset_train =call_obj(**datasets[0])
         class_weights_dict = dataset_train.data_source.class_dist
@@ -325,11 +332,14 @@ def batch_processor(model, datas, train_mode, loss):
     loss_flip_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
 
     if have_flips:
-        loss_flip_tensor = my_loss(output_all_flipped, output_all)
+        loss_flip_tensor = mse_loss(output_all_flipped, output_all)
         if loss_flip_tensor.data > 10:
             pass
             # print('output_all_flipped', output_all_flipped, 'output_all', output_all)
 
+    if not flip_loss_bool:
+        loss_flip_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
+        loss_flip_tensor = loss_flip_tensor.cuda()
 
     # if we don't have any valid labels for this batch...
     if num_valid_samples < 1:
@@ -339,7 +349,9 @@ def batch_processor(model, datas, train_mode, loss):
         # loss_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
         # loss_tensor = loss_tensor.cuda()
 
-        log_vars = dict(loss=loss_flip_tensor)
+
+
+        log_vars = dict(loss_label=0, loss_flip = loss_flip_tensor.item(), loss_all=loss_flip_tensor.item())
         log_vars['mae_raw'] = 0
         log_vars['mae_rounded'] = 0
         output_labels = dict(true=labels, pred=preds, raw_preds=raw_preds)
