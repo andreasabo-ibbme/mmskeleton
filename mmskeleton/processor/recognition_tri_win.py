@@ -14,8 +14,7 @@ import matplotlib.pyplot as plt
 from spacecutter.models import OrdinalLogisticModel
 import spacecutter
 import pandas as pd
-import pickle
-# os.environ['WANDB_MODE'] = 'dryrun'
+os.environ['WANDB_MODE'] = 'dryrun'
 
 num_class = 3
 balance_classes = False
@@ -78,7 +77,6 @@ def train(
         flip_loss=False,
         weight_classes=False,
         group_notes='',
-        launch_from_windows=False,
 ):
 
     global flip_loss_bool
@@ -147,8 +145,8 @@ def train(
             if exclude_cv: 
                 workflow = [workflow_orig[0], workflow_orig[2]]
                 datasets = [copy.deepcopy(dataset_cfg[0]) for i in range(len(workflow))]
-                datasets[0]['data_source']['data_dir'] = non_test_walks
-                datasets[1]['data_source']['data_dir'] = test_walks
+                datasets[0]['data_source']['data_dir'] = non_test_walks[0:10]
+                datasets[1]['data_source']['data_dir'] = test_walks[0:10]
             else:
                 datasets[0]['data_source']['data_dir'] = train_walks
                 datasets[1]['data_source']['data_dir'] = val_walks
@@ -164,11 +162,23 @@ def train(
             print('size of train set: ', len(datasets[0]['data_source']['data_dir']))
             print('size of test set: ', len(test_walks))
 
-            if launch_from_windows:
 
-                file_path = 'C:/Users/Andrea/andrea/mmskeleton/mmskeleton/processor/recognition_tri_win_train.py'
-                pkl_file = os.path.join(work_dir, 'obj.pkl')
-                vars_to_save = [work_dir_amb,
+            file_path = 'C:/Users/Andrea/andrea/mmskeleton/mmskeleton/processor/recognition_tri_win_train.py'
+            options_amb = {
+                'work_dir' : work_dir_amb,
+                'model_cfg' : model_cfg,
+            }
+
+            os_call = "python " + file_path 
+            for key in options_amb:
+                print(key)
+                os_call += "--" + key + " " + options_amb[key]
+
+            print("os call: ", os_call)
+            os.system(os_call)
+            continue
+            train_model(
+                    work_dir_amb,
                     model_cfg,
                     loss_cfg,
                     datasets,
@@ -182,40 +192,12 @@ def train(
                     workers,
                     resume_from,
                     load_from, 
-                    things_to_log]
-
-                with open(pkl_file, 'wb') as f:
-                    pickle.dump(vars_to_save, f)
-
-
-                os_call = f"python {file_path} --pkl_file {pkl_file}"
-
-
-                print("os call: ", os_call)
-                os.system(os_call)
-
-            else: # Launching from linux
-                train_model(
-                        work_dir_amb,
-                        model_cfg,
-                        loss_cfg,
-                        datasets,
-                        optimizer_cfg,
-                        batch_size,
-                        total_epochs,
-                        training_hooks,
-                        workflow,
-                        gpus,
-                        log_level,
-                        workers,
-                        resume_from,
-                        load_from, 
-                        things_to_log)
+                    things_to_log)
 
 
     # Compute summary statistics (accuracy and confusion matrices)
     final_results_dir = os.path.join(work_dir, 'all_test', wandb_group)
-    wandb.init(name="ALL", project='mmskel_windows', group=wandb_group, tags=['summary'], reinit=True)
+    wandb.init(name="ALL", project='mmskel_cv', group=wandb_group, tags=['summary'], reinit=True)
     print(final_results_dir)
     for e in range(0, total_epochs):
         log_vars = {}

@@ -14,229 +14,19 @@ import matplotlib.pyplot as plt
 from spacecutter.models import OrdinalLogisticModel
 import spacecutter
 import pandas as pd
+import argparse
 import pickle
-# os.environ['WANDB_MODE'] = 'dryrun'
+
+parser = argparse.ArgumentParser(description='Process some integers.')
+parser.add_argument('--work_dir', dest='work_dir', type=str)
+parser.add_argument('--pkl_file', dest='pkl_file', type=str)
+
 
 num_class = 3
 balance_classes = False
 class_weights_dict = {}
 flip_loss_bool = False
 
-def test(model_cfg, dataset_cfg, checkpoint, batch_size=64, gpus=1, workers=4):
-    dataset = call_obj(**dataset_cfg)
-    data_loader = torch.utils.data.DataLoader(dataset=dataset,
-                                              batch_size=batch_size,
-                                              shuffle=False,
-                                              num_workers=workers)
-
-    # put model on gpus
-    if isinstance(model_cfg, list):
-        model = [call_obj(**c) for c in model_cfg]
-        model = torch.nn.Sequential(*model)
-    else:
-        model = call_obj(**model_cfg)
-    load_checkpoint(model, checkpoint, map_location='cpu')
-    model = MMDataParallel(model, device_ids=range(gpus)).cuda()
-    model.eval()
-
-    results = []
-    labels = []
-    prog_bar = ProgressBar(len(dataset))
-    for data, label in data_loader:
-        with torch.no_grad():
-            output = model(data).data.cpu().numpy()
-        results.append(output)
-        labels.append(label)
-        for i in range(len(data)):
-            prog_bar.update()
-    results = np.concatenate(results)
-    labels = np.concatenate(labels)
-
-    print('Top 1: {:.2f}%'.format(100 * topk_accuracy(results, labels, 1)))
-    print('Top 5: {:.2f}%'.format(100 * topk_accuracy(results, labels, 5)))
-
-
-def train(
-        work_dir,
-        model_cfg,
-        loss_cfg,
-        dataset_cfg,
-        optimizer_cfg,
-        batch_size,
-        total_epochs,
-        training_hooks,
-        workflow=[('train', 1)],
-        gpus=1,
-        log_level=0,
-        workers=4,
-        resume_from=None,
-        load_from=None,
-        test_ids=None,
-        cv=5,
-        exclude_cv=False,
-        notes=None,
-        flip_loss=False,
-        weight_classes=False,
-        group_notes='',
-        launch_from_windows=False,
-):
-
-    global flip_loss_bool
-    flip_loss_bool = flip_loss
-
-    global balance_classes
-    balance_classes = weight_classes
-
-    outcome_label = dataset_cfg[0]['data_source']['outcome_label']
-    global num_class
-    num_class = model_cfg['num_class']
-    wandb_group = wandb.util.generate_id() + "_" + outcome_label + "_" + group_notes
-    print("ANDREA - TRI-recognition: ", wandb_group)
-
-    id_mapping = {27:25, 33:31, 34:32, 37:35, 39:37,
-                  46:44, 47:45, 48:46, 50:48, 52:50, 
-                  55:53, 57:55, 59:57, 66:63}
-
-
-    # prepare data loaders
-    if isinstance(dataset_cfg, dict):
-        dataset_cfg = [dataset_cfg]
-
-    print("==================================")
-    # print(dataset_cfg[0])
-    assert len(dataset_cfg) == 1
-    data_dir = dataset_cfg[0]['data_source']['data_dir']
-    all_files = [os.path.join(data_dir, f) for f in os.listdir(data_dir)]
-    workflow_orig = copy.deepcopy(workflow)
-    for test_id in test_ids:
-        plt.close('all')
-        ambid = id_mapping[test_id]
-
-        test_walks = [i for i in all_files if re.search('ID_'+str(test_id), i) ]
-        non_test_walks = list(set(all_files).symmetric_difference(set(test_walks)))
-    
-        datasets = [copy.deepcopy(dataset_cfg[0]) for i in range(len(workflow))]
-        # datasets = [copy.deepcopy(dataset_cfg[0]), copy.deepcopy(dataset_cfg[0])]
-        work_dir_amb = work_dir + "/" + str(ambid)
-        for ds in datasets:
-            ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
-
-
-        if len(test_walks) == 0:
-            continue
-        
-        # Split the non_test walks into train/val
-        kf = KFold(n_splits=cv, shuffle=True, random_state=1)
-        kf.get_n_splits(non_test_walks)
-
-
-        num_reps = 1
-        for train_ids, val_ids in kf.split(non_test_walks):
-            if num_reps > 1:
-                break
-            num_reps += 1
-            train_walks = [non_test_walks[i] for i in train_ids]
-            val_walks = [non_test_walks[i] for i in val_ids]
-
-            plt.close('all')
-            ambid = id_mapping[test_id]
-
-            test_walks = [i for i in all_files if re.search('ID_'+str(test_id), i) ]
-            non_test_walks = list(set(all_files).symmetric_difference(set(test_walks)))
-        
-            if exclude_cv: 
-                workflow = [workflow_orig[0], workflow_orig[2]]
-                datasets = [copy.deepcopy(dataset_cfg[0]) for i in range(len(workflow))]
-                datasets[0]['data_source']['data_dir'] = non_test_walks
-                datasets[1]['data_source']['data_dir'] = test_walks
-            else:
-                datasets[0]['data_source']['data_dir'] = train_walks
-                datasets[1]['data_source']['data_dir'] = val_walks
-                datasets[2]['data_source']['data_dir'] = test_walks
-            work_dir_amb = work_dir + "/" + str(ambid)
-            for ds in datasets:
-                ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
-            # x = dataset_cfg[0]['data_source']['outcome_label']
-    
-            print(workflow)
-            # print(model_cfg['num_class'])
-            things_to_log = {'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
-            print('size of train set: ', len(datasets[0]['data_source']['data_dir']))
-            print('size of test set: ', len(test_walks))
-
-            if launch_from_windows:
-
-                file_path = 'C:/Users/Andrea/andrea/mmskeleton/mmskeleton/processor/recognition_tri_win_train.py'
-                pkl_file = os.path.join(work_dir, 'obj.pkl')
-                vars_to_save = [work_dir_amb,
-                    model_cfg,
-                    loss_cfg,
-                    datasets,
-                    optimizer_cfg,
-                    batch_size,
-                    total_epochs,
-                    training_hooks,
-                    workflow,
-                    gpus,
-                    log_level,
-                    workers,
-                    resume_from,
-                    load_from, 
-                    things_to_log]
-
-                with open(pkl_file, 'wb') as f:
-                    pickle.dump(vars_to_save, f)
-
-
-                os_call = f"python {file_path} --pkl_file {pkl_file}"
-
-
-                print("os call: ", os_call)
-                os.system(os_call)
-
-            else: # Launching from linux
-                train_model(
-                        work_dir_amb,
-                        model_cfg,
-                        loss_cfg,
-                        datasets,
-                        optimizer_cfg,
-                        batch_size,
-                        total_epochs,
-                        training_hooks,
-                        workflow,
-                        gpus,
-                        log_level,
-                        workers,
-                        resume_from,
-                        load_from, 
-                        things_to_log)
-
-
-    # Compute summary statistics (accuracy and confusion matrices)
-    final_results_dir = os.path.join(work_dir, 'all_test', wandb_group)
-    wandb.init(name="ALL", project='mmskel_windows', group=wandb_group, tags=['summary'], reinit=True)
-    print(final_results_dir)
-    for e in range(0, total_epochs):
-        log_vars = {}
-        results_file = os.path.join(final_results_dir, "test_" + str(e + 1) + ".csv")
-        df = pd.read_csv(results_file)
-        true_labels = df['true_score']
-        preds = df['pred_round']
-        preds_raw = df['pred_raw']
-
-        log_vars['val/mae_rounded'] = mean_absolute_error(true_labels, preds)
-        log_vars['val/mae_raw'] = mean_absolute_error(true_labels, preds_raw)
-        log_vars['val/accuracy'] = accuracy_score(true_labels, preds)
-        wandb.log(log_vars, step=e+1)
-
-        if e % 5 == 0:
-            class_names = [str(i) for i in range(num_class)]
-
-            fig = plot_confusion_matrix( true_labels,preds, class_names)
-            wandb.log({"val_"+ str(e)+".png": fig}, step=e+1)
-
-        
 
 
 def train_model(
@@ -255,7 +45,6 @@ def train_model(
         resume_from=None,
         load_from=None,
         things_to_log=None,
-        
 ):
     # print(all_files)
     print("==================================")
@@ -559,3 +348,26 @@ def plot_confusion_matrix( y_true, y_pred, classes,normalize=False,title=None,cm
     fig.tight_layout()
     return fig
 
+if __name__ == "__main__":
+    args = parser.parse_args()
+    with open(args.pkl_file, "rb") as f:
+        # x = pickle.load(f)
+        work_dir_amb, model_cfg, loss_cfg, datasets, optimizer_cfg, batch_size, total_epochs, training_hooks, workflow, gpus, log_level, workers, resume_from, load_from, things_to_log = pickle.load(f)
+
+
+    train_model(
+            work_dir_amb,
+            model_cfg,
+            loss_cfg,
+            datasets,
+            optimizer_cfg,
+            batch_size,
+            total_epochs,
+            training_hooks,
+            workflow,
+            gpus,
+            log_level,
+            workers,
+            resume_from,
+            load_from, 
+            things_to_log)

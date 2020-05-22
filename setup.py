@@ -149,6 +149,7 @@ if __name__ == '__main__':
         subprocess.check_call([sys.executable, "-m", "pip", "install", 'https://github.com/open-mmlab/mmdetection/archive/v1.0rc1.zip', '-v'])
 
     write_version_py()
+    print("now in setup")
     setup(
         name='mmskeleton',
         version=get_version(),
