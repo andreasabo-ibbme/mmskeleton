@@ -79,6 +79,7 @@ def train(
         weight_classes=False,
         group_notes='',
         launch_from_windows=False,
+        wandb_project="mmskel",
 ):
 
     global flip_loss_bool
@@ -162,7 +163,7 @@ def train(
     
             print(workflow)
             # print(model_cfg['num_class'])
-            things_to_log = {'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
+            things_to_log = {'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
             print('size of train set: ', len(datasets[0]['data_source']['data_dir']))
             print('size of test set: ', len(test_walks))
 
@@ -217,7 +218,7 @@ def train(
 
     # Compute summary statistics (accuracy and confusion matrices)
     final_results_dir = os.path.join(work_dir, 'all_test', wandb_group)
-    wandb.init(name="ALL", project='mmskel_cluster', group=wandb_group, tags=['summary'], reinit=True)
+    wandb.init(name="ALL", project=wandb_project, group=wandb_group, tags=['summary'], reinit=True)
     print(final_results_dir)
     for e in range(0, total_epochs):
         log_vars = {}

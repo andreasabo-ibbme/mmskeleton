@@ -50,12 +50,9 @@ class ST_GCN_18_ordinal_smaller_1(nn.Module):
         kwargs0 = {k: v for k, v in kwargs.items() if k != 'dropout'}
         self.st_gcn_networks = nn.ModuleList((
             st_gcn_block(
-                in_channels, 64, kernel_size, 1, residual=False, **kwargs0),
+                in_channels, 32, kernel_size, 1, residual=False, **kwargs0),
+            st_gcn_block(32, 32, kernel_size, 2, **kwargs),
             st_gcn_block(64, 64, kernel_size, 1, **kwargs),
-            st_gcn_block(64, 128, kernel_size, 2, **kwargs),
-            st_gcn_block(128, 128, kernel_size, 1, **kwargs),
-            st_gcn_block(128, 128, kernel_size, 1, **kwargs),
-            st_gcn_block(128, 128, kernel_size, 1, **kwargs),
         ))
 
         # initialize parameters for edge importance weighting
@@ -68,7 +65,7 @@ class ST_GCN_18_ordinal_smaller_1(nn.Module):
             self.edge_importance = [1] * len(self.st_gcn_networks)
 
         # fcn for prediction
-        self.fcn = nn.Conv2d(128, 1, kernel_size=1)
+        self.fcn = nn.Conv2d(64, 1, kernel_size=1)
 
     def forward(self, x):
 

@@ -14,6 +14,7 @@ save/*
 configs_private/
 wandb/*
 *.out
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
