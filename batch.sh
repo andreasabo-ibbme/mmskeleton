@@ -1,10 +1,18 @@
 #!/bin/bash
 #SBATCH --gres=gpu:1              # Number of GPUs (per node)
 #SBATCH --mem=8000               # memory (per node)
-#SBATCH --time=0-01:40            # time (DD-HH:MM)
+#SBATCH --cpus-per-task=8
+#SBATCH --time=0-20:00            # time (DD-HH:MM)
 #SBATCH --job-name=cedar_mmskel
-#SBATCH --output=%x-%j.out
+#SBATCH --output=%x-%j_20hour.out
+#SBATCH --account=def-btaati
 
+#SBATCH --mail-user=andrea.sabo@mail.utoronto.ca
+#SBATCH --mail-type=BEGIN
+#SBATCH --mail-type=END
+#SBATCH --mail-type=FAIL
+#SBATCH --mail-type=REQUEUE
+#SBATCH --mail-type=ALL
 
 
 module load python/3.6

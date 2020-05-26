@@ -15,7 +15,7 @@ from spacecutter.models import OrdinalLogisticModel
 import spacecutter
 import pandas as pd
 import pickle
-# os.environ['WANDB_MODE'] = 'dryrun'
+#os.environ['WANDB_MODE'] = 'dryrun'
 
 num_class = 3
 balance_classes = False
@@ -103,6 +103,8 @@ def train(
         dataset_cfg = [dataset_cfg]
 
     print("==================================")
+    print('have cuda: ', torch.cuda.is_available())
+    print('using device: ', torch.cuda.get_device_name())
     # print(dataset_cfg[0])
     assert len(dataset_cfg) == 1
     data_dir = dataset_cfg[0]['data_source']['data_dir']
@@ -215,7 +217,7 @@ def train(
 
     # Compute summary statistics (accuracy and confusion matrices)
     final_results_dir = os.path.join(work_dir, 'all_test', wandb_group)
-    wandb.init(name="ALL", project='mmskel_windows', group=wandb_group, tags=['summary'], reinit=True)
+    wandb.init(name="ALL", project='mmskel_cluster', group=wandb_group, tags=['summary'], reinit=True)
     print(final_results_dir)
     for e in range(0, total_epochs):
         log_vars = {}
@@ -329,7 +331,10 @@ def train_model(
 
 # process a batch of data
 def batch_processor(model, datas, train_mode, loss):
-    torch.cuda.empty_cache()
+    #torch.cuda.empty_cache()
+    #print('have cuda: ', torch.cuda.is_available())
+    #print('using device: ', torch.cuda.get_device_name())
+    
     mse_loss = torch.nn.MSELoss()
     model_2 = copy.deepcopy(model)
     have_flips = 0
