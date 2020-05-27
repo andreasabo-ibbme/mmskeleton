@@ -2,9 +2,9 @@
 #SBATCH --gres=gpu:1              # Number of GPUs (per node)
 #SBATCH --mem=8000               # memory (per node)
 #SBATCH --cpus-per-task=8
-#SBATCH --time=0-12:00            # time (DD-HH:MM)
+#SBATCH --time=0-32:00            # time (DD-HH:MM)
 #SBATCH --job-name=cedar_mmskel
-#SBATCH --output=%x-%j_12hour.out
+#SBATCH --output=%x-%j_32hour.out
 #SBATCH --account=def-btaati
 
 #SBATCH --mail-user=andrea.sabo@mail.utoronto.ca
