@@ -237,7 +237,11 @@ def train(
             class_names = [str(i) for i in range(num_class)]
 
             fig = plot_confusion_matrix( true_labels,preds, class_names)
-            wandb.log({"val_"+ str(e)+".png": fig}, step=e+1)
+            wandb.log({"confusion_matrix/val_"+ str(e)+".png": fig}, step=e+1)
+            fig_title = "Regression for ALL unseen participants"
+            reg_fig = regressionPlot(true_labels,preds, class_names, fig_title)
+            wandb.log({"regression/val_"+ str(e)+".png": reg_fig}, step=e+1)
+
 
         
 
@@ -565,3 +569,17 @@ def plot_confusion_matrix( y_true, y_pred, classes,normalize=False,title=None,cm
     fig.tight_layout()
     return fig
 
+def regressionPlot(labels, raw_preds, classes, fig_title):
+    labels = np.asarray(labels)
+    true_labels_jitter = labels + np.random.random_sample(labels.shape)/6
+
+    fig = plt.figure()
+    plt.plot(true_labels_jitter, raw_preds, 'bo', markersize=6)
+    plt.title(fig_title)
+
+    plt.xlim(-0.5, 4.5)
+    plt.ylim(-0.5, 4.5)
+
+    plt.xlabel("True Label")
+    plt.ylabel("Regression Value")
+    return fig
