@@ -6,7 +6,7 @@ from torch.autograd import Variable
 from mmskeleton.ops.st_gcn import ConvTemporalGraphical, Graph
 
 
-class ST_GCN_18_ordinal_smaller_4(nn.Module):
+class ST_GCN_18_ordinal_smaller_2(nn.Module):
     r"""Spatial temporal graph convolutional networks.
 
     Args:
@@ -43,19 +43,19 @@ class ST_GCN_18_ordinal_smaller_4(nn.Module):
 
         # build networks
         spatial_kernel_size = A.size(0)
-        temporal_kernel_size = 15
+        temporal_kernel_size = 9
         kernel_size = (temporal_kernel_size, spatial_kernel_size)
         self.data_bn = nn.BatchNorm1d(
             in_channels * A.size(1)) if data_bn else lambda x: x
         kwargs0 = {k: v for k, v in kwargs.items() if k != 'dropout'}
         self.st_gcn_networks = nn.ModuleList((
-            st_gcn_block(
-                in_channels, 16, kernel_size, 1, residual=False, **kwargs0),
-            st_gcn_block(16, 16, kernel_size, 1, **kwargs),
-            st_gcn_block(16, 32, kernel_size, 2, **kwargs),
-            st_gcn_block(32, 32, kernel_size, 1, **kwargs),
-            st_gcn_block(32, 32, kernel_size, 1, **kwargs),
-        ))
+                st_gcn_block(
+                    in_channels, 32, kernel_size, 1, residual=False, **kwargs0),
+                st_gcn_block(32, 32, kernel_size, 1, **kwargs),
+                st_gcn_block(32, 64, kernel_size, 2, **kwargs),
+                st_gcn_block(64, 64, kernel_size, 1, **kwargs),
+            ))
+
 
         # initialize parameters for edge importance weighting
         if edge_importance_weighting:
@@ -67,11 +67,7 @@ class ST_GCN_18_ordinal_smaller_4(nn.Module):
             self.edge_importance = [1] * len(self.st_gcn_networks)
 
         # fcn for prediction
-        self.fcn = nn.Conv2d(32, 1, kernel_size=1)
-
-        # self.dp = nn.Dropout(0.3)
-        # self.fc2 = nn.Linear(128, 1)
-
+        self.fcn = nn.Conv2d(64, 1, kernel_size=1)
 
     def forward(self, x):
 
@@ -94,10 +90,6 @@ class ST_GCN_18_ordinal_smaller_4(nn.Module):
 
         # prediction
         x = self.fcn(x)
-        # x = x.squeeze()
-        # x = self.fc2(self.dp(x))
-
-
         x = x.view(x.size(0), -1)
 
         return x

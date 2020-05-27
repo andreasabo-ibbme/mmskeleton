@@ -19,7 +19,7 @@ processor_cfg:
   cv: 5
   exclude_cv: True
   notes: "two_part_loss"
-  group_notes: "150_all_simplified_2"
+  group_notes: "150_all_simplified_4"
   weight_classes: False
   flip_loss: True
   launch_from_windows: False
@@ -27,7 +27,7 @@ processor_cfg:
   
   # model setting
   model_cfg:
-    type: 'models.backbones.ST_GCN_18_ordinal_smaller_2'
+    type: 'models.backbones.ST_GCN_18_ordinal_smaller_4'
     in_channels: 3
     num_class: 3
     edge_importance_weighting: True
