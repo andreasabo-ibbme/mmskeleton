@@ -5,4 +5,6 @@ from .st_gcn_aaai18_ordinal_smaller_2 import ST_GCN_18_ordinal_smaller_2
 from .st_gcn_aaai18_ordinal_smaller_3 import ST_GCN_18_ordinal_smaller_3
 from .st_gcn_aaai18_ordinal_smaller_4 import ST_GCN_18_ordinal_smaller_4
 from .st_gcn_aaai18_ordinal_smaller_5 import ST_GCN_18_ordinal_smaller_5
+from .st_gcn_aaai18_ordinal_smaller_6 import ST_GCN_18_ordinal_smaller_6
+from .st_gcn_aaai18_ordinal_smaller_7 import ST_GCN_18_ordinal_smaller_7
 from .hrnet import HRNet
