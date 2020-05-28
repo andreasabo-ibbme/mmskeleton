@@ -92,6 +92,11 @@ def train(
     global num_class
     num_class = model_cfg['num_class']
     wandb_group = wandb.util.generate_id() + "_" + outcome_label + "_" + group_notes
+    wandb_group = "2goee0h1_SAS_gait_150_all_simplified_3"
+    wandb_group = "xnhol0sq_UPDRS_gait_150_all_simplified_3"
+    wandb_group = "2rn70zfb_UPDRS_gait_120_all_simplified_3"
+    wandb_group = "38tznb2y_SAS_gait_120_all_simplified_3"
+
     print("ANDREA - TRI-recognition: ", wandb_group)
 
     id_mapping = {27:25, 33:31, 34:32, 37:35, 39:37,
@@ -111,6 +116,44 @@ def train(
     data_dir = dataset_cfg[0]['data_source']['data_dir']
     all_files = [os.path.join(data_dir, f) for f in os.listdir(data_dir)]
     workflow_orig = copy.deepcopy(workflow)
+
+
+
+    # Compute summary statistics (accuracy and confusion matrices)
+    final_results_dir = os.path.join(work_dir, 'all_test', wandb_group)
+    wandb.init(name="ALL", project=wandb_project, group=wandb_group, tags=['summary'], reinit=True)
+    print(final_results_dir)
+    for e in range(0, total_epochs):
+        log_vars = {}
+        results_file = os.path.join(final_results_dir, "test_" + str(e + 1) + ".csv")
+        df = pd.read_csv(results_file)
+        true_labels = df['true_score']
+        preds = df['pred_round']
+        preds_raw = df['pred_raw']
+
+        log_vars['val/mae_rounded'] = mean_absolute_error(true_labels, preds)
+        log_vars['val/mae_raw'] = mean_absolute_error(true_labels, preds_raw)
+        log_vars['val/accuracy'] = accuracy_score(true_labels, preds)
+        wandb.log(log_vars, step=e+1)
+
+        if e % 5 == 0:
+            class_names = [str(i) for i in range(num_class)]
+
+            fig = plot_confusion_matrix( true_labels,preds, class_names)
+            wandb.log({"confusion_matrix/val_"+ str(e)+".png": fig}, step=e+1)
+            fig_title = "Regression for ALL unseen participants"
+            reg_fig = regressionPlot(true_labels,preds, class_names, fig_title)
+            try:
+                wandb.log({"regression/val_"+ str(e)+".png": [self.wandb.Image(reg_fig)]}, step=e+1)
+            except:
+                pass
+    
+    return
+
+
+
+
+
     for test_id in test_ids:
         plt.close('all')
         ambid = id_mapping[test_id]
@@ -215,35 +258,6 @@ def train(
                         load_from, 
                         things_to_log)
 
-
-    # Compute summary statistics (accuracy and confusion matrices)
-    final_results_dir = os.path.join(work_dir, 'all_test', wandb_group)
-    wandb.init(name="ALL", project=wandb_project, group=wandb_group, tags=['summary'], reinit=True)
-    print(final_results_dir)
-    for e in range(0, total_epochs):
-        log_vars = {}
-        results_file = os.path.join(final_results_dir, "test_" + str(e + 1) + ".csv")
-        df = pd.read_csv(results_file)
-        true_labels = df['true_score']
-        preds = df['pred_round']
-        preds_raw = df['pred_raw']
-
-        log_vars['val/mae_rounded'] = mean_absolute_error(true_labels, preds)
-        log_vars['val/mae_raw'] = mean_absolute_error(true_labels, preds_raw)
-        log_vars['val/accuracy'] = accuracy_score(true_labels, preds)
-        wandb.log(log_vars, step=e+1)
-
-        if e % 5 == 0:
-            class_names = [str(i) for i in range(num_class)]
-
-            fig = plot_confusion_matrix( true_labels,preds, class_names)
-            wandb.log({"confusion_matrix/val_"+ str(e)+".png": fig}, step=e+1)
-            fig_title = "Regression for ALL unseen participants"
-            reg_fig = regressionPlot(true_labels,preds, class_names, fig_title)
-            try:
-                wandb.log({"regression/val_"+ str(e)+".png": [self.wandb.Image(reg_fig)]}, step=e+1)
-            except:
-                pass
 
         
 
