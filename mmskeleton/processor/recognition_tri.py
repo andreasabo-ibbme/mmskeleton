@@ -240,8 +240,10 @@ def train(
             wandb.log({"confusion_matrix/val_"+ str(e)+".png": fig}, step=e+1)
             fig_title = "Regression for ALL unseen participants"
             reg_fig = regressionPlot(true_labels,preds, class_names, fig_title)
-            wandb.log({"regression/val_"+ str(e)+".png": reg_fig}, step=e+1)
-
+            try:
+                wandb.log({"regression/val_"+ str(e)+".png": [self.wandb.Image(reg_fig)]}, step=e+1)
+            except:
+                pass
 
         
 
