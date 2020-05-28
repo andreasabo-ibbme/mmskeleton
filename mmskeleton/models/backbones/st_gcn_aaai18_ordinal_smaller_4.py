@@ -6,7 +6,7 @@ from torch.autograd import Variable
 from mmskeleton.ops.st_gcn import ConvTemporalGraphical, Graph
 
 
-class ST_GCN_18_ordinal_smaller_2(nn.Module):
+class ST_GCN_18_ordinal_smaller_4(nn.Module):
     r"""Spatial temporal graph convolutional networks.
 
     Args:
