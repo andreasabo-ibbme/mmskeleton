@@ -74,7 +74,7 @@ def train(
         cv=5,
         exclude_cv=False,
         notes=None,
-        flip_loss=False,
+        flip_loss=0,
         weight_classes=False,
         group_notes='',
 ):

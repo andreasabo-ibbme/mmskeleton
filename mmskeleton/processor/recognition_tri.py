@@ -20,7 +20,7 @@ import pickle
 num_class = 3
 balance_classes = False
 class_weights_dict = {}
-flip_loss_bool = False
+flip_loss_mult = False
 
 def test(model_cfg, dataset_cfg, checkpoint, batch_size=64, gpus=1, workers=4):
     dataset = call_obj(**dataset_cfg)
@@ -75,15 +75,15 @@ def train(
         cv=5,
         exclude_cv=False,
         notes=None,
-        flip_loss=False,
+        flip_loss=0,
         weight_classes=False,
         group_notes='',
         launch_from_windows=False,
         wandb_project="mmskel",
 ):
 
-    global flip_loss_bool
-    flip_loss_bool = flip_loss
+    global flip_loss_mult
+    flip_loss_mult = flip_loss
 
     global balance_classes
     balance_classes = weight_classes
@@ -383,10 +383,11 @@ def batch_processor(model, datas, train_mode, loss):
             pass
             # print('output_all_flipped', output_all_flipped, 'output_all', output_all)
 
-    if not flip_loss_bool:
+    if not flip_loss_mult:
         loss_flip_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
         loss_flip_tensor = loss_flip_tensor.cuda()
-
+    else:
+        loss_flip_tensor = loss_flip_tensor * flip_loss_mult
     # if we don't have any valid labels for this batch...
     if num_valid_samples < 1:
         labels = []
