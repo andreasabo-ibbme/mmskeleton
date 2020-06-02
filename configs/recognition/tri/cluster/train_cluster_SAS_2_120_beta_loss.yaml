@@ -19,7 +19,7 @@ processor_cfg:
   cv: 5
   exclude_cv: True
   notes: "two_part_loss"
-  group_notes: "150_all_simplified_2_0.33"
+  group_notes: "120_all_simplified_2_0.33"
   weight_classes: True
   flip_loss: 0.333
   launch_from_windows: False
@@ -29,7 +29,7 @@ processor_cfg:
   model_cfg:
     type: 'models.backbones.ST_GCN_18_ordinal_smaller_2'
     in_channels: 3
-    num_class: 3
+    num_class: 4
     edge_importance_weighting: True
     dropout: 0.0
     graph_cfg:
@@ -51,7 +51,7 @@ processor_cfg:
         num_track: 1
         num_keypoints: 13
         repeat: 1
-        outcome_label: UPDRS_gait
+        outcome_label: SAS_gait
         csv_loader: True
         missing_joint_val: mean
         cache: True

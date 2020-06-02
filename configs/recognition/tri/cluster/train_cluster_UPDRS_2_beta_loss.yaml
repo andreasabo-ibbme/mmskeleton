@@ -19,9 +19,9 @@ processor_cfg:
   cv: 5
   exclude_cv: True
   notes: "two_part_loss"
-  group_notes: "150_all_simplified_2_3"
+  group_notes: "150_all_simplified_2_0.33"
   weight_classes: True
-  flip_loss: 3 # How much more should flip loss be weighted than label loss?
+  flip_loss: 0.333 # How much more should flip loss be weighted than label loss?
   launch_from_windows: False
   wandb_project: "mmskel_simplified"
   
@@ -75,7 +75,7 @@ processor_cfg:
     lr: 0.001
     momentum: 0.9
     nesterov: true
-    weight_decay: 0.00001
+    weight_decay: 0.001
 
   # runtime setting
   workflow: [['train', 1], ['val', 1], ['test', 1]]
