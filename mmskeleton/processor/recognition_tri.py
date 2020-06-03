@@ -440,9 +440,10 @@ def batch_processor(model, datas, train_mode, loss):
         labels = [int(cl) for cl in labels]
         preds = [int(cl) for cl in preds]
     except TypeError as e:
-        print("got an error: ", e)
         print(labels)
         print(preds)
+        print("got an error: ", e)
+
 
     overall_loss = losses + loss_flip_tensor
     log_vars = dict(loss_label=losses.item(), loss_flip = loss_flip_tensor.item(), loss_all=overall_loss.item())
