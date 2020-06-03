@@ -1,0 +1,4 @@
+[submodule "SupContrast"]
+	path = SupContrast
+	url = https://github.com/HobbitLong/SupContrast.git
+	branch = master
