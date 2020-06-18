@@ -95,7 +95,7 @@ def train(
     wandb_group = "2goee0h1_SAS_gait_150_all_simplified_3"
     wandb_group = "xnhol0sq_UPDRS_gait_150_all_simplified_3"
     wandb_group = "2rn70zfb_UPDRS_gait_120_all_simplified_3"
-    wandb_group = "38tznb2y_SAS_gait_120_all_simplified_3"
+#    wandb_group = "38tznb2y_SAS_gait_120_all_simplified_3"
 
     print("ANDREA - TRI-recognition: ", wandb_group)
 
