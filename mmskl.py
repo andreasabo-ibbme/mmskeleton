@@ -7,7 +7,7 @@ import torch
 import spacecutter
 import mmskeleton
 
-from SubContrast.losses import SupConLoss
+# from SubContrast.losses import SupConLoss
 from mmcv import Config
 from mmskeleton.utils import call_obj, set_attr, get_attr
 """ Configuration Structure
