@@ -156,6 +156,11 @@ def train(
                 datasets[0]['data_source']['data_dir'] = train_walks
                 datasets[1]['data_source']['data_dir'] = val_walks
                 datasets[2]['data_source']['data_dir'] = test_walks
+
+                print('size of train set: ', len(datasets[0]['data_source']['data_dir']))
+                print('size of val set: ', len(datasets[1]['data_source']['data_dir']))                
+                print('size of test set: ', len(test_walks))
+
             work_dir_amb = work_dir + "/" + str(ambid)
             for ds in datasets:
                 ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
@@ -228,20 +233,20 @@ def train(
         preds = df['pred_round']
         preds_raw = df['pred_raw']
 
-        log_vars['val/mae_rounded'] = mean_absolute_error(true_labels, preds)
-        log_vars['val/mae_raw'] = mean_absolute_error(true_labels, preds_raw)
-        log_vars['val/accuracy'] = accuracy_score(true_labels, preds)
+        log_vars['eval/mae_rounded'] = mean_absolute_error(true_labels, preds)
+        log_vars['eval/mae_raw'] = mean_absolute_error(true_labels, preds_raw)
+        log_vars['eval/accuracy'] = accuracy_score(true_labels, preds)
         wandb.log(log_vars, step=e+1)
 
         if e % 5 == 0:
             class_names = [str(i) for i in range(num_class)]
 
             fig = plot_confusion_matrix( true_labels,preds, class_names)
-            wandb.log({"confusion_matrix/val_"+ str(e)+".png": fig}, step=e+1)
+            wandb.log({"confusion_matrix/eval_"+ str(e)+".png": fig}, step=e+1)
             fig_title = "Regression for ALL unseen participants"
             reg_fig = regressionPlot(true_labels,preds, class_names, fig_title)
             try:
-                wandb.log({"regression/val_"+ str(e)+".png": [self.wandb.Image(reg_fig)]}, step=e+1)
+                wandb.log({"regression/eval_"+ str(e)+".png": [self.wandb.Image(reg_fig)]}, step=e+1)
             except:
                 pass
 

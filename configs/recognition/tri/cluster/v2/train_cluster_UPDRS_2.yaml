@@ -17,13 +17,13 @@ processor_cfg:
   workers: 1
   test_ids: [48, 47, 34, 37, 27, 39, 46, 50, 52, 55, 57, 59, 66, 33]
   cv: 5
-  exclude_cv: True
+  exclude_cv: False
   notes: "two_part_loss"
-  group_notes: "120_shoulder_2"
+  group_notes: "150_shoulder_2"
   weight_classes: False
   flip_loss: True
   launch_from_windows: False
-  wandb_project: "mmskel_v2"
+  wandb_project: "mmskel_v3"
   
   # model setting
   model_cfg:
