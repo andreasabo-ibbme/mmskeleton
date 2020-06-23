@@ -419,6 +419,7 @@ def batch_processor(model, datas, train_mode, loss):
         loss_flip_tensor = loss_flip_tensor.cuda()
     else:
         loss_flip_tensor = loss_flip_tensor * flip_loss_mult
+
     # if we don't have any valid labels for this batch...
     if num_valid_samples < 1:
         labels = []
@@ -435,7 +436,7 @@ def batch_processor(model, datas, train_mode, loss):
         output_labels = dict(true=labels, pred=preds, raw_preds=raw_preds)
         outputs = dict(loss=loss_flip_tensor, log_vars=log_vars, num_samples=0)
 
-        return outputs, output_labels
+        return outputs, output_labels, loss_flip_tensor.item()
     
 
 
