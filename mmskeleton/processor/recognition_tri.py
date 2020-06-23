@@ -233,7 +233,10 @@ def train(
     for e in range(0, total_epochs):
         log_vars = {}
         results_file = os.path.join(final_results_dir, "test_" + str(e + 1) + ".csv")
-        df = pd.read_csv(results_file)
+        try:
+            df = pd.read_csv(results_file)
+        except:
+            break
         true_labels = df['true_score']
         preds = df['pred_round']
         preds_raw = df['pred_raw']
@@ -266,6 +269,7 @@ def train(
 
         log_vars = {}
         results_file = os.path.join(final_results_dir, mode+".csv")
+        print("loading from: ", results_file)
         df = pd.read_csv(results_file)
         true_labels = df['true_score']
         preds = df['pred_round']
