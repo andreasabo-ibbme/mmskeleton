@@ -82,6 +82,8 @@ def train(
         wandb_project="mmskel",
         early_stopping=False,
         force_run_all_epochs=True,
+        es_patience=10,
+        es_start_up=50,
 ):
 
     global flip_loss_mult
@@ -170,7 +172,7 @@ def train(
     
             print(workflow)
             # print(model_cfg['num_class'])
-            things_to_log = {'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
+            things_to_log = {'es_start_up': es_start_up, 'es_patience': es_patience, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
             print('size of train set: ', len(datasets[0]['data_source']['data_dir']))
             print('size of test set: ', len(test_walks))
 
@@ -222,7 +224,9 @@ def train(
                         load_from, 
                         things_to_log,
                         early_stopping,
-                        force_run_all_epochs
+                        force_run_all_epochs,
+                        es_patience,
+                        es_start_up,
                         )
 
 
@@ -260,8 +264,6 @@ def train(
 
     # final results
     final_results_dir = os.path.join(work_dir, 'all_eval', wandb_group)
-    wandb.init(name="ALL", project=wandb_project, group=wandb_group, tags=['summary'], reinit=True)
-
 
     for i, flow in enumerate(workflow):
         mode, _ = flow
@@ -311,6 +313,8 @@ def train_model(
         things_to_log=None,
         early_stopping=False,
         force_run_all_epochs=True,
+        es_patience=10,
+        es_start_up=50,
 ):
     print("==================================")
 
@@ -357,7 +361,7 @@ def train_model(
     # print('training hooks: ', training_hooks_local)
     # build runner
     optimizer = call_obj(params=model.parameters(), **optimizer_cfg_local)
-    runner = Runner(model, batch_processor, optimizer, work_dir, log_level, things_to_log=things_to_log, early_stopping=early_stopping, force_run_all_epochs=force_run_all_epochs)
+    runner = Runner(model, batch_processor, optimizer, work_dir, log_level, things_to_log=things_to_log, early_stopping=early_stopping, force_run_all_epochs=force_run_all_epochs, es_patience=es_patience, es_start_up=es_start_up)
     runner.register_training_hooks(**training_hooks_local)
 
     if resume_from:

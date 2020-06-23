@@ -15,7 +15,7 @@ argparse_cfg:
 processor_cfg:
   type: 'processor.recognition_tri.train'
   workers: 1
-  test_ids: [48, 47] #, 34, 37, 27, 39, 46, 50, 52, 55, 57, 59, 66, 33]
+  test_ids: [48, 47, 34, 37, 27, 39, 46, 50, 52, 55, 57, 59, 66, 33]
   cv: 5
   exclude_cv: False
   notes: "two_part_loss"
@@ -26,6 +26,8 @@ processor_cfg:
   wandb_project: "mmskel_es"
   early_stopping: True
   force_run_all_epochs: False
+  es_patience: 10
+  es_start_up: 50
 
   # model setting
   model_cfg:

@@ -26,7 +26,9 @@ processor_cfg:
   wandb_project: "mmskel_es"
   early_stopping: True
   force_run_all_epochs: False
-  
+  es_patience: 10
+  es_start_up: 50
+
   # model setting
   model_cfg:
     type: 'models.backbones.ST_GCN_18_ordinal_smaller_2'
