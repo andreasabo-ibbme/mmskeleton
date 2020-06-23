@@ -24,6 +24,8 @@ processor_cfg:
   flip_loss: True
   launch_from_windows: False
   wandb_project: "mmskel_v4"
+  early_stopping: True
+  force_run_all_epochs: True
   
   # model setting
   model_cfg:

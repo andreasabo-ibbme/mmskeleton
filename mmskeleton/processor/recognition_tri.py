@@ -80,6 +80,8 @@ def train(
         group_notes='',
         launch_from_windows=False,
         wandb_project="mmskel",
+        early_stopping=False,
+        force_run_all_epochs=True,
 ):
 
     global flip_loss_mult
@@ -168,7 +170,7 @@ def train(
     
             print(workflow)
             # print(model_cfg['num_class'])
-            things_to_log = {'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
+            things_to_log = {'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
             print('size of train set: ', len(datasets[0]['data_source']['data_dir']))
             print('size of test set: ', len(test_walks))
 
@@ -218,7 +220,10 @@ def train(
                         workers,
                         resume_from,
                         load_from, 
-                        things_to_log)
+                        things_to_log,
+                        early_stopping,
+                        force_run_all_epochs
+                        )
 
 
     # Compute summary statistics (accuracy and confusion matrices)
@@ -250,6 +255,37 @@ def train(
             except:
                 pass
 
+    # final results
+    final_results_dir = os.path.join(work_dir, 'all_eval', wandb_group)
+    wandb.init(name="ALL", project=wandb_project, group=wandb_group, tags=['summary'], reinit=True)
+
+
+    for i, flow in enumerate(workflow):
+        mode, _ = flow
+
+
+        log_vars = {}
+        results_file = os.path.join(final_results_dir, mode+".csv")
+        df = pd.read_csv(results_file)
+        true_labels = df['true_score']
+        preds = df['pred_round']
+        preds_raw = df['pred_raw']
+
+        log_vars['early_stop_eval/'+mode+ '/mae_rounded'] = mean_absolute_error(true_labels, preds)
+        log_vars['early_stop_eval/'+mode+ '/mae_raw'] = mean_absolute_error(true_labels, preds_raw)
+        log_vars['early_stop_eval/'+mode+ '/accuracy'] = accuracy_score(true_labels, preds)
+        wandb.log(log_vars)
+
+        class_names = [str(i) for i in range(num_class)]
+
+        fig = plot_confusion_matrix( true_labels,preds, class_names)
+        wandb.log({"early_stop_eval/final_confusion_matrix.png": fig})
+        fig_title = "Regression for ALL unseen participants"
+        reg_fig = regressionPlot(true_labels,preds, class_names, fig_title)
+        try:
+            wandb.log({"early_stop_eval/final_regression_plot.png": [self.wandb.Image(reg_fig)]})
+        except:
+            pass
         
 
 
@@ -269,20 +305,10 @@ def train_model(
         resume_from=None,
         load_from=None,
         things_to_log=None,
-        
+        early_stopping=False,
+        force_run_all_epochs=True,
 ):
-    # print(all_files)
     print("==================================")
-    
-    # if loss_cfg['type'] == "spacecutter.losses.CumulativeLinkLoss":
-    #     print('we have a cumulative loss')
-    # else:
-    #     print('we DO NOT have a cumulative loss')
-
-    # raise ValueError("stop")
-
-
-    # print(datasets)
 
     data_loaders = [
         torch.utils.data.DataLoader(dataset=call_obj(**d),
@@ -327,7 +353,7 @@ def train_model(
     # print('training hooks: ', training_hooks_local)
     # build runner
     optimizer = call_obj(params=model.parameters(), **optimizer_cfg_local)
-    runner = Runner(model, batch_processor, optimizer, work_dir, log_level, things_to_log=things_to_log)
+    runner = Runner(model, batch_processor, optimizer, work_dir, log_level, things_to_log=things_to_log, early_stopping=early_stopping, force_run_all_epochs=force_run_all_epochs)
     runner.register_training_hooks(**training_hooks_local)
 
     if resume_from:
@@ -466,7 +492,7 @@ def batch_processor(model, datas, train_mode, loss):
     outputs = dict(loss=overall_loss, log_vars=log_vars, num_samples=len(labels))
     # print(type(labels), type(preds))
     # print('this is what we return: ', output_labels)
-    return outputs, output_labels
+    return outputs, output_labels, overall_loss
 
 def my_loss(output, target):
     loss = torch.mean((output - target)**2)

@@ -9,4 +9,5 @@ from .st_gcn_aaai18_ordinal_smaller_6 import ST_GCN_18_ordinal_smaller_6
 from .st_gcn_aaai18_ordinal_smaller_7 import ST_GCN_18_ordinal_smaller_7
 from .st_gcn_aaai18_ordinal_smaller_8 import ST_GCN_18_ordinal_smaller_8
 from .st_gcn_aaai18_ordinal_smaller_9 import ST_GCN_18_ordinal_smaller_9
+from .st_gcn_aaai18_ordinal_smaller_10 import ST_GCN_18_ordinal_smaller_10
 from .hrnet import HRNet
