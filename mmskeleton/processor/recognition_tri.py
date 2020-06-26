@@ -111,7 +111,7 @@ def train(
     print('have cuda: ', torch.cuda.is_available())
     print('using device: ', torch.cuda.get_device_name())
     # print(dataset_cfg[0])
-    assert len(dataset_cfg) == 1
+    # assert len(dataset_cfg) == 1
     data_dir = dataset_cfg[0]['data_source']['data_dir']
     all_files = [os.path.join(data_dir, f) for f in os.listdir(data_dir)]
     workflow_orig = copy.deepcopy(workflow)
@@ -119,9 +119,18 @@ def train(
         plt.close('all')
         ambid = id_mapping[test_id]
 
-        test_walks = [i for i in all_files if re.search('ID_'+str(test_id), i) ]
-        non_test_walks = list(set(all_files).symmetric_difference(set(test_walks)))
+        # These are all of the walks (both labelled and not) of the test participant and cannot be included in training data
+        test_subj_walks = [i for i in all_files if re.search('ID_'+str(test_id), i) ]
+        non_test_subj_walks = list(set(all_files).symmetric_difference(set(test_subj_walks)))
     
+        try:
+            test_data_dir = dataset_cfg[1]['data_source']['data_dir']
+        except: 
+            test_data_dir = data_dir
+    
+        all_test_files = [os.path.join(test_data_dir, f) for f in os.listdir(test_data_dir)]
+        test_walks = [i for i in all_test_files if re.search('ID_'+str(test_id), i) ]
+
         datasets = [copy.deepcopy(dataset_cfg[0]) for i in range(len(workflow))]
         # datasets = [copy.deepcopy(dataset_cfg[0]), copy.deepcopy(dataset_cfg[0])]
         work_dir_amb = work_dir + "/" + str(ambid)
@@ -129,32 +138,32 @@ def train(
             ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
 
 
-        if len(test_walks) == 0:
+        if len(test_subj_walks) == 0:
             continue
         
         # Split the non_test walks into train/val
         kf = KFold(n_splits=cv, shuffle=True, random_state=1)
-        kf.get_n_splits(non_test_walks)
+        kf.get_n_splits(non_test_subj_walks)
 
 
         num_reps = 1
-        for train_ids, val_ids in kf.split(non_test_walks):
+        for train_ids, val_ids in kf.split(non_test_subj_walks):
             if num_reps > 1:
                 break
             num_reps += 1
-            train_walks = [non_test_walks[i] for i in train_ids]
-            val_walks = [non_test_walks[i] for i in val_ids]
+            train_walks = [non_test_subj_walks[i] for i in train_ids]
+            val_walks = [non_test_subj_walks[i] for i in val_ids]
 
             plt.close('all')
             ambid = id_mapping[test_id]
 
-            test_walks = [i for i in all_files if re.search('ID_'+str(test_id), i) ]
-            non_test_walks = list(set(all_files).symmetric_difference(set(test_walks)))
+            # test_subj_walks = [i for i in all_files if re.search('ID_'+str(test_id), i) ]
+            # non_test_subj_walks = list(set(all_files).symmetric_difference(set(test_subj_walks)))
         
             if exclude_cv: 
                 workflow = [workflow_orig[0], workflow_orig[2]]
                 datasets = [copy.deepcopy(dataset_cfg[0]) for i in range(len(workflow))]
-                datasets[0]['data_source']['data_dir'] = non_test_walks
+                datasets[0]['data_source']['data_dir'] = non_test_subj_walks
                 datasets[1]['data_source']['data_dir'] = test_walks
             else:
                 datasets[0]['data_source']['data_dir'] = train_walks
@@ -163,7 +172,7 @@ def train(
 
                 print('size of train set: ', len(datasets[0]['data_source']['data_dir']))
                 print('size of val set: ', len(datasets[1]['data_source']['data_dir']))                
-                print('size of test set: ', len(test_walks))
+                print('size of test set: ', len(test_subj_walks))
 
             work_dir_amb = work_dir + "/" + str(ambid)
             for ds in datasets:
@@ -172,9 +181,9 @@ def train(
     
             print(workflow)
             # print(model_cfg['num_class'])
-            things_to_log = {'es_start_up': es_start_up, 'es_patience': es_patience, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
+            things_to_log = {'es_start_up': es_start_up, 'es_patience': es_patience, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_subj_walks), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
             print('size of train set: ', len(datasets[0]['data_source']['data_dir']))
-            print('size of test set: ', len(test_walks))
+            print('size of test set: ', len(test_subj_walks))
 
             if launch_from_windows:
 
