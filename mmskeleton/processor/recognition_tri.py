@@ -172,7 +172,7 @@ def train(
 
                 print('size of train set: ', len(datasets[0]['data_source']['data_dir']))
                 print('size of val set: ', len(datasets[1]['data_source']['data_dir']))                
-                print('size of test set: ', len(test_subj_walks))
+                print('size of test set: ', len(test_walks))
 
             work_dir_amb = work_dir + "/" + str(ambid)
             for ds in datasets:
@@ -181,9 +181,9 @@ def train(
     
             print(workflow)
             # print(model_cfg['num_class'])
-            things_to_log = {'es_start_up': es_start_up, 'es_patience': es_patience, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_subj_walks), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
+            things_to_log = {'es_start_up': es_start_up, 'es_patience': es_patience, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
             print('size of train set: ', len(datasets[0]['data_source']['data_dir']))
-            print('size of test set: ', len(test_subj_walks))
+            print('size of test set: ', len(test_walks))
 
             if launch_from_windows:
 
