@@ -19,19 +19,19 @@ processor_cfg:
   cv: 5
   exclude_cv: False
   notes: "two_part_loss"
-  group_notes: "150_shoulder_2"
+  group_notes: "150_nonorm_10"
   weight_classes: False
   flip_loss: True
   launch_from_windows: False
   wandb_project: "mmskel_es"
   early_stopping: True
   force_run_all_epochs: False
-  es_patience: 10
+  es_patience: 15
   es_start_up: 50
 
   # model setting
   model_cfg:
-    type: 'models.backbones.ST_GCN_18_ordinal_smaller_2'
+    type: 'models.backbones.ST_GCN_18_ordinal_smaller_10'
     in_channels: 3
     num_class: 3
     edge_importance_weighting: True
@@ -51,7 +51,7 @@ processor_cfg:
     - type: "datasets.DataPipeline"
       data_source:
         type: "datasets.SkeletonLoaderTRI"
-        data_dir: /home/asabo/projects/def-btaati/asabo/skel_data/stgcn_normalized_100_center_all_shoulder_norm
+        data_dir: /home/asabo/projects/def-btaati/asabo/skel_data/stgcn_normalized_100_center_all_no_norm
         num_track: 1
         num_keypoints: 13
         repeat: 1
@@ -72,7 +72,7 @@ processor_cfg:
     - type: "datasets.DataPipeline"
       data_source:
         type: "datasets.SkeletonLoaderTRI"
-        data_dir: /home/asabo/projects/def-btaati/asabo/skel_data/stgcn_normalized_100_center_pd_shoulder_norm
+        data_dir: /home/asabo/projects/def-btaati/asabo/skel_data/stgcn_normalized_100_center_pd_no_norm
         num_track: 1
         num_keypoints: 13
         repeat: 1
