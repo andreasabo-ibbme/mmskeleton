@@ -296,12 +296,14 @@ def train(
         fig = plot_confusion_matrix( true_labels,preds, class_names)
         wandb.log({"early_stop_eval/final_confusion_matrix.png": fig})
         fig_title = "Regression for ALL unseen participants"
-        reg_fig = regressionPlot(true_labels,preds, class_names, fig_title)
+        reg_fig = regressionPlot(true_labels, preds, class_names, fig_title)
         try:
-            wandb.log({"early_stop_eval/final_regression_plot.png": [self.wandb.Image(reg_fig)]})
+            wandb.log({"early_stop_eval/final_regression_plot.png": [self.wandb.Image(reg_fig)]}, step=1)
         except:
-            wandb.log({"early_stop_eval/final_regression_plot.png": reg_fig})
-        
+            try:
+                wandb.log({"early_stop_eval/final_regression_plot.png": reg_fig})
+            except:
+                print("failed to log regression plot")
 
 
 def train_model(
