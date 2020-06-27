@@ -104,7 +104,7 @@ processor_cfg:
 
   # runtime setting
   workflow: [['train', 1], ['val', 1], ['test', 1]]
-  work_dir: ./work_dir/recognition/tri_all/dataset_example
+  work_dir: ./work_dir/recognition/tri_all/dataset_example/v2/SAS/PD_only/SAS_2_120
   total_epochs: 200
   training_hooks:
     lr_config:

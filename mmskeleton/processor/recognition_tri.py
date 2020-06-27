@@ -582,7 +582,7 @@ def plot_confusion_matrix( y_true, y_pred, classes,normalize=False,title=None,cm
 
     cm = cm_new
 
-    classes = [i + 1 for i in range(max_cm_size)]
+    classes = [i for i in range(max_cm_size)]
 
     # print(cm)
     # classes = classes[unique_labels(y_true, y_pred).astype(int)]
