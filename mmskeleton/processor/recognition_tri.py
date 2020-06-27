@@ -300,7 +300,7 @@ def train(
         try:
             wandb.log({"early_stop_eval/final_regression_plot.png": [self.wandb.Image(reg_fig)]})
         except:
-            pass
+            wandb.log({"early_stop_eval/final_regression_plot.png": reg_fig})
         
 
 
