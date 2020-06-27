@@ -8,11 +8,8 @@
 #SBATCH --account=def-btaati
 
 #SBATCH --mail-user=andrea.sabo@mail.utoronto.ca
-#SBATCH --mail-type=BEGIN
-#SBATCH --mail-type=END
+
 #SBATCH --mail-type=FAIL
-#SBATCH --mail-type=REQUEUE
-#SBATCH --mail-type=ALL
 
 
 module load python/3.6
