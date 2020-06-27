@@ -577,8 +577,14 @@ def plot_confusion_matrix( y_true, y_pred, classes,normalize=False,title=None,cm
         for j in range(len(y_all_unique)):
             i_global = y_all_unique[i]
             j_global = y_all_unique[j]
-            cm_new[i_global, j_global] = cm[i,j]
-            
+            try:
+                cm_new[i_global, j_global] = cm[i,j]
+            except:
+                print('CM failed++++++++++++++++++++++++++++++++++++++')
+                print('cm_new', cm_new)
+                print('cm', cm)
+                print('classes', classes)
+                print('y_all_unique', y_all_unique)
 
     cm = cm_new
 
