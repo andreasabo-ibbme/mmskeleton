@@ -23,7 +23,7 @@ processor_cfg:
   weight_classes: False
   flip_loss: True
   launch_from_windows: False
-  wandb_project: "mmskel_es"
+  wandb_project: "mmskel_es_UPDRS"
   early_stopping: True
   force_run_all_epochs: False
   es_patience: 15
