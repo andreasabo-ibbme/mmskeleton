@@ -1,17 +1,27 @@
 #!/bin/bash
 
-bash ./UPDRS/start_UPDRS_2.sh
-bash ./UPDRS/start_UPDRS_10.sh
-bash ./UPDRS/PD_only/start_UPDRS_2.sh
-bash ./UPDRS/PD_only/start_UPDRS_10.sh
-bash ./UPDRS/PD_only/lrd40/start_UPDRS_2.sh
-bash ./UPDRS/PD_only/lrd40/start_UPDRS_10.sh
+cd ./UPDRS/
+bash start_UPDRS_2.sh
+bash start_UPDRS_10.sh
 
-bash ./SAS/start_SAS_2.sh
-bash ./SAS/start_SAS_10.sh
-bash ./SAS/PD_only/start_SAS_2.sh
-bash ./SAS/PD_only/start_SAS_10.sh
-bash ./SAS/PD_only/lrd40/start_SAS_2.sh
-bash ./SAS/PD_only/lrd40/start_SAS_10.sh
+cd ./PD_only/
+bash start_UPDRS_2.sh
+bash start_UPDRS_10.sh
 
+cd ./lrd40/
+bash start_UPDRS_2.sh
+bash start_UPDRS_10.sh
+
+cd /home/asabo/projects/def-btaati/asabo/mmskeleton/batch/v2
+cd ./SAS/
+bash start_UPDRS_2.sh
+bash start_UPDRS_10.sh
+
+cd ./PD_only/
+bash start_UPDRS_2.sh
+bash start_UPDRS_10.sh
+
+cd ./lrd40/
+bash start_UPDRS_2.sh
+bash start_UPDRS_10.sh
 
