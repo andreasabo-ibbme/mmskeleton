@@ -265,9 +265,9 @@ def train(
             fig = plot_confusion_matrix( true_labels,preds, class_names)
             wandb.log({"confusion_matrix/eval_"+ str(e)+".png": fig}, step=e+1)
             fig_title = "Regression for ALL unseen participants"
-            reg_fig = regressionPlot(true_labels,preds, class_names, fig_title)
+            reg_fig = regressionPlot(true_labels,preds_raw, class_names, fig_title)
             try:
-                wandb.log({"regression/eval_"+ str(e)+".png": [self.wandb.Image(reg_fig)]}, step=e+1)
+                wandb.log({"regression/eval_"+ str(e)+".png": [wandb.Image(reg_fig)]}, step=e+1)
             except:
                 pass
 
@@ -296,9 +296,9 @@ def train(
         fig = plot_confusion_matrix( true_labels,preds, class_names)
         wandb.log({"early_stop_eval/final_confusion_matrix.png": fig})
         fig_title = "Regression for ALL unseen participants"
-        reg_fig = regressionPlot(true_labels, preds, class_names, fig_title)
+        reg_fig = regressionPlot(true_labels, preds_raw, class_names, fig_title)
         try:
-            wandb.log({"early_stop_eval/final_regression_plot.png": [self.wandb.Image(reg_fig)]}, step=1)
+            wandb.log({"early_stop_eval/final_regression_plot.png": [wandb.Image(reg_fig)]})
         except:
             try:
                 wandb.log({"early_stop_eval/final_regression_plot.png": reg_fig})
