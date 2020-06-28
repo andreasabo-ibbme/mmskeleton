@@ -23,11 +23,11 @@ processor_cfg:
   weight_classes: False
   flip_loss: True
   launch_from_windows: False
-  wandb_project: "mmskel_es_SAS"
+  wandb_project: "mmskel_es_SAS_100epochs"
   early_stopping: True
   force_run_all_epochs: False
   es_patience: 15
-  es_start_up: 50
+  es_start_up: 100
 
 
   # model setting
