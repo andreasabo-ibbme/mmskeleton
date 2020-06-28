@@ -572,7 +572,7 @@ def plot_confusion_matrix( y_true, y_pred, classes,normalize=False,title=None,cm
         y_all_unique = list(set(all_labels))
         y_all_unique.sort()
 
-        max_cm_size = max(len(classes))
+        max_cm_size = len(classes)
         print('max_cm_size: ', max_cm_size)
         cm_new = np.zeros((max_cm_size, max_cm_size), dtype=np.int64)
         try:
@@ -589,7 +589,7 @@ def plot_confusion_matrix( y_true, y_pred, classes,normalize=False,title=None,cm
             print('classes', classes)
             print('y_all_unique', y_all_unique)
 
-            max_cm_size = max(len(classes), y_all_unique[-1])
+            max_cm_size = max([len(classes), y_all_unique[-1]])
             print('max_cm_size: ', max_cm_size)
             cm_new = np.zeros((max_cm_size, max_cm_size), dtype=np.int64)
             for i in range(len(y_all_unique)):
