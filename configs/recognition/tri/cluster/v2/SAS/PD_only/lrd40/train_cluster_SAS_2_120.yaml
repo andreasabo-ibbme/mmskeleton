@@ -115,7 +115,7 @@ processor_cfg:
       hooks:
         - type: WandbLoggerHook
     checkpoint_config:
-      interval: 10
+      interval: 200
     optimizer_config:
       grad_clip:
   resume_from:

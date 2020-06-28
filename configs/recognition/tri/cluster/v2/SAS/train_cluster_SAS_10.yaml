@@ -110,7 +110,7 @@ processor_cfg:
       policy: 'step'
       step: [20, 80, 120]
     log_config:
-      interval: 100
+      interval: 200
       hooks:
         - type: WandbLoggerHook
     checkpoint_config:
