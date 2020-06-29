@@ -7,7 +7,7 @@ from mmcv.runner import Runner
 from mmcv import Config, ProgressBar
 from mmcv.parallel import MMDataParallel
 import os, re, copy
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn.metrics import mean_absolute_error, accuracy_score, confusion_matrix
 import wandb
 import matplotlib.pyplot as plt
@@ -15,8 +15,11 @@ from spacecutter.models import OrdinalLogisticModel
 import spacecutter
 import pandas as pd
 import pickle
+from .utils import *
+
 os.environ['WANDB_MODE'] = 'dryrun'
 
+# Global variables
 num_class = 3
 balance_classes = False
 class_weights_dict = {}
@@ -115,29 +118,35 @@ def train(
     # All data dir (use this for finetuning with the flip loss)
     data_dir_all_data = dataset_cfg[0]['data_source']['data_dir']
     all_files = [os.path.join(data_dir_all_data, f) for f in os.listdir(data_dir_all_data)]
-    all_file_names_only = [f in os.listdir(data_dir_all_data)]
+    all_file_names_only = os.listdir(data_dir_all_data)
 
     # PD lablled dir (only use this data for supervised contrastive)
     data_dir_pd_data = dataset_cfg[1]['data_source']['data_dir']
     pd_all_files = [os.path.join(data_dir_pd_data, f) for f in os.listdir(data_dir_pd_data)]
-    pd_all_file_names_only = [f in os.listdir(data_dir_pd_data)]
+    pd_all_file_names_only = os.listdir(data_dir_pd_data)
 
 
+    original_wandb_group = wandb_group
     workflow_orig = copy.deepcopy(workflow)
     for test_id in test_ids:
         plt.close('all')
         ambid = id_mapping[test_id]
 
         # These are all of the walks (both labelled and not) of the test participant and cannot be included in training data at any point (for LOSOCV)
-        test_subj_walks_name_only = [i for i in all_file_names_only if re.search('ID_'+str(test_id), i) ]
+        test_subj_walks_name_only_all = [i for i in all_file_names_only if re.search('ID_'+str(test_id), i) ]
+        test_subj_walks_name_only_pd_only = [i for i in pd_all_files if re.search('ID_'+str(test_id), i) ]
+        
         # These are the walks that can potentially be included in the train/val sets at some stage
-        non_test_subj_walks_name_only = list(set(all_file_names_only).symmetric_difference(set(test_subj_walks_name_only)))
+        non_test_subj_walks_name_only_all = list(set(all_file_names_only).symmetric_difference(set(test_subj_walks_name_only_all)))
+        non_test_subj_walks_name_only_pd_only = list(set(pd_all_file_names_only).symmetric_difference(set(test_subj_walks_name_only_pd_only)))
         
         # These are all of the labelled walks from the current participant that we want to evaluate our eventual model on
-        test_walks_pd_labelled = [os.path.join(data_dir_pd_data, f) for f in os.listdir(test_subj_walks_name_only)]
-        non_test_walks_pd_labelled = [os.path.join(data_dir_pd_data, f) for f in os.listdir(non_test_subj_walks_name_only)]
-        non_test_walks_all = [os.path.join(data_dir_all_data, f) for f in os.listdir(non_test_subj_walks_name_only)]
+        test_walks_pd_labelled = [os.path.join(data_dir_pd_data, f) for f in os.listdir(test_subj_walks_name_only_pd_only)]
+        non_test_walks_pd_labelled = [os.path.join(data_dir_pd_data, f) for f in os.listdir(non_test_subj_walks_name_only_pd_only)]
+        non_test_walks_all = [os.path.join(data_dir_all_data, f) for f in os.listdir(test_subj_walks_name_only_all)]
 
+        # A list of whether a walk from the non_test_walks_all list has a pd label as well
+        non_test_is_lablled = [1 if i in non_test_walks_pd_labelled else 0 for i in non_test_walks_all]
 
         datasets = [copy.deepcopy(dataset_cfg[0]) for i in range(len(workflow))]
         work_dir_amb = work_dir + "/" + str(ambid)
@@ -149,20 +158,76 @@ def train(
             continue
         
         # Split the non_test walks into train/val
-        kf = KFold(n_splits=cv, shuffle=True, random_state=1)
-        kf.get_n_splits(non_test_subj_walks)
-
+        kf = StratifiedKFold(n_splits=cv, shuffle=True, random_state=1)
+        kf.get_n_splits(non_test_subj_walks, non_test_is_lablled)
 
         num_reps = 1
-        for train_ids, val_ids in kf.split(non_test_subj_walks):
+        for train_ids, val_ids in kf.split(non_test_subj_walks, non_test_is_lablled):
             if num_reps > 1:
                 break
-            num_reps += 1
-            train_walks = [non_test_subj_walks[i] for i in train_ids]
-            val_walks = [non_test_subj_walks[i] for i in val_ids]
-
+            
             plt.close('all')
             ambid = id_mapping[test_id]
+            num_reps += 1
+
+            # Divide all of the data into:
+            # Stage 1 train/val
+            # Stage 2 train/val
+
+            # These are from the full (all) set
+            stage_2_train = [non_test_walks_all[i] for i in train_ids]
+            stage_2_val = [non_test_walks_all[i] for i in val_ids]
+
+            # These are from the pd labelled set
+            stage_1_train = [non_test_walks_pd_labelled[i] if i < len(non_test_walks_pd_labelled) for i in train_ids]
+            stage_1_val = [non_test_walks_pd_labelled[i] if i < len(non_test_walks_pd_labelled) for i in val_ids]
+
+
+            # ================================ STAGE 1 ====================================
+            # Stage 1 training
+            datasets[0]['data_source']['data_dir'] = stage_1_train
+            datasets[1]['data_source']['data_dir'] = stage_1_val
+            datasets[2]['data_source']['data_dir'] = test_walks_pd_labelled
+
+            work_dir_amb = work_dir + "/" + str(ambid)
+            for ds in datasets:
+                ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
+
+
+            pretrained_model = pretrain_model(
+                work_dir_amb,
+                model_cfg,
+                loss_cfg,
+                datasets,
+                optimizer_cfg,
+                batch_size,
+                total_epochs,
+                training_hooks,
+                workflow,
+                gpus,
+                log_level,
+                workers,
+                resume_from,
+                load_from, 
+                things_to_log,
+                early_stopping,
+                force_run_all_epochs=True,
+                es_patience=es_patience,
+                es_start_up=es_start_up
+                )
+
+
+            # ================================ STAGE 2 ====================================
+
+            # Stage 2 training
+            datasets[0]['data_source']['data_dir'] = stage_2_train
+            datasets[1]['data_source']['data_dir'] = stage_2_val
+            datasets[2]['data_source']['data_dir'] = test_walks_pd_labelled
+
+            # Final testing
+
+
+
 
             # test_subj_walks = [i for i in all_files if re.search('ID_'+str(test_id), i) ]
             # non_test_subj_walks = list(set(all_files).symmetric_difference(set(test_subj_walks)))
@@ -192,38 +257,7 @@ def train(
             print('size of train set: ', len(datasets[0]['data_source']['data_dir']))
             print('size of test set: ', len(test_walks))
 
-            if launch_from_windows:
-
-                file_path = 'C:/Users/Andrea/andrea/mmskeleton/mmskeleton/processor/recognition_tri_win_train.py'
-                pkl_file = os.path.join(work_dir, 'obj.pkl')
-                vars_to_save = [work_dir_amb,
-                    model_cfg,
-                    loss_cfg,
-                    datasets,
-                    optimizer_cfg,
-                    batch_size,
-                    total_epochs,
-                    training_hooks,
-                    workflow,
-                    gpus,
-                    log_level,
-                    workers,
-                    resume_from,
-                    load_from, 
-                    things_to_log]
-
-                with open(pkl_file, 'wb') as f:
-                    pickle.dump(vars_to_save, f)
-
-
-                os_call = f"python {file_path} --pkl_file {pkl_file}"
-
-
-                print("os call: ", os_call)
-                os.system(os_call)
-
-            else: # Launching from linux
-                train_model(
+            train_model(
                         work_dir_amb,
                         model_cfg,
                         loss_cfg,
@@ -337,7 +371,7 @@ def finetune_model(
     pass
 
 
-def train_model(
+def pretrain_model(
         work_dir,
         model_cfg,
         loss_cfg,
@@ -358,9 +392,7 @@ def train_model(
         es_patience=10,
         es_start_up=50,
 ):
-    print("==================================")
-
-
+    print("Starting STAGE 1: Pretraining...")
 
     data_loaders = [
         torch.utils.data.DataLoader(dataset=call_obj(**d),
@@ -383,7 +415,6 @@ def train_model(
     optimizer_cfg_local = copy.deepcopy(optimizer_cfg)
 
 
-
     # put model on gpus
     if isinstance(model_cfg, list):
         model = [call_obj(**c) for c in model_cfg_local]
@@ -398,6 +429,9 @@ def train_model(
 
 
     # Step 1: Initialize the model with random weights, 
+    print("THIS IS OUR MODEL")
+    print(model)
+    return
     model.apply(weights_init)
     model = MMDataParallel(model, device_ids=range(gpus)).cuda()
     torch.cuda.set_device(0)

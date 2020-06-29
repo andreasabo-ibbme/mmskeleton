@@ -13,17 +13,17 @@ argparse_cfg:
 
 
 processor_cfg:
-  type: 'processor.recognition_tri.train'
+  type: 'processor.recognition_tri_supcon.train'
   workers: 1
   test_ids: [48, 47, 34, 37, 27, 39, 46, 50, 52, 55, 57, 59, 66, 33]
   cv: 5
   exclude_cv: False
   notes: "two_part_loss"
-  group_notes: "supcon"
+  group_notes: "supcon_UPDRS_2_150"
   weight_classes: False
   flip_loss: True
   launch_from_windows: False
-  wandb_project: "supcon_UPDRS_2_150"
+  wandb_project: "supcon_UPDRS_wip"
   early_stopping: True
   force_run_all_epochs: False
   es_patience: 15
