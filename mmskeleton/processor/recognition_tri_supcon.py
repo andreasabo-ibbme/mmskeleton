@@ -154,7 +154,7 @@ def train(
             ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
 
         # Don't bother training if we have no test data
-        if len(test_subj_walks) == 0:
+        if len(test_walks_pd_labelled) == 0:
             continue
         
         # Split the non_test walks into train/val
