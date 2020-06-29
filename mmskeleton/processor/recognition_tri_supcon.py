@@ -179,8 +179,8 @@ def train(
             stage_2_val = [non_test_walks_all[i] for i in val_ids]
 
             # These are from the pd labelled set
-            stage_1_train = [non_test_walks_pd_labelled[i] if i < len(non_test_walks_pd_labelled) for i in train_ids]
-            stage_1_val = [non_test_walks_pd_labelled[i] if i < len(non_test_walks_pd_labelled) for i in val_ids]
+            stage_1_train = [non_test_walks_pd_labelled[i] for i in train_ids if i < len(non_test_walks_pd_labelled) ]
+            stage_1_val = [non_test_walks_pd_labelled[i] for i in val_ids if i < len(non_test_walks_pd_labelled)]
 
 
             # ================================ STAGE 1 ====================================
