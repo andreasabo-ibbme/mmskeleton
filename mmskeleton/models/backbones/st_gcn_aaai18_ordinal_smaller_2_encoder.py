@@ -34,7 +34,7 @@ class ST_GCN_18_ordinal_smaller_2_encoder(nn.Module):
                  data_bn=True,
                  **kwargs):
         super().__init__()
-        print('In ST_GCN_18 ordinal: ', graph_cfg)
+        print('In ST_GCN_18 ordinal 2 encoder: ', graph_cfg)
         # load graph
         self.graph = Graph(**graph_cfg)
         A = torch.tensor(
