@@ -141,9 +141,9 @@ def train(
         non_test_subj_walks_name_only_pd_only = list(set(pd_all_file_names_only).symmetric_difference(set(test_subj_walks_name_only_pd_only)))
         
         # These are all of the labelled walks from the current participant that we want to evaluate our eventual model on
-        test_walks_pd_labelled = [os.path.join(data_dir_pd_data, f) for f in os.listdir(test_subj_walks_name_only_pd_only)]
-        non_test_walks_pd_labelled = [os.path.join(data_dir_pd_data, f) for f in os.listdir(non_test_subj_walks_name_only_pd_only)]
-        non_test_walks_all = [os.path.join(data_dir_all_data, f) for f in os.listdir(test_subj_walks_name_only_all)]
+        test_walks_pd_labelled = [os.path.join(data_dir_pd_data, f) for f in test_subj_walks_name_only_pd_only]
+        non_test_walks_pd_labelled = [os.path.join(data_dir_pd_data, f) for f in non_test_subj_walks_name_only_pd_only]
+        non_test_walks_all = [os.path.join(data_dir_all_data, f) for f in test_subj_walks_name_only_all]
 
         # A list of whether a walk from the non_test_walks_all list has a pd label as well
         non_test_is_lablled = [1 if i in non_test_walks_pd_labelled else 0 for i in non_test_walks_all]
