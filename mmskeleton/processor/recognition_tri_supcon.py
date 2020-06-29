@@ -194,6 +194,10 @@ def train(
                 ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
 
 
+            print('stage_1_train: ', len(stage_1_train))
+            print('stage_1_val: ', len(stage_1_val))
+            print('test_walks_pd_labelled: ', len(test_walks_pd_labelled))
+
             pretrained_model = pretrain_model(
                 work_dir_amb,
                 model_cfg,
@@ -225,7 +229,7 @@ def train(
             datasets[2]['data_source']['data_dir'] = test_walks_pd_labelled
 
             # Final testing
-
+            return
 
 
 
