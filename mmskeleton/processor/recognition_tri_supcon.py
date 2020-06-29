@@ -159,10 +159,10 @@ def train(
         
         # Split the non_test walks into train/val
         kf = StratifiedKFold(n_splits=cv, shuffle=True, random_state=1)
-        kf.get_n_splits(non_test_subj_walks, non_test_is_lablled)
+        kf.get_n_splits(non_test_walks_all, non_test_is_lablled)
 
         num_reps = 1
-        for train_ids, val_ids in kf.split(non_test_subj_walks, non_test_is_lablled):
+        for train_ids, val_ids in kf.split(non_test_walks_all, non_test_is_lablled):
             if num_reps > 1:
                 break
             
