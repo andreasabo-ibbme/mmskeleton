@@ -47,6 +47,7 @@ class ST_GCN_18_ordinal_smaller_2_supcon(nn.Module):
                  **kwargs)
       
         # fcn for prediction
+        dim_in = self.encoder.output_filters
         if head == 'linear':
             self.head = nn.Linear(dim_in, feat_dim)
         elif head == 'mlp':
@@ -56,6 +57,8 @@ class ST_GCN_18_ordinal_smaller_2_supcon(nn.Module):
                 nn.Linear(dim_in, feat_dim)
             )
 
+        print("encoder: ", self.encoder)
+        print('projection head', self.head)
     def forward(self, x):
         feat = self.encoder(x)
         feat = F.normalize(self.head(feat), dim=1)
