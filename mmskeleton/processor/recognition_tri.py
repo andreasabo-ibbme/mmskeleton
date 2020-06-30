@@ -8,13 +8,14 @@ from mmcv import Config, ProgressBar
 from mmcv.parallel import MMDataParallel
 import os, re, copy
 from sklearn.model_selection import KFold
-from sklearn.metrics import mean_absolute_error, accuracy_score, confusion_matrix
+from sklearn.metrics import mean_absolute_error, accuracy_score, confusion_matrix, precision_recall_fscore_support
 import wandb
 import matplotlib.pyplot as plt
 from spacecutter.models import OrdinalLogisticModel
 import spacecutter
 import pandas as pd
 import pickle
+
 #os.environ['WANDB_MODE'] = 'dryrun'
 
 num_class = 3
@@ -271,12 +272,13 @@ def train(
             except:
                 pass
 
-    # final results
+    # final results +++++++++++++++++++++++++++++++++++++++++
     final_results_dir = os.path.join(work_dir, 'all_eval', wandb_group)
 
     for i, flow in enumerate(workflow):
         mode, _ = flow
 
+        class_names = [str(i) for i in range(num_class)]
 
         log_vars = {}
         results_file = os.path.join(final_results_dir, mode+".csv")
@@ -286,13 +288,37 @@ def train(
         preds = df['pred_round']
         preds_raw = df['pred_raw']
 
+        # Calculate the mean metrics across classes
+        average_types = ['macro', 'micro', 'weighted']
+        average_metrics_to_log = ['precision', 'recall', 'f1score', 'support']
+        average_dict = {}
+        prefix_name = 'final/'+ mode + '/'
+        for av in average_types:
+            results_tuple = precision_recall_fscore_support(true_labels, preds, average=av)
+            for m in range(len(average_metrics_to_log)):      
+                average_dict[prefix_name + '_'+ average_metrics_to_log[m] +'_average_' + av] = results_tuple[m]
+
+        wandb.log(average_dict)
+
+        # Calculate metrics per class
+        results_tuple = precision_recall_fscore_support(true_labels, preds, average=None, labels=class_names)
+
+        per_class_stats = {}
+        for c in range(len(class_names)):
+            cur_class_metrics = results_tuple[c]
+            for s in range(len(average_metrics_to_log)):
+                per_class_stats[prefix_name + str(class_names[c]) + '_'+ average_metrics_to_log[s]] = cur_class_metrics[s]
+
+        wandb.log(per_class_stats)
+
+
+        # Keep the original metrics for backwards compatibility
         log_vars['early_stop_eval/'+mode+ '/mae_rounded'] = mean_absolute_error(true_labels, preds)
         log_vars['early_stop_eval/'+mode+ '/mae_raw'] = mean_absolute_error(true_labels, preds_raw)
         log_vars['early_stop_eval/'+mode+ '/accuracy'] = accuracy_score(true_labels, preds)
         wandb.log(log_vars)
 
-        class_names = [str(i) for i in range(num_class)]
-
+        
         fig = plot_confusion_matrix( true_labels,preds, class_names)
         wandb.log({"early_stop_eval/final_confusion_matrix.png": fig})
         fig_title = "Regression for ALL unseen participants"
