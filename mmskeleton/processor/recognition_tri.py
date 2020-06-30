@@ -305,10 +305,11 @@ def train(
         results_tuple = precision_recall_fscore_support(true_labels, preds, average=None, labels=class_names_int)
 
         per_class_stats = {}
-        for c in range(len(class_names)):
-            cur_class_metrics = results_tuple[c]
-            for s in range(len(average_metrics_to_log)):
-                per_class_stats[prefix_name + str(class_names_int[c]) + '_'+ average_metrics_to_log[s]] = cur_class_metrics[s]
+        for c in range(len(average_metrics_to_log)):
+            cur_metrics = results_tuple[c]
+            print(cur_metrics)
+            for s in range(len(class_names_int)):
+                per_class_stats[prefix_name + str(class_names_int[c]) + '_'+ average_metrics_to_log[s]] = cur_metrics[s]
 
         wandb.log(per_class_stats)
 
