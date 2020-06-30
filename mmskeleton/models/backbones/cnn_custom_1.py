@@ -67,8 +67,10 @@ class cnn_custom_1(nn.Module):
 
 
     def forward(self, x):
-        print(x)
         print("size of input is: ", x.shape)
+        x = x.permute(0, 4, 3, 1, 2).contiguous()
+        print("size of x reshaped is: ", x.shape)
+
         x = self.conv1(x)
         print("the size of output is: ", x.shape)
 
