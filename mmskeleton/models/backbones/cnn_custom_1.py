@@ -43,7 +43,7 @@ class cnn_custom_1(nn.Module):
 
 
         # build the CNN
-        self.conv1 = nn.Conv3d(1, 1, (1,3,13))
+        self.conv1 = nn.Conv3d(1, 8, (1, 13, 3))
 
 
 # class Net(nn.Module):
