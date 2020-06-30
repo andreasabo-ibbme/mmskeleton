@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 from mmskeleton.ops.st_gcn import ConvTemporalGraphical, Graph
-from ST_GCN_18_ordinal_smaller_2_encoder import ST_GCN_18_ordinal_smaller_2_encoder
+from .st_gcn_aaai18_ordinal_smaller_2_encoder import ST_GCN_18_ordinal_smaller_2_encoder
 
 class ST_GCN_18_ordinal_smaller_2_supcon(nn.Module):
     r"""Spatial temporal graph convolutional networks.
