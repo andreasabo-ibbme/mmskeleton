@@ -589,9 +589,11 @@ def plot_confusion_matrix( y_true, y_pred, classes,normalize=False,title=None,cm
             print('cm', cm)
             print('classes', classes)
             print('y_all_unique', y_all_unique)
-
-            max_cm_size = max([len(classes), y_all_unique[-1]])
+            print('y_true': list(set(y_true)))
+            print('y_pred': list(set(y_pred)))
             print('max_cm_size: ', max_cm_size)
+            max_cm_size = max([len(classes), y_all_unique[-1]])
+
             cm_new = np.zeros((max_cm_size, max_cm_size), dtype=np.int64)
             for i in range(len(y_all_unique)):
                 for j in range(len(y_all_unique)):
@@ -600,11 +602,14 @@ def plot_confusion_matrix( y_true, y_pred, classes,normalize=False,title=None,cm
                     try:
                         cm_new[i_global, j_global] = cm[i,j]
                     except:
-                        print('CM failed++++++++++++++++++++++++++++++++++++++')
+                        print('CM failed second time++++++++++++++++++++++++++++++++++++++')
                         print('cm_new', cm_new)
                         print('cm', cm)
                         print('classes', classes)
                         print('y_all_unique', y_all_unique)
+                        print('y_true': list(set(y_true)))
+                        print('y_pred': list(set(y_pred)))
+                        print('max_cm_size: ', max_cm_size)
 
 
 
