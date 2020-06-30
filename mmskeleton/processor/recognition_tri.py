@@ -589,8 +589,8 @@ def plot_confusion_matrix( y_true, y_pred, classes,normalize=False,title=None,cm
             print('cm', cm)
             print('classes', classes)
             print('y_all_unique', y_all_unique)
-            print('y_true': list(set(y_true)))
-            print('y_pred': list(set(y_pred)))
+            print('y_true', list(set(y_true)))
+            print('y_pred', list(set(y_pred)))
             print('max_cm_size: ', max_cm_size)
             max_cm_size = max([len(classes), y_all_unique[-1]])
 
@@ -607,8 +607,8 @@ def plot_confusion_matrix( y_true, y_pred, classes,normalize=False,title=None,cm
                         print('cm', cm)
                         print('classes', classes)
                         print('y_all_unique', y_all_unique)
-                        print('y_true': list(set(y_true)))
-                        print('y_pred': list(set(y_pred)))
+                        print('y_true', list(set(y_true)))
+                        print('y_pred', list(set(y_pred)))
                         print('max_cm_size: ', max_cm_size)
 
 
