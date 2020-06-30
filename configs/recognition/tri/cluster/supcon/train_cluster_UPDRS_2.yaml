@@ -31,7 +31,7 @@ processor_cfg:
 
   # model setting
   model_cfg:
-    type: 'models.backbones.ST_GCN_18_ordinal_smaller_2'
+    type: 'models.backbones.ST_GCN_18_ordinal_smaller_2_supcon'
     in_channels: 3
     num_class: 3
     edge_importance_weighting: True
