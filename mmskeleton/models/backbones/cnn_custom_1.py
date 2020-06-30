@@ -44,6 +44,7 @@ class cnn_custom_1(nn.Module):
 
         # build the CNN
         self.conv1 = nn.Conv3d(1, 8, (1, 13, 3))
+        self.conv2 = nn.Conv3d(8, 16, (8, 1, 1))
 
 
 # class Net(nn.Module):
@@ -72,9 +73,11 @@ class cnn_custom_1(nn.Module):
         print("size of x reshaped is: ", x.shape)
 
         x = self.conv1(x)
-        print("the size of output is: ", x.shape)
+        print("the size of output conv1 is: ", x.shape)
+        x = self.conv2(x)
+        print("the size of output conv2 is: ", x.shape)
 
-        x = x.squeeze()
+        # x = x.squeeze()
         print("the size of output is 2: ", x.shape)
         raise Exception("done forward pass")
         return x
