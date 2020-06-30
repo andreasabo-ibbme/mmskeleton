@@ -36,7 +36,8 @@ class ST_GCN_18_ordinal_smaller_2_supcon(nn.Module):
                  **kwargs):
         super().__init__()
         print('In ST_GCN_18 ordinal supcon: ', graph_cfg)
-        print(**kwargs)
+        print(kwargs)
+        print('Init encoder...')
         self.encoder = ST_GCN_18_ordinal_smaller_2_encoder(self,
                  in_channels,
                  num_class,
