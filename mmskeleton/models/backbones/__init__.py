@@ -1,3 +1,4 @@
+# ST-GCN models
 from .st_gcn_aaai18 import ST_GCN_18
 from .st_gcn_aaai18_ordinal import ST_GCN_18_ordinal
 from .st_gcn_aaai18_ordinal_smaller_1 import ST_GCN_18_ordinal_smaller_1
@@ -13,4 +14,10 @@ from .st_gcn_aaai18_ordinal_smaller_10 import ST_GCN_18_ordinal_smaller_10
 
 # Supervised contrastive models
 from .st_gcn_aaai18_ordinal_smaller_2_supcon import ST_GCN_18_ordinal_smaller_2_supcon
+
+
+# CNN models
+from .cnn_custom_1 import cnn_custom_1
+
+
 from .hrnet import HRNet
