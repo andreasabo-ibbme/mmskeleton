@@ -652,7 +652,7 @@ def weights_init_xavier(model):
         if model.bias is not None:
             model.bias.data.fill_(0)
     elif classname.find('BatchNorm') != -1:
-        torch.nn.init.xavier_uniform(model.weight)
+        model.weight.data.normal_(1.0, 0.02)
         model.bias.data.fill_(0)
 
 
