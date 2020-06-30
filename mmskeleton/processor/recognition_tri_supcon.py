@@ -434,14 +434,19 @@ def pretrain_model(
         model = OrdinalLogisticModel(model, model_cfg_local['num_class'])
 
 
+
+    # print("These are the model parameters:")
+    # for param in model.parameters():
+    #     print(param.data)
+
     # Step 1: Initialize the model with random weights, 
+    model.apply(weights_init_xavier)
+
     print("THIS IS OUR MODEL")
     print(model)
-    print("These are the model parameters:")
-    for param in model.parameters():
-        print(param.data)
-    return
-    model.apply(weights_init)
+
+    return model
+
     model = MMDataParallel(model, device_ids=range(gpus)).cuda()
     torch.cuda.set_device(0)
     loss = call_obj(**loss_cfg_local)
@@ -633,6 +638,21 @@ def weights_init(model):
             model.bias.data.fill_(0)
     elif classname.find('BatchNorm') != -1:
         model.weight.data.normal_(1.0, 0.02)
+        model.bias.data.fill_(0)
+
+
+def weights_init_xavier(model):
+    classname = model.__class__.__name__
+    if classname.find('Conv1d') != -1:
+        model.weight.data.xavier_uniform_()
+        if model.bias is not None:
+            model.bias.data.fill_(0)
+    elif classname.find('Conv2d') != -1:
+        model.weight.data.xavier_uniform_()
+        if model.bias is not None:
+            model.bias.data.fill_(0)
+    elif classname.find('BatchNorm') != -1:
+        model.weight.data.xavier_uniform_()
         model.bias.data.fill_(0)
 
 
