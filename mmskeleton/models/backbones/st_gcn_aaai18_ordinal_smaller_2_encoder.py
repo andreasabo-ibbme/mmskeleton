@@ -33,6 +33,7 @@ class ST_GCN_18_ordinal_smaller_2_encoder(nn.Module):
                  edge_importance_weighting=True,
                  data_bn=True,
                  **kwargs):
+                 
         super().__init__()
         print('In ST_GCN_18 ordinal: ', graph_cfg)
         # load graph
