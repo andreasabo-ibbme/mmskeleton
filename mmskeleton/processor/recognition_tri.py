@@ -279,6 +279,7 @@ def train(
         mode, _ = flow
 
         class_names = [str(i) for i in range(num_class)]
+        class_names_int = [int(i) for i in range(num_class)]
 
         log_vars = {}
         results_file = os.path.join(final_results_dir, mode+".csv")
@@ -301,13 +302,13 @@ def train(
         wandb.log(average_dict)
 
         # Calculate metrics per class
-        results_tuple = precision_recall_fscore_support(true_labels, preds, average=None, labels=class_names)
+        results_tuple = precision_recall_fscore_support(true_labels, preds, average=None, labels=class_names_int)
 
         per_class_stats = {}
         for c in range(len(class_names)):
             cur_class_metrics = results_tuple[c]
             for s in range(len(average_metrics_to_log)):
-                per_class_stats[prefix_name + str(class_names[c]) + '_'+ average_metrics_to_log[s]] = cur_class_metrics[s]
+                per_class_stats[prefix_name + str(class_names_int[c]) + '_'+ average_metrics_to_log[s]] = cur_class_metrics[s]
 
         wandb.log(per_class_stats)
 
