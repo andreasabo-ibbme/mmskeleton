@@ -644,15 +644,15 @@ def weights_init(model):
 def weights_init_xavier(model):
     classname = model.__class__.__name__
     if classname.find('Conv1d') != -1:
-        model.weight.data.xavier_uniform_()
+        torch.nn.init.xavier_uniform(model.weight)
         if model.bias is not None:
             model.bias.data.fill_(0)
     elif classname.find('Conv2d') != -1:
-        model.weight.data.xavier_uniform_()
+        torch.nn.init.xavier_uniform(model.weight)
         if model.bias is not None:
             model.bias.data.fill_(0)
     elif classname.find('BatchNorm') != -1:
-        model.weight.data.xavier_uniform_()
+        torch.nn.init.xavier_uniform(model.weight)
         model.bias.data.fill_(0)
 
 
