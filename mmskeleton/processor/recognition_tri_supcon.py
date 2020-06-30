@@ -437,6 +437,9 @@ def pretrain_model(
     # Step 1: Initialize the model with random weights, 
     print("THIS IS OUR MODEL")
     print(model)
+    print("These are the model parameters:")
+    for param in model.parameters():
+        print(param.data)
     return
     model.apply(weights_init)
     model = MMDataParallel(model, device_ids=range(gpus)).cuda()
