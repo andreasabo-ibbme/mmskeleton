@@ -43,7 +43,7 @@ class ST_GCN_18_ordinal_smaller_2_supcon(nn.Module):
                  num_class,
                  graph_cfg,
                  edge_importance_weighting,
-                 data_bn=True,
+                 data_bn,
                  **kwargs)
       
         # fcn for prediction
