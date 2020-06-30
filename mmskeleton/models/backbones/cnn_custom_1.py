@@ -43,7 +43,7 @@ class cnn_custom_1(nn.Module):
 
 
         # build the CNN
-        self.conv1 = nn.Conv3d(3, 1, (1,3,13))
+        self.conv1 = nn.Conv3d(1, 1, (1,3,13))
 
 
 # class Net(nn.Module):
@@ -68,7 +68,7 @@ class cnn_custom_1(nn.Module):
 
     def forward(self, x):
         print("size of input is: ", x.shape)
-        x = x.permute(0, 4, 3, 1, 2).contiguous()
+        x = x.permute(0, 4, 2, 3, 1).contiguous()
         print("size of x reshaped is: ", x.shape)
 
         x = self.conv1(x)
