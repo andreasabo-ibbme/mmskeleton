@@ -30,6 +30,7 @@ class ST_GCN_18_ordinal_smaller_2_supcon(nn.Module):
                  in_channels,
                  num_class,
                  graph_cfg,
+                 edge_importance_weighting=True,
                  data_bn=True,
                  head='linear',
                  feat_dim=32,
@@ -37,11 +38,11 @@ class ST_GCN_18_ordinal_smaller_2_supcon(nn.Module):
         super().__init__()
         print('In ST_GCN_18 ordinal supcon: ', graph_cfg)
         print(kwargs)
-        print('Init encoder...')
         self.encoder = ST_GCN_18_ordinal_smaller_2_encoder(self,
                  in_channels,
                  num_class,
                  graph_cfg,
+                 edge_importance_weighting,
                  data_bn=True,
                  **kwargs)
       
