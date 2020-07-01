@@ -23,12 +23,11 @@ processor_cfg:
   weight_classes: False
   flip_loss: True
   launch_from_windows: False
-  wandb_project: "mmskel_es_UPDRS_40epochs"
+  wandb_project: "mmskel_es_UPDRS_50epochs"
   early_stopping: True
   force_run_all_epochs: False
   es_patience: 15
-  es_start_up: 40
-  
+  es_start_up: 50  
   # model setting
   model_cfg:
     type: 'models.backbones.ST_GCN_18_ordinal_smaller_10'

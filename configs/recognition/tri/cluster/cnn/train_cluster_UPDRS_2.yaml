@@ -27,8 +27,7 @@ processor_cfg:
   early_stopping: True
   force_run_all_epochs: False
   es_patience: 15
-  es_start_up: 40
-
+  es_start_up: 50
   # model setting
   model_cfg:
     type: 'models.backbones.cnn_custom_1'
