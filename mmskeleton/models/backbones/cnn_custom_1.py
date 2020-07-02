@@ -42,6 +42,11 @@ class cnn_custom_1(nn.Module):
         self.register_buffer('A', A)
 
 
+        self.data_bn = nn.BatchNorm1d(
+            in_channels * A.size(1)) if data_bn else lambda x: x
+
+        print("A size is: ", A.size())
+
         self.temporal_kernel = 9
         self.conv1_filters = 16
         self.conv2_filters = 32
@@ -79,6 +84,7 @@ class cnn_custom_1(nn.Module):
         print("size of input is: ", x.shape)
         # Reshape the input to be of size [bs, 1, timestamps, num_joints, num_coords] 
         x = x.permute(0, 4, 2, 3, 1).contiguous()
+
 
         num_timesteps = x.shape[2]
         print("size of x reshaped is: ", x.shape)
