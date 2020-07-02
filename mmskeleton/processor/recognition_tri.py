@@ -453,11 +453,12 @@ def batch_processor(model, datas, train_mode, loss):
 
     # Get predictions from the model
     output_all = model(data_all)
-    print("output all: ", output_all.t())   
+    print("output all: ", output_all.t())  
+    print("model is ", model)  
+    print("conv1", model.conv1.weight)
 
     if torch.sum(output_all) == 0:
         print("model is ", model) 
-        print("conv1", conv1.weight)
     output = output_all[row_cond]
     loss_flip_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
 
