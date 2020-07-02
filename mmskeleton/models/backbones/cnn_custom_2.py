@@ -50,18 +50,18 @@ class cnn_custom_2(nn.Module):
         self.conv1_filters = 16
         self.conv2_filters = 32
         self.conv3_filters = 32
-        self.conv4_filters = 32
         self.fc1_out = 128
 
         # build the CNN
         self.conv1 = nn.Conv3d(1, self.conv1_filters, (1, 13, 3))
         self.conv2 = nn.Conv1d(self.conv1_filters, self.conv2_filters, self.temporal_kernel)
         self.conv3 = nn.Conv1d(self.conv2_filters, self.conv3_filters, self.temporal_kernel)
-        self.conv4 = nn.Conv1d(self.conv3_filters, self.conv4_filters, self.temporal_kernel)
 
-        self.num_features_before_fc = (input_timesteps-3*(self.temporal_kernel-1)) * self.conv4_filters
+        self.num_features_before_fc = (input_timesteps-2*(self.temporal_kernel-1)) * self.conv3_filters
 
         self.fc = nn.Linear(self.num_features_before_fc, 1)
+        
+        
         self.fc1 = nn.Linear(self.num_features_before_fc, self.fc1_out)
         self.fc2 = nn.Linear(self.fc1_out, 1)
  
