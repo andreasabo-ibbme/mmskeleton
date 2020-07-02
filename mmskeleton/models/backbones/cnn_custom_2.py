@@ -46,10 +46,10 @@ class cnn_custom_2(nn.Module):
         self.data_bn = nn.BatchNorm3d(1) if data_bn else lambda x: x
 
 
-        self.temporal_kernel = 9
-        self.conv1_filters = 32
-        self.conv2_filters = 64
-        self.conv3_filters = 64
+        self.temporal_kernel = 15
+        self.conv1_filters = 16
+        self.conv2_filters = 32
+        self.conv3_filters = 32
         self.fc1_out = 128
 
         # build the CNN
