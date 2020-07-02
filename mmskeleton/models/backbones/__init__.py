@@ -18,6 +18,7 @@ from .st_gcn_aaai18_ordinal_smaller_2_supcon import ST_GCN_18_ordinal_smaller_2_
 
 # CNN models
 from .cnn_custom_1 import cnn_custom_1
+from .cnn_custom_2 import cnn_custom_2
 
 
 from .hrnet import HRNet

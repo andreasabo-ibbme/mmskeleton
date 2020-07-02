@@ -30,7 +30,7 @@ processor_cfg:
   es_start_up: 50
   # model setting
   model_cfg:
-    type: 'models.backbones.cnn_custom_1'
+    type: 'models.backbones.cnn_custom_2'
     in_channels: 3
     num_class: 3
     edge_importance_weighting: True
