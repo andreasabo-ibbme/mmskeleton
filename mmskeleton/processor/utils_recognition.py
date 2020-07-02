@@ -45,7 +45,7 @@ def weights_init_cnn(m):
         torch.nn.init.xavier_uniform_(m.weight.data)
 
     if type(m) == torch.nn.Linear:
-        torch.nn.init.xavier_uniform(m.weight)
+        torch.nn.init.xavier_uniform_(m.weight)
         m.bias.data.fill_(0.01)
 
 def my_loss(output, target):

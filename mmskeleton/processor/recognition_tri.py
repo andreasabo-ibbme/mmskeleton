@@ -491,6 +491,8 @@ def batch_processor(model, datas, train_mode, loss):
 
     y_true_orig_shape = y_true.reshape(1,-1).squeeze()
     losses = loss(output, y_true)
+    print("LOSS GRAD: ", loss.grad) 
+
 
     if type(loss) == type(mse_loss):
         if balance_classes:
