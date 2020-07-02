@@ -51,6 +51,7 @@ class cnn_custom_1(nn.Module):
         self.conv2_filters = 64
         self.conv3_filters = 64
         self.conv4_filters = 128
+        self.fc1_out = 128
 
         # build the CNN
         self.conv1 = nn.Conv3d(1, self.conv1_filters, (1, 13, 3))
@@ -60,7 +61,8 @@ class cnn_custom_1(nn.Module):
 
         self.num_features_before_fc = (input_timesteps-3*(self.temporal_kernel-1)) * self.conv4_filters
 
-        self.fc = nn.Linear(self.num_features_before_fc, 1)
+        self.fc1 = nn.Linear(self.num_features_before_fc, self.fc1_out)
+        self.fc2 = nn.Linear(self.fc1_out, 1)
  
 # class Net(nn.Module):
 #     def __init__(self):
@@ -87,14 +89,18 @@ class cnn_custom_1(nn.Module):
         x = x.permute(0, 4, 2, 3, 1).contiguous()
         # x = self.data_bn(x)
 
+        # 3d conv
         x = F.relu(self.conv1(x))
         x = x.squeeze()
+
+        # 1d conv
         x = F.relu(self.conv2(x))
         x = F.relu(self.conv3(x))
         x = F.relu(self.conv4(x))
         x = x.view(-1, self.num_features_before_fc)
 
-        x = F.relu(self.fc(x))
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
 
 
 
