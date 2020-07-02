@@ -37,9 +37,9 @@ def weights_init(model):
 
 
 def weights_init_cnn(m):
-    if isinstance(m, nn.Conv1d):
+    if isinstance(m, torch.nn.Conv1d):
         torch.nn.init.xavier_uniform_(m.weight.data)
-    if isinstance(m, nn.Conv3d):
+    if isinstance(m, torch.nn.Conv3d):
         torch.nn.init.xavier_uniform_(m.weight.data)
 
 
