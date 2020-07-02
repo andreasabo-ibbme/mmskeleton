@@ -392,7 +392,7 @@ def train_model(
         model = OrdinalLogisticModel(model, model_cfg_local['num_class'])
 
 
-    model.apply(weights_init)
+    model.apply(weights_init_cnn)
     
     model = MMDataParallel(model, device_ids=range(gpus)).cuda()
     torch.cuda.set_device(0)
@@ -453,22 +453,22 @@ def batch_processor(model, datas, train_mode, loss):
 
     # Get predictions from the model
     output_all = model(data_all)
-    # print("output all: ", output_all.t())  
-    # print('type general output', type(output_all))
+    print("output all: ", output_all.t())  
+    print('type general output', type(output_all))
 
-    # if torch.sum(output_all) == 0:
-    #     print("model is ", model)  
-    #     print("conv1", model.module.conv1.weight)
-    #     print("conv2", model.module.conv2.weight)
+    if torch.sum(output_all) == 0:
+        print("model is ", model)  
+        print("conv1", model.module.conv1.weight)
+        print("conv2", model.module.conv2.weight)
 
-    #     print("conv3", model.module.conv3.weight)
+        print("conv3", model.module.conv3.weight)
 
-    #     print("fc", model.module.fc.weight)
-    #     print("input was: ", label)
-    #     print("output was: ", output_all.t())
-    #     print("type output: ", type(output_all))
+        print("fc", model.module.fc.weight)
+        print("input was: ", label)
+        print("output was: ", output_all.t())
+        print("type output: ", type(output_all))
         
-    #     raise ValueError("got all zero output...")
+        raise ValueError("got all zero output...")
     output = output_all[row_cond]
     loss_flip_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
 

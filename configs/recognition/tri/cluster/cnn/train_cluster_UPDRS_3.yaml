@@ -19,7 +19,7 @@ processor_cfg:
   cv: 5
   exclude_cv: False
   notes: "two_part_loss"
-  group_notes: "UPDRS_2_150_bigger"
+  group_notes: "UPDRS_3_150"
   weight_classes: False
   flip_loss: False
   launch_from_windows: False
@@ -30,7 +30,7 @@ processor_cfg:
   es_start_up: 50
   # model setting
   model_cfg:
-    type: 'models.backbones.cnn_custom_2'
+    type: 'models.backbones.cnn_custom_3'
     in_channels: 3
     num_class: 3
     edge_importance_weighting: True
