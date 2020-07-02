@@ -392,7 +392,7 @@ def train_model(
         model = OrdinalLogisticModel(model, model_cfg_local['num_class'])
 
 
-    model.apply(weights_init_cnn)
+    # model.apply(weights_init_cnn)
     
     model = MMDataParallel(model, device_ids=range(gpus)).cuda()
     torch.cuda.set_device(0)
