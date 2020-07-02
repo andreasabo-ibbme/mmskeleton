@@ -42,8 +42,7 @@ class cnn_custom_1(nn.Module):
         self.register_buffer('A', A)
 
 
-        self.data_bn = nn.BatchNorm1d(
-            in_channels * A.size(1)) if data_bn else lambda x: x
+        self.data_bn = nn.BatchNorm3d(1) if data_bn else lambda x: x
 
         print("A size is: ", A.size())
 
