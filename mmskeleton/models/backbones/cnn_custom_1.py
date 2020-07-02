@@ -45,7 +45,6 @@ class cnn_custom_1(nn.Module):
 
         self.data_bn = nn.BatchNorm3d(1) if data_bn else lambda x: x
 
-        print("A size is: ", A.size())
 
         self.temporal_kernel = 9
         self.conv1_filters = 16
@@ -84,7 +83,6 @@ class cnn_custom_1(nn.Module):
 
 
     def forward(self, x):
-        print("size of input is: ", x.shape)
         # Reshape the input to be of size [bs, 1, timestamps, num_joints, num_coords] 
         x = x.permute(0, 4, 2, 3, 1).contiguous()
         x = self.data_bn(x)
