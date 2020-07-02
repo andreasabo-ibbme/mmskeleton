@@ -455,7 +455,7 @@ def batch_processor(model, datas, train_mode, loss):
     output_all = model(data_all)
     print("output all: ", output_all.t())  
     print("model is ", model)  
-    print("conv1", model.conv1.weight)
+    print("conv1", model.module.conv1.weight)
 
     if torch.sum(output_all) == 0:
         print("model is ", model) 
