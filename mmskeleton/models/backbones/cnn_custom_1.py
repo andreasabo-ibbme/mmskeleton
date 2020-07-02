@@ -84,6 +84,7 @@ class cnn_custom_1(nn.Module):
         print("size of input is: ", x.shape)
         # Reshape the input to be of size [bs, 1, timestamps, num_joints, num_coords] 
         x = x.permute(0, 4, 2, 3, 1).contiguous()
+        x = self.data_bn(x)
 
 
         num_timesteps = x.shape[2]
