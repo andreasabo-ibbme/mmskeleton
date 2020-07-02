@@ -42,9 +42,17 @@ class cnn_custom_1(nn.Module):
         self.register_buffer('A', A)
 
 
+        self.temporal_kernel = 9
+        self.conv1_filters = 16
+        self.conv2_filters = 32
+        self.conv3_filters = 32
+        self.conv4_filters = 64
+
         # build the CNN
-        self.conv1 = nn.Conv3d(1, 8, (1, 13, 3))
-        self.conv2 = nn.Conv3d(8, 16, (8, 1, 1))
+        self.conv1 = nn.Conv3d(1, conv1_filters, (1, 13, 3))
+        self.conv2 = nn.Conv1d(conv1_filters, conv2_filters, temporal_kernel)
+        self.conv3 = nn.Conv1d(conv2_filters, conv3_filters, temporal_kernel)
+        self.conv3 = nn.Conv1d(conv3_filters, conv4_filters, temporal_kernel)
 
 
 # class Net(nn.Module):
@@ -69,15 +77,22 @@ class cnn_custom_1(nn.Module):
 
     def forward(self, x):
         print("size of input is: ", x.shape)
+        # Reshape the input to be of size [bs, 1, timestamps, num_joints, num_coords] 
         x = x.permute(0, 4, 2, 3, 1).contiguous()
         print("size of x reshaped is: ", x.shape)
 
-        x = self.conv1(x)
-        print("the size of output conv1 is: ", x.shape)
-        x = self.conv2(x)
-        print("the size of output conv2 is: ", x.shape)
-
+        x = F.relu(self.conv1(x))
         x = x.squeeze()
+        print("the size of output conv1 is: ", x.shape)
+        x = F.relu(self.conv2(x))
+        print("the size of output conv2 is: ", x.shape)
+        x = F.relu(self.conv3(x))
+        print("the size of output conv3 is: ", x.shape)
+        x = F.relu(self.conv4(x))
+        print("the size of output conv4 is: ", x.shape)
+
+
+
         print("the size of output 2 after squeezing is: ", x.shape)
         raise Exception("done forward pass")
         return x
