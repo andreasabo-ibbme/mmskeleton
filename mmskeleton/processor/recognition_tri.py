@@ -465,6 +465,9 @@ def batch_processor(model, datas, train_mode, loss):
 
         print("fc", model.module.fc.weight)
         print("input was: ", label)
+        print("output was: ", output_all.t())
+        print("type outputL ", type(output_all))
+        
         raise ValueError("got all zero output...")
     output = output_all[row_cond]
     loss_flip_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
