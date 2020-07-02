@@ -38,9 +38,9 @@ def weights_init(model):
 
 def weights_init_cnn(m):
     if isinstance(m, nn.Conv1d):
-        nn.init.xavier_uniform_(m.weight.data)
+        torch.nn.init.xavier_uniform_(m.weight.data)
     if isinstance(m, nn.Conv3d):
-        nn.init.xavier_uniform_(m.weight.data)
+        torch.nn.init.xavier_uniform_(m.weight.data)
 
 
 def my_loss(output, target):
