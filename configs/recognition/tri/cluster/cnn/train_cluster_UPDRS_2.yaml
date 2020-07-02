@@ -34,6 +34,7 @@ processor_cfg:
     in_channels: 3
     num_class: 3
     edge_importance_weighting: True
+    input_timesteps: 150
     dropout: 0.0
     graph_cfg:
       layout: 'coco_simplified_head'

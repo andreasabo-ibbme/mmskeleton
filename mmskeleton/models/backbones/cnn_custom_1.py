@@ -32,6 +32,7 @@ class cnn_custom_1(nn.Module):
                  graph_cfg,
                  edge_importance_weighting=True,
                  data_bn=True,
+                 input_timesteps=150,
                  **kwargs):
         super().__init__()
         print('In CNN custom: ', graph_cfg)
@@ -58,7 +59,10 @@ class cnn_custom_1(nn.Module):
         self.conv3 = nn.Conv1d(self.conv2_filters, self.conv3_filters, self.temporal_kernel)
         self.conv4 = nn.Conv1d(self.conv3_filters, self.conv4_filters, self.temporal_kernel)
 
+        self.num_features_before_fc = (input_timesteps-3*(self.temporal_kernel-1)) * self.conv4_filters
 
+        self.fc = nn.Linear(self.num_features_before_fc, 1)
+ 
 # class Net(nn.Module):
 #     def __init__(self):
 #         super(Net, self).__init__()
@@ -98,10 +102,13 @@ class cnn_custom_1(nn.Module):
         print("the size of output conv3 is: ", x.shape)
         x = F.relu(self.conv4(x))
         print("the size of output conv4 is: ", x.shape)
-        x = x.view(-1, (num_timesteps-3*(self.temporal_kernel-1)) * self.conv4_filters)
+        x = x.view(-1, self.num_features_before_fc)
+
+        print("output before fc layer: ", x.shape)
+        x = F.relu(self.fc(x))
 
 
-        print("the size of output 2 after squeezing is: ", x.shape)
+        print("output size after squeezing: ", x.shape)
         raise Exception("done forward pass")
         return x
 
