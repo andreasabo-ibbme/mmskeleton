@@ -90,7 +90,7 @@ class cnn_custom_2(nn.Module):
         x = x.permute(0, 4, 2, 3, 1).contiguous()
 
         # 3d conv
-        x = F.relu((self.data_b(self.conv1(x)))
+        x = F.relu(self.data_b(self.conv1(x)))
         x = x.squeeze()
 
         # 1d conv
