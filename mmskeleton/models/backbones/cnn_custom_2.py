@@ -88,9 +88,10 @@ class cnn_custom_2(nn.Module):
     def forward(self, x):
         # Reshape the input to be of size [bs, 1, timestamps, num_joints, num_coords] 
         x = x.permute(0, 4, 2, 3, 1).contiguous()
+        x = self.data_bn(x)
 
         # 3d conv
-        x = F.relu(self.data_bn(self.conv1(x)))
+        x = F.relu(self.conv1(x))
         x = x.squeeze()
 
         # 1d conv
@@ -99,7 +100,7 @@ class cnn_custom_2(nn.Module):
         #x = F.relu(self.conv4(x))
         x = x.view(-1, self.num_features_before_fc)
 
-        x = self.fc(x)
+        x = F.relu(self.fc(x))
 
 
 
