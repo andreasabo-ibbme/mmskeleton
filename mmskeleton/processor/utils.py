@@ -17,6 +17,19 @@ import pandas as pd
 import pickle
 
 
+def weights_init(model):
+    classname = model.__class__.__name__
+    if classname.find('Conv1d') != -1:
+        model.weight.data.normal_(0.0, 0.02)
+        if model.bias is not None:
+            model.bias.data.fill_(0)
+    elif classname.find('Conv2d') != -1:
+        model.weight.data.normal_(0.0, 0.02)
+        if model.bias is not None:
+            model.bias.data.fill_(0)
+    elif classname.find('BatchNorm') != -1:
+        model.weight.data.normal_(1.0, 0.02)
+        model.bias.data.fill_(0)
 
 
 
