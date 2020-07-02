@@ -171,13 +171,13 @@ def pad_mean(data, size):
 
         np_array = data[data_field]
         mean_val = np.mean(np_array)
-        print("np array is: ", np_array)
+        # print("np array is: ", np_array)
         print("mean val is:", mean_val)
         T = np_array.shape[2]
         if T < size:
             pad_shape = list(np_array.shape)
             pad_shape[2] = size
-            np_array_paded = np.ones(pad_shape, dtype=np_array.dtype)*mean_val
+            np_array_paded = np.ones(pad_shape, dtype=np_array.dtype)
             np_array_paded[:, :, :T, :] = np_array
             data[data_field] = np_array_paded
     return data
