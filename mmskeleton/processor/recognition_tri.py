@@ -15,7 +15,7 @@ from spacecutter.models import OrdinalLogisticModel
 import spacecutter
 import pandas as pd
 import pickle
-from utils import *
+import utils as ut
 
 #os.environ['WANDB_MODE'] = 'dryrun'
 
@@ -393,7 +393,7 @@ def train_model(
         model = OrdinalLogisticModel(model, model_cfg_local['num_class'])
 
 
-    model.apply(weights_init)
+    model.apply(ut.weights_init)
     model = MMDataParallel(model, device_ids=range(gpus)).cuda()
     torch.cuda.set_device(0)
     loss = call_obj(**loss_cfg_local)
