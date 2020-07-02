@@ -89,27 +89,17 @@ class cnn_custom_1(nn.Module):
         x = x.permute(0, 4, 2, 3, 1).contiguous()
         x = self.data_bn(x)
 
-
-        num_timesteps = x.shape[2]
-        print("size of x reshaped is: ", x.shape)
-
         x = F.relu(self.conv1(x))
         x = x.squeeze()
-        print("the size of output conv1 is: ", x.shape)
         x = F.relu(self.conv2(x))
-        print("the size of output conv2 is: ", x.shape)
         x = F.relu(self.conv3(x))
-        print("the size of output conv3 is: ", x.shape)
         x = F.relu(self.conv4(x))
-        print("the size of output conv4 is: ", x.shape)
         x = x.view(-1, self.num_features_before_fc)
 
-        print("output before fc layer: ", x.shape)
         x = F.relu(self.fc(x))
 
 
-        print("output size after squeezing: ", x.shape)
-        raise Exception("done forward pass")
+
         return x
 
 
