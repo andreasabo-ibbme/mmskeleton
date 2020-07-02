@@ -164,6 +164,24 @@ def pad_zero(data, size):
             data[data_field] = np_array_paded
     return data
 
+def pad_mean(data, size):
+    for data_field in data_fields:
+        if data_field not in data.keys():
+            continue
+
+        np_array = data[data_field]
+        mean_val = np.mean(np_array)
+        print(mean_val)
+        T = np_array.shape[2]
+        if T < size:
+            pad_shape = list(np_array.shape)
+            pad_shape[2] = size
+            np_array_paded = np.ones(pad_shape, dtype=np_array.dtype)*mean_val
+            np_array_paded[:, :, :T, :] = np_array
+            data[data_field] = np_array_paded
+    return data
+
+
 
 def random_crop(data, size):
     for data_field in data_fields:

@@ -28,6 +28,7 @@ processor_cfg:
   force_run_all_epochs: False
   es_patience: 15
   es_start_up: 50
+
   # model setting
   model_cfg:
     type: 'models.backbones.cnn_custom_3'
@@ -64,7 +65,7 @@ processor_cfg:
       pipeline:
         - {type: "datasets.skeleton.normalize_by_resolution"}
         - {type: "datasets.skeleton.mask_by_visibility"}
-        - {type: "datasets.skeleton.pad_zero", size: 150 }
+        - {type: "datasets.skeleton.pad_mean", size: 150 }
         - {type: "datasets.skeleton.random_crop", size: 150 }
         - {type: "datasets.skeleton.transpose", order: [0, 2, 1, 3]}
         - {type: "datasets.skeleton.to_tuple"}
@@ -86,7 +87,7 @@ processor_cfg:
       pipeline:
         - {type: "datasets.skeleton.normalize_by_resolution"}
         - {type: "datasets.skeleton.mask_by_visibility"}
-        - {type: "datasets.skeleton.pad_zero", size: 150 }
+        - {type: "datasets.skeleton.pad_mean", size: 150 }
         - {type: "datasets.skeleton.random_crop", size: 150 }
         - {type: "datasets.skeleton.transpose", order: [0, 2, 1, 3]}
         - {type: "datasets.skeleton.to_tuple"}
