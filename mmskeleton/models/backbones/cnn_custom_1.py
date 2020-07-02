@@ -49,10 +49,10 @@ class cnn_custom_1(nn.Module):
         self.conv4_filters = 64
 
         # build the CNN
-        self.conv1 = nn.Conv3d(1, conv1_filters, (1, 13, 3))
-        self.conv2 = nn.Conv1d(conv1_filters, conv2_filters, temporal_kernel)
-        self.conv3 = nn.Conv1d(conv2_filters, conv3_filters, temporal_kernel)
-        self.conv3 = nn.Conv1d(conv3_filters, conv4_filters, temporal_kernel)
+        self.conv1 = nn.Conv3d(1, self.conv1_filters, (1, 13, 3))
+        self.conv2 = nn.Conv1d(self.conv1_filters, self.conv2_filters, self.temporal_kernel)
+        self.conv3 = nn.Conv1d(self.conv2_filters, self.conv3_filters, self.temporal_kernel)
+        self.conv3 = nn.Conv1d(self.conv3_filters, self.conv4_filters, self.temporal_kernel)
 
 
 # class Net(nn.Module):
