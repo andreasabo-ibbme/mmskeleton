@@ -454,7 +454,7 @@ def batch_processor(model, datas, train_mode, loss):
     # Get predictions from the model
     output_all = model(data_all)
     print("output all: ", output_all.t())  
-
+    print('type general output', type(output_all))
 
     if torch.sum(output_all) == 0:
         print("model is ", model)  
@@ -466,7 +466,7 @@ def batch_processor(model, datas, train_mode, loss):
         print("fc", model.module.fc.weight)
         print("input was: ", label)
         print("output was: ", output_all.t())
-        print("type outputL ", type(output_all))
+        print("type output: ", type(output_all))
         
         raise ValueError("got all zero output...")
     output = output_all[row_cond]
