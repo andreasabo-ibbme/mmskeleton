@@ -47,10 +47,10 @@ class cnn_custom_1(nn.Module):
 
 
         self.temporal_kernel = 9
-        self.conv1_filters = 16
-        self.conv2_filters = 32
-        self.conv3_filters = 32
-        self.conv4_filters = 64
+        self.conv1_filters = 32
+        self.conv2_filters = 64
+        self.conv3_filters = 64
+        self.conv4_filters = 128
 
         # build the CNN
         self.conv1 = nn.Conv3d(1, self.conv1_filters, (1, 13, 3))
@@ -85,7 +85,7 @@ class cnn_custom_1(nn.Module):
     def forward(self, x):
         # Reshape the input to be of size [bs, 1, timestamps, num_joints, num_coords] 
         x = x.permute(0, 4, 2, 3, 1).contiguous()
-        x = self.data_bn(x)
+        # x = self.data_bn(x)
 
         x = F.relu(self.conv1(x))
         x = x.squeeze()

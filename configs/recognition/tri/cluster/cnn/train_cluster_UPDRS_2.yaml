@@ -19,12 +19,12 @@ processor_cfg:
   cv: 5
   exclude_cv: False
   notes: "two_part_loss"
-  group_notes: "supcon_UPDRS_2_150"
+  group_notes: "UPDRS_2_150_bigger"
   weight_classes: False
   flip_loss: True
   launch_from_windows: False
   wandb_project: "cnn_UPDRS_wip"
-  early_stopping: True
+  early_stopping: False
   force_run_all_epochs: False
   es_patience: 15
   es_start_up: 50
