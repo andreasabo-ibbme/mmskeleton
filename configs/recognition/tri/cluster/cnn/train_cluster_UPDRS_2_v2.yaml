@@ -96,10 +96,10 @@ processor_cfg:
 
   # optimizer setting
   optimizer_cfg:
-    type: 'torch.optim.Adam'
+    type: 'torch.optim.SGD'
     lr: 0.01
-    # momentum: 0.9
-    # nesterov: true
+    momentum: 0.9
+    nesterov: true
     weight_decay: 0.00000
 
   # runtime setting
