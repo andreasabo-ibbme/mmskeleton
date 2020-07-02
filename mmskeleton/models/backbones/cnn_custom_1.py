@@ -79,6 +79,8 @@ class cnn_custom_1(nn.Module):
         print("size of input is: ", x.shape)
         # Reshape the input to be of size [bs, 1, timestamps, num_joints, num_coords] 
         x = x.permute(0, 4, 2, 3, 1).contiguous()
+
+        num_timesteps = x.shape[2]
         print("size of x reshaped is: ", x.shape)
 
         x = F.relu(self.conv1(x))
@@ -90,7 +92,7 @@ class cnn_custom_1(nn.Module):
         print("the size of output conv3 is: ", x.shape)
         x = F.relu(self.conv4(x))
         print("the size of output conv4 is: ", x.shape)
-
+        x = x.view(-1, (num_timesteps-3*(self.temporal_kernel-1)) * self.conv4_filters)
 
 
         print("the size of output 2 after squeezing is: ", x.shape)

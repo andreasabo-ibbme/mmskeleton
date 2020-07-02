@@ -20,15 +20,14 @@ processor_cfg:
   exclude_cv: False
   notes: "two_part_loss"
   group_notes: "120_nonorm_2_pd_only"
-  weight_classes: False
+  weight_classes: True
   flip_loss: True
   launch_from_windows: False
   wandb_project: "debug_mmskl"
   early_stopping: True
   force_run_all_epochs: False
   es_patience: 15
-  es_start_up: 40
-
+  es_start_up: 50
 
   # model setting
   model_cfg:
