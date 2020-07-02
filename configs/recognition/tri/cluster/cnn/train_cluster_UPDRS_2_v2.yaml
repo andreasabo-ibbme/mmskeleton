@@ -117,6 +117,8 @@ processor_cfg:
     checkpoint_config:
       interval: 200
     optimizer_config:
-      grad_clip: 3
+      grad_clip: 
+        max_norm: 5
+        norm_type: 2
   resume_from:
   load_from:
