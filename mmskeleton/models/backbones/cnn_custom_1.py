@@ -77,8 +77,8 @@ class cnn_custom_1(nn.Module):
         x = self.conv2(x)
         print("the size of output conv2 is: ", x.shape)
 
-        # x = x.squeeze()
-        print("the size of output is 2: ", x.shape)
+        x = x.squeeze()
+        print("the size of output 2 after squeezing is: ", x.shape)
         raise Exception("done forward pass")
         return x
 
