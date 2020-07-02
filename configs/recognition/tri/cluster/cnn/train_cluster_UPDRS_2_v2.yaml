@@ -97,7 +97,7 @@ processor_cfg:
   # optimizer setting
   optimizer_cfg:
     type: 'torch.optim.SGD'
-    lr: 0.0001
+    lr: 0.01
     momentum: 0.9
     nesterov: true
     weight_decay: 0.00000
@@ -117,6 +117,6 @@ processor_cfg:
     checkpoint_config:
       interval: 200
     optimizer_config:
-      grad_clip:
+      grad_clip: 3
   resume_from:
   load_from:
