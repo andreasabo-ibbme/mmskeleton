@@ -466,7 +466,7 @@ def pretrain_model(
     # run
     workflow = [tuple(w) for w in workflow]
     # [('train', 5), ('val', 1)]
-    runner.run(data_loaders, workflow, total_epochs, loss=loss)
+    runner.run(data_loaders, workflow, total_epochs, loss=loss, supcon_pretraining=True)
 
 
 
