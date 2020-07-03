@@ -454,7 +454,8 @@ def pretrain_model(
 
     # print('training hooks: ', training_hooks_local)
     # build runner
-    print("the optimizer isL ", optimizer_cfg_local)
+    print("the loss is ", loss_cfg_local)
+    print("the loss is ", loss)
 
 
     raise ValueError("we done")
