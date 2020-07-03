@@ -230,6 +230,12 @@ def train(
             datasets[1]['data_source']['data_dir'] = stage_2_val
             datasets[2]['data_source']['data_dir'] = test_walks_pd_labelled
 
+
+            # Reset the head
+            pretrained_model.module.head.apply(weights_init_xavier)
+
+
+
             # Final testing
             return
 
@@ -412,7 +418,7 @@ def pretrain_model(
     global class_weights_dict
 
     if balance_classes:
-        dataset_train =call_obj(**datasets[0])
+        dataset_train = call_obj(**datasets[0])
         class_weights_dict = dataset_train.data_source.class_dist
 
     model_cfg_local = copy.deepcopy(model_cfg)
@@ -440,19 +446,17 @@ def pretrain_model(
     #     print(param.data)
 
     # Step 1: Initialize the model with random weights, 
-    model.encoder.apply(weights_init_xavier)
-
-    print("THIS IS OUR MODEL")
-    print(model)
-
-    return model
-
+    model.apply(weights_init_xavier)
     model = MMDataParallel(model, device_ids=range(gpus)).cuda()
     torch.cuda.set_device(0)
     loss = call_obj(**loss_cfg_local)
 
     # print('training hooks: ', training_hooks_local)
     # build runner
+    print("the optimizer isL ", optimizer_cfg_local)
+
+
+    raise ValueError("we done")
     optimizer = call_obj(params=model.parameters(), **optimizer_cfg_local)
     runner = Runner(model, batch_processor, optimizer, work_dir, log_level, things_to_log=things_to_log, early_stopping=early_stopping, force_run_all_epochs=force_run_all_epochs, es_patience=es_patience, es_start_up=es_start_up)
     runner.register_training_hooks(**training_hooks_local)
