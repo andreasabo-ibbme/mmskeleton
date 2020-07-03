@@ -15,7 +15,7 @@ argparse_cfg:
 processor_cfg:
   type: 'processor.recognition_tri_cnn.train'
   workers: 1
-  test_ids: [47, 34, 37, 27, 39, 46, 48, 50, 52, 55, 57, 59, 66, 33]
+  test_ids: [34, 37, 27, 47, 39, 46, 48, 50, 52, 55, 57, 59, 66, 33]
   cv: 5
   exclude_cv: False
   notes: "two_part_loss"
