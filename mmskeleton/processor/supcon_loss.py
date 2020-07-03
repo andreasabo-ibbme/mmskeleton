@@ -92,7 +92,10 @@ class SupConLoss(nn.Module):
         mean_log_prob_pos = (mask * log_prob).sum(1) / mask.sum(1)
 
         # loss
+        print("log_prob", log_prob)
         loss = - (self.temperature / self.base_temperature) * mean_log_prob_pos
+        print("loss before mean", loss)
+        print("lables were: ", labels)
         loss = loss.view(anchor_count, batch_size).mean()
 
         return loss
