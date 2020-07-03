@@ -20,7 +20,7 @@ from mmskeleton.processor.supcon_loss import *
 
 
 
-os.environ['WANDB_MODE'] = 'dryrun'
+# os.environ['WANDB_MODE'] = 'dryrun'
 
 # Global variables
 num_class = 3

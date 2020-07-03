@@ -33,7 +33,7 @@ class ST_GCN_18_ordinal_smaller_2_supcon(nn.Module):
                  edge_importance_weighting=True,
                  data_bn=True,
                  head='linear',
-                 feat_dim=64,
+                 feat_dim=128,
                  **kwargs):
         super().__init__()
         print('In ST_GCN_18 ordinal supcon: ', graph_cfg)
