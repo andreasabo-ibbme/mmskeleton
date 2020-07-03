@@ -482,6 +482,8 @@ def batch_processor_pretraining(model, datas, train_mode, loss):
         have_flips = 1
 
 
+    # Even if we have flipped data, we only want to use the original in this stage
+
     data_all = data.cuda()
     label = label.cuda()
 
@@ -493,21 +495,26 @@ def batch_processor_pretraining(model, datas, train_mode, loss):
     data = data_all.data[row_cond, :]
     num_valid_samples = data.shape[0]
 
+    # For supervised contrastive learning, we only use the data that has labels
+    labelled_data = data
+    labelled_data_true_labels = y_true
 
-    if have_flips:
-        data_all = data_all.data
-        data_all_flipped = data_flipped.cuda()
-        data_all_flipped = data_all_flipped.data
-        # print('input_flipped', torch.sum(torch.isnan(data_all_flipped)))     
-        # print('raw', torch.sum(torch.isnan(data_all)))   
-        output_all_flipped = model_2(data_all_flipped)
+    labelled_data_predicted_features= models(labelled_data)
 
 
     # Get predictions from the model
     output_all = model(data_all)
 
-    if torch.sum(output_all) == 0:        
+    if torch.sum(labelled_data_predicted_labels) == 0:        
         raise ValueError("=============================== got all zero output...")
+
+
+    # Calculate the supcon loss for this data
+    batch_loss = loss(labelled_data_predicted_features, labelled_data_true_labels)
+
+    raise ValueError("the supcon batch loss is: ", batch_loss)
+
+
     output = output_all[row_cond]
     loss_flip_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
 
