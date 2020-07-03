@@ -18,6 +18,8 @@ import pickle
 from mmskeleton.processor.utils_recognition import *
 from mmskeleton.processor.supcon_loss import *
 
+
+
 os.environ['WANDB_MODE'] = 'dryrun'
 
 # Global variables
@@ -511,8 +513,12 @@ def batch_processor_pretraining(model, datas, train_mode, loss):
 
 
     # Calculate the supcon loss for this data
-    batch_loss = loss(labelled_data_predicted_features, labelled_data_true_labels)
-    print("the supcon batch loss is: ", batch_loss)
+    try:
+
+        batch_loss = loss(labelled_data_predicted_features, labelled_data_true_labels)
+        print("the supcon batch loss is: ", batch_loss)
+    except Exception as e:
+        logging.exception("loss calc message")
     # raise ValueError("the supcon batch loss is: ", batch_loss)
 
     labels = []
