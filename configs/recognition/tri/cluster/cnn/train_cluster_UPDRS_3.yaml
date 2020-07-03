@@ -21,10 +21,10 @@ processor_cfg:
   notes: "two_part_loss"
   group_notes: "UPDRS_3_150_bn"
   weight_classes: True
-  flip_loss: False
+  flip_loss: True
   launch_from_windows: False
   wandb_project: "cnn_UPDRS_v1"
-  early_stopping: False
+  early_stopping: True
   force_run_all_epochs: False
   es_patience: 15
   es_start_up: 50
