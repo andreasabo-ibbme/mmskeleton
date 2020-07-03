@@ -15,7 +15,7 @@ from spacecutter.models import OrdinalLogisticModel
 import spacecutter
 import pandas as pd
 import pickle
-from mmskeleton.processor.utils_recognition import *
+from .utils import *
 
 os.environ['WANDB_MODE'] = 'dryrun'
 
