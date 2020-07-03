@@ -32,7 +32,7 @@ class ST_GCN_18_ordinal_smaller_2_supcon(nn.Module):
                  graph_cfg,
                  edge_importance_weighting=True,
                  data_bn=True,
-                 head='linear',
+                 head='mlp',
                  feat_dim=128,
                  **kwargs):
         super().__init__()
