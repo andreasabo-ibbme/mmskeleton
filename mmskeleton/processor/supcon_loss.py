@@ -75,7 +75,7 @@ class SupConLoss(nn.Module):
 
         # tile mask
         mask = mask.repeat(anchor_count, contrast_count)
-        print('original mask: ', mask)
+        # print('original mask: ', mask)
         # mask-out self-contrast cases
         logits_mask = torch.scatter(
             torch.ones_like(mask),
@@ -83,7 +83,7 @@ class SupConLoss(nn.Module):
             torch.arange(batch_size * anchor_count).view(-1, 1).to(device),
             0
         )
-        mask = mask * logits_mask
+        # mask = mask * logits_mask
 
         # compute log_prob
         exp_logits = torch.exp(logits) * logits_mask
