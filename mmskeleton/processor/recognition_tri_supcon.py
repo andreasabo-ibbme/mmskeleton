@@ -497,7 +497,11 @@ def batch_processor_pretraining(model, datas, train_mode, loss):
     labelled_data_true_labels = y_true
 
     labelled_data_predicted_features= model(labelled_data)
+    print("this is the original size of the features: ", labelled_data_predicted_features.shape)
+    labelled_data_predicted_features = labelled_data_predicted_features.view(labelled_data_predicted_features.shape[0], 1, -1)
 
+
+    print("this is the new size of the features: ", labelled_data_predicted_features.shape
 
     # Get predictions from the model
     output_all = model(data_all)
