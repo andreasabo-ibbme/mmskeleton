@@ -379,8 +379,7 @@ def train_model(
     global class_weights_dict
 
     if balance_classes:
-        dataset_train =call_obj(**datasets[0])
-        class_weights_dict = dataset_train.data_source.class_dist
+        class_weights_dict = data_loaders[0].data_source.class_dist
 
     model_cfg_local = copy.deepcopy(model_cfg)
     loss_cfg_local = copy.deepcopy(loss_cfg)
@@ -478,7 +477,7 @@ def batch_processor(model, datas, train_mode, loss):
         # print("output was: ", output_all.t())
         # print("type output: ", type(output_all))
         
-        raise ValueError("got all zero output...")
+        raise ValueError("=============================== got all zero output...")
     output = output_all[row_cond]
     loss_flip_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
 
