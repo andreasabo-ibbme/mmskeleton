@@ -15,6 +15,7 @@ from spacecutter.models import OrdinalLogisticModel
 import spacecutter
 import pandas as pd
 import pickle
+import shutil
 from mmskeleton.processor.utils_recognition import *
 #os.environ['WANDB_MODE'] = 'dryrun'
 
@@ -146,79 +147,51 @@ def train(
         kf = KFold(n_splits=cv, shuffle=True, random_state=1)
         kf.get_n_splits(non_test_subj_walks)
 
+        try:
+            num_reps = 1
+            for train_ids, val_ids in kf.split(non_test_subj_walks):
+                if num_reps > 1:
+                    break
+                num_reps += 1
+                train_walks = [non_test_subj_walks[i] for i in train_ids]
+                val_walks = [non_test_subj_walks[i] for i in val_ids]
 
-        num_reps = 1
-        for train_ids, val_ids in kf.split(non_test_subj_walks):
-            if num_reps > 1:
-                break
-            num_reps += 1
-            train_walks = [non_test_subj_walks[i] for i in train_ids]
-            val_walks = [non_test_subj_walks[i] for i in val_ids]
+                plt.close('all')
+                ambid = id_mapping[test_id]
 
-            plt.close('all')
-            ambid = id_mapping[test_id]
+                # test_subj_walks = [i for i in all_files if re.search('ID_'+str(test_id), i) ]
+                # non_test_subj_walks = list(set(all_files).symmetric_difference(set(test_subj_walks)))
+            
+                if exclude_cv: 
+                    workflow = [workflow_orig[0], workflow_orig[2]]
+                    datasets = [copy.deepcopy(dataset_cfg[0]) for i in range(len(workflow))]
+                    datasets[0]['data_source']['data_dir'] = non_test_subj_walks
+                    datasets[1]['data_source']['data_dir'] = test_walks
+                else:
+                    datasets[0]['data_source']['data_dir'] = train_walks
+                    datasets[1]['data_source']['data_dir'] = val_walks
+                    datasets[2]['data_source']['data_dir'] = test_walks
 
-            # test_subj_walks = [i for i in all_files if re.search('ID_'+str(test_id), i) ]
-            # non_test_subj_walks = list(set(all_files).symmetric_difference(set(test_subj_walks)))
+                    print('size of train set: ', len(datasets[0]['data_source']['data_dir']))
+                    print('size of val set: ', len(datasets[1]['data_source']['data_dir']))                
+                    print('size of test set: ', len(test_walks))
+
+                work_dir_amb = work_dir + "/" + str(ambid)
+                for ds in datasets:
+                    ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
+                # x = dataset_cfg[0]['data_source']['outcome_label']
         
-            if exclude_cv: 
-                workflow = [workflow_orig[0], workflow_orig[2]]
-                datasets = [copy.deepcopy(dataset_cfg[0]) for i in range(len(workflow))]
-                datasets[0]['data_source']['data_dir'] = non_test_subj_walks
-                datasets[1]['data_source']['data_dir'] = test_walks
-            else:
-                datasets[0]['data_source']['data_dir'] = train_walks
-                datasets[1]['data_source']['data_dir'] = val_walks
-                datasets[2]['data_source']['data_dir'] = test_walks
-
+                print(workflow)
+                # print(model_cfg['num_class'])
+                things_to_log = {'es_start_up': es_start_up, 'es_patience': es_patience, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
                 print('size of train set: ', len(datasets[0]['data_source']['data_dir']))
-                print('size of val set: ', len(datasets[1]['data_source']['data_dir']))                
                 print('size of test set: ', len(test_walks))
 
-            work_dir_amb = work_dir + "/" + str(ambid)
-            for ds in datasets:
-                ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
-            # x = dataset_cfg[0]['data_source']['outcome_label']
-    
-            print(workflow)
-            # print(model_cfg['num_class'])
-            things_to_log = {'es_start_up': es_start_up, 'es_patience': es_patience, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
-            print('size of train set: ', len(datasets[0]['data_source']['data_dir']))
-            print('size of test set: ', len(test_walks))
+                if launch_from_windows:
 
-            if launch_from_windows:
-
-                file_path = 'C:/Users/Andrea/andrea/mmskeleton/mmskeleton/processor/recognition_tri_win_train.py'
-                pkl_file = os.path.join(work_dir, 'obj.pkl')
-                vars_to_save = [work_dir_amb,
-                    model_cfg,
-                    loss_cfg,
-                    datasets,
-                    optimizer_cfg,
-                    batch_size,
-                    total_epochs,
-                    training_hooks,
-                    workflow,
-                    gpus,
-                    log_level,
-                    workers,
-                    resume_from,
-                    load_from, 
-                    things_to_log]
-
-                with open(pkl_file, 'wb') as f:
-                    pickle.dump(vars_to_save, f)
-
-
-                os_call = f"python {file_path} --pkl_file {pkl_file}"
-
-
-                print("os call: ", os_call)
-                os.system(os_call)
-
-            else: # Launching from linux
-                train_model(
-                        work_dir_amb,
+                    file_path = 'C:/Users/Andrea/andrea/mmskeleton/mmskeleton/processor/recognition_tri_win_train.py'
+                    pkl_file = os.path.join(work_dir, 'obj.pkl')
+                    vars_to_save = [work_dir_amb,
                         model_cfg,
                         loss_cfg,
                         datasets,
@@ -232,12 +205,49 @@ def train(
                         workers,
                         resume_from,
                         load_from, 
-                        things_to_log,
-                        early_stopping,
-                        force_run_all_epochs,
-                        es_patience,
-                        es_start_up,
-                        )
+                        things_to_log]
+
+                    with open(pkl_file, 'wb') as f:
+                        pickle.dump(vars_to_save, f)
+
+
+                    os_call = f"python {file_path} --pkl_file {pkl_file}"
+
+
+                    print("os call: ", os_call)
+                    os.system(os_call)
+
+                else: # Launching from linux
+                    train_model(
+                            work_dir_amb,
+                            model_cfg,
+                            loss_cfg,
+                            datasets,
+                            optimizer_cfg,
+                            batch_size,
+                            total_epochs,
+                            training_hooks,
+                            workflow,
+                            gpus,
+                            log_level,
+                            workers,
+                            resume_from,
+                            load_from, 
+                            things_to_log,
+                            early_stopping,
+                            force_run_all_epochs,
+                            es_patience,
+                            es_start_up,
+                            )
+        except:
+            pass
+
+        # Done with this participant, we can delete the temp foldeer
+
+        try:
+            shutil.rmtree(work_dir_amb)
+        except:
+            print('failed to delete the participant folder')
 
 
     # Compute summary statistics (accuracy and confusion matrices)
@@ -457,16 +467,16 @@ def batch_processor(model, datas, train_mode, loss):
     # print('type general output', type(output_all))
 
     if torch.sum(output_all) == 0:
-        print("model is ", model)  
-        print("conv1", model.module.conv1.weight)
-        print("conv2", model.module.conv2.weight)
+        # print("model is ", model)  
+        # print("conv1", model.module.conv1.weight)
+        # print("conv2", model.module.conv2.weight)
 
-        print("conv3", model.module.conv3.weight)
+        # print("conv3", model.module.conv3.weight)
 
-        print("fc", model.module.fc.weight)
-        print("input was: ", label)
-        print("output was: ", output_all.t())
-        print("type output: ", type(output_all))
+        # print("fc", model.module.fc.weight)
+        # print("input was: ", label)
+        # print("output was: ", output_all.t())
+        # print("type output: ", type(output_all))
         
         raise ValueError("got all zero output...")
     output = output_all[row_cond]
