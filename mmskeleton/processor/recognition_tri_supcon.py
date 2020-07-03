@@ -470,7 +470,7 @@ def pretrain_model(
 
 # process a batch of data
 def batch_processor_pretraining(model, datas, train_mode, loss):
-    print("in barch processor pretraining")
+    print("in batch processor pretraining")
 
     try:
         data, label = datas
