@@ -510,7 +510,7 @@ def batch_processor_pretraining(model, datas, train_mode, loss):
     try:
 
         batch_loss = loss(labelled_data_predicted_features, labelled_data_true_labels)
-        print("the supcon batch loss is: ", batch_loss)
+        # print("the supcon batch loss is: ", batch_loss)
     except Exception as e:
         logging.exception("loss calc message=================================================")
     # raise ValueError("the supcon batch loss is: ", batch_loss)
@@ -526,7 +526,7 @@ def batch_processor_pretraining(model, datas, train_mode, loss):
 
     log_vars = dict(loss_pretrain=batch_loss.item())
     output_labels = dict(true=labels, pred=preds, raw_preds=raw_preds)
-    outputs = dict(loss=batch_loss, log_vars=log_vars, num_samples=0)
+    outputs = dict(loss=batch_loss, log_vars=log_vars, num_samples=len(labelled_data_true_labels))
 
     return outputs, output_labels, batch_loss.item()
     
