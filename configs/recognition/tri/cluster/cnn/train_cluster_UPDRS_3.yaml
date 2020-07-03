@@ -20,7 +20,7 @@ processor_cfg:
   exclude_cv: False
   notes: "two_part_loss"
   group_notes: "UPDRS_3_150_pad_0"
-  weight_classes: True
+  weight_classes: False
   flip_loss: False
   launch_from_windows: False
   wandb_project: "cnn_UPDRS_wip"
