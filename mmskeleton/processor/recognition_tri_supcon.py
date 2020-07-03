@@ -454,10 +454,9 @@ def pretrain_model(
 
     # print('training hooks: ', training_hooks_local)
     # build runner
-    print("the loss is ", loss_cfg_local)
+
+    loss = SupConLoss()
     print("the loss is ", loss)
-
-
     raise ValueError("we done")
     optimizer = call_obj(params=model.parameters(), **optimizer_cfg_local)
     runner = Runner(model, batch_processor, optimizer, work_dir, log_level, things_to_log=things_to_log, early_stopping=early_stopping, force_run_all_epochs=force_run_all_epochs, es_patience=es_patience, es_start_up=es_start_up)
