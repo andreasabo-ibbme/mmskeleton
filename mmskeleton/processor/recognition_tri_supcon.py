@@ -472,7 +472,6 @@ def pretrain_model(
 
 # process a batch of data
 def batch_processor_pretraining(model, datas, train_mode, loss):
-    print("in batch processor pretraining")
 
     try:
         data, label = datas
@@ -516,9 +515,14 @@ def batch_processor_pretraining(model, datas, train_mode, loss):
         logging.exception("loss calc message=================================================")
     # raise ValueError("the supcon batch loss is: ", batch_loss)
 
-    labels = []
     preds = []
     raw_preds = []
+
+    labels = labelled_data_true_labels.data.tolist()
+
+    # Case when we have a single output
+    if type(labels) is not list:
+        labels = [labels]
 
     log_vars = dict(loss_pretrain=batch_loss.item())
     output_labels = dict(true=labels, pred=preds, raw_preds=raw_preds)
