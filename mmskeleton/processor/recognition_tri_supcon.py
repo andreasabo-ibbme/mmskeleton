@@ -502,7 +502,7 @@ def batch_processor_pretraining(model, datas, train_mode, loss):
     # Get predictions from the model
     output_all = model(data_all)
 
-    if torch.sum(labelled_data_predicted_labels) == 0:        
+    if torch.sum(labelled_data_predicted_features) == 0:        
         raise ValueError("=============================== got all zero output...")
 
 
