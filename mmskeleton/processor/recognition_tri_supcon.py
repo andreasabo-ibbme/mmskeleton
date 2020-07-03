@@ -496,7 +496,7 @@ def batch_processor_pretraining(model, datas, train_mode, loss):
     labelled_data = data
     labelled_data_true_labels = y_true
 
-    labelled_data_predicted_features= models(labelled_data)
+    labelled_data_predicted_features= model(labelled_data)
 
 
     # Get predictions from the model
