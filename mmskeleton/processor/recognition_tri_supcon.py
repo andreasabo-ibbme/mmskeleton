@@ -498,15 +498,10 @@ def batch_processor_pretraining(model, datas, train_mode, loss):
     labelled_data = data
     labelled_data_true_labels = y_true
 
+    # Get predictions from the model
     labelled_data_predicted_features= model(labelled_data)
-    print("this is the original size of the features: ", labelled_data_predicted_features.shape)
     labelled_data_predicted_features = labelled_data_predicted_features.view(labelled_data_predicted_features.shape[0], 1, -1)
 
-
-    print("this is the new size of the features: ", labelled_data_predicted_features.shape)
-
-    # Get predictions from the model
-    output_all = model(data_all)
 
     if torch.sum(labelled_data_predicted_features) == 0:        
         raise ValueError("=============================== got all zero output...")
@@ -518,16 +513,14 @@ def batch_processor_pretraining(model, datas, train_mode, loss):
         batch_loss = loss(labelled_data_predicted_features, labelled_data_true_labels)
         print("the supcon batch loss is: ", batch_loss)
     except Exception as e:
-        logging.exception("loss calc message")
+        logging.exception("loss calc message=================================================")
     # raise ValueError("the supcon batch loss is: ", batch_loss)
 
     labels = []
     preds = []
     raw_preds = []
 
-    log_vars = dict(loss_label=0, loss_flip = 0, loss_all=batch_loss.item())
-    log_vars['mae_raw'] = 0
-    log_vars['mae_rounded'] = 0
+    log_vars = dict(loss_pretrain=batch_loss.item())
     output_labels = dict(true=labels, pred=preds, raw_preds=raw_preds)
     outputs = dict(loss=batch_loss, log_vars=log_vars, num_samples=0)
 
