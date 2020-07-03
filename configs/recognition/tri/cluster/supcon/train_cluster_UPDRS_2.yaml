@@ -19,7 +19,7 @@ processor_cfg:
   cv: 5
   exclude_cv: False
   notes: "two_part_loss"
-  group_notes: "supcon_UPDRS_2_150_lin_temp_0.1,base_0.25"
+  group_notes: "supcon_UPDRS_2_150_lin_temp_0.05,base_0.25_32_feats"
   weight_classes: False
   flip_loss: True
   launch_from_windows: False
