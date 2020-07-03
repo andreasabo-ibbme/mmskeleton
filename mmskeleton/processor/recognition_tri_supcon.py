@@ -472,9 +472,6 @@ def pretrain_model(
 def batch_processor_pretraining(model, datas, train_mode, loss):
     print("in barch processor pretraining")
 
-    print("datas, ",  datas)
-    print("datas len: ", len(datas))
-    print("datas size:", datas.size)
     try:
         data, label = datas
     except:
