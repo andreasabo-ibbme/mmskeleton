@@ -440,7 +440,7 @@ def pretrain_model(
     #     print(param.data)
 
     # Step 1: Initialize the model with random weights, 
-    model.apply(weights_init_xavier)
+    model.encoder.apply(weights_init_xavier)
 
     print("THIS IS OUR MODEL")
     print(model)
@@ -509,6 +509,9 @@ def batch_processor(model, datas, train_mode, loss):
 
     # Get predictions from the model
     output_all = model(data_all)
+
+    if torch.sum(output_all) == 0:        
+        raise ValueError("=============================== got all zero output...")
     output = output_all[row_cond]
     loss_flip_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
 
@@ -547,9 +550,10 @@ def batch_processor(model, datas, train_mode, loss):
     y_true_orig_shape = y_true.reshape(1,-1).squeeze()
     losses = loss(output, y_true)
 
+
     if type(loss) == type(mse_loss):
         if balance_classes:
-            losses = weighted_mse_loss(output, y_true, class_weights_dict)
+            losses = log_weighted_mse_loss(output, y_true, class_weights_dict)
         # Convert the output to classes and clip from 0 to number of classes
         y_pred_rounded = output.detach().cpu().numpy()
         output = y_pred_rounded
@@ -598,6 +602,7 @@ def batch_processor(model, datas, train_mode, loss):
     # print(type(labels), type(preds))
     # print('this is what we return: ', output_labels)
     return outputs, output_labels, overall_loss
+
 
 def my_loss(output, target):
     loss = torch.mean((output - target)**2)
@@ -648,6 +653,10 @@ def weights_init_xavier(model):
         if model.bias is not None:
             model.bias.data.fill_(0)
     elif classname.find('Conv2d') != -1:
+        torch.nn.init.xavier_uniform(model.weight)
+        if model.bias is not None:
+            model.bias.data.fill_(0)
+    elif classname.find('Linear') != -1:
         torch.nn.init.xavier_uniform(model.weight)
         if model.bias is not None:
             model.bias.data.fill_(0)
