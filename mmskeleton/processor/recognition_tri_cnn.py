@@ -453,8 +453,8 @@ def batch_processor(model, datas, train_mode, loss):
 
     # Get predictions from the model
     output_all = model(data_all)
-    print("output all: ", output_all.t())  
-    print('type general output', type(output_all))
+    # print("output all: ", output_all.t())  
+    # print('type general output', type(output_all))
 
     if torch.sum(output_all) == 0:
         print("model is ", model)  
