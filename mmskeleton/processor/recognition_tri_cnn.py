@@ -379,7 +379,9 @@ def train_model(
     global class_weights_dict
 
     if balance_classes:
-        class_weights_dict = data_loaders[0].class_dist
+        print("loading data to get class weights")
+        dataset_train =call_obj(**datasets[0])
+        class_weights_dict = dataset_train.data_source.class_dist
 
     model_cfg_local = copy.deepcopy(model_cfg)
     loss_cfg_local = copy.deepcopy(loss_cfg)
