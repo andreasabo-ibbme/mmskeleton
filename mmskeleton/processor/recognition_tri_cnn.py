@@ -239,8 +239,8 @@ def train(
                             es_patience,
                             es_start_up,
                             )
-        except:
-            pass
+        except Exception as e: 
+            print("caught error ==========================", e)
 
         # Done with this participant, we can delete the temp foldeer
 
