@@ -474,6 +474,142 @@ def pretrain_model(
 
 
 
+# process a batch of data
+def batch_processor_pretraining(model, datas, train_mode, loss):
+    print("in barch processor pretraining")
+
+    print("datas, ",  datas)
+    print("datas len: ", len(datas))
+    print("datas size:", datas.size)
+    try:
+        data, label = datas
+    except:
+        data, data_flipped, label = datas
+        have_flips = 1
+
+
+    data_all = data.cuda()
+    label = label.cuda()
+
+    # Remove the -1 labels
+    y_true = label.data.reshape(-1, 1).float()
+    condition = y_true >= 0.
+    row_cond = condition.all(1)
+    y_true = y_true[row_cond, :]
+    data = data_all.data[row_cond, :]
+    num_valid_samples = data.shape[0]
+
+
+    if have_flips:
+        data_all = data_all.data
+        data_all_flipped = data_flipped.cuda()
+        data_all_flipped = data_all_flipped.data
+        # print('input_flipped', torch.sum(torch.isnan(data_all_flipped)))     
+        # print('raw', torch.sum(torch.isnan(data_all)))   
+        output_all_flipped = model_2(data_all_flipped)
+
+
+    # Get predictions from the model
+    output_all = model(data_all)
+
+    if torch.sum(output_all) == 0:        
+        raise ValueError("=============================== got all zero output...")
+    output = output_all[row_cond]
+    loss_flip_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
+
+    if have_flips:
+        loss_flip_tensor = mse_loss(output_all_flipped, output_all)
+        if loss_flip_tensor.data > 10:
+            pass
+            # print('output_all_flipped', output_all_flipped, 'output_all', output_all)
+
+    if not flip_loss_mult:
+        loss_flip_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
+        loss_flip_tensor = loss_flip_tensor.cuda()
+    else:
+        loss_flip_tensor = loss_flip_tensor * flip_loss_mult
+
+    # if we don't have any valid labels for this batch...
+    if num_valid_samples < 1:
+        labels = []
+        preds = []
+        raw_preds = []
+        # loss_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
+        # loss_tensor = loss_tensor.cuda()
+
+
+
+        log_vars = dict(loss_label=0, loss_flip = loss_flip_tensor.item(), loss_all=loss_flip_tensor.item())
+        log_vars['mae_raw'] = 0
+        log_vars['mae_rounded'] = 0
+        output_labels = dict(true=labels, pred=preds, raw_preds=raw_preds)
+        outputs = dict(loss=loss_flip_tensor, log_vars=log_vars, num_samples=0)
+
+        return outputs, output_labels, loss_flip_tensor.item()
+    
+
+
+    y_true_orig_shape = y_true.reshape(1,-1).squeeze()
+    losses = loss(output, y_true)
+
+
+    if type(loss) == type(mse_loss):
+        if balance_classes:
+            losses = log_weighted_mse_loss(output, y_true, class_weights_dict)
+        # Convert the output to classes and clip from 0 to number of classes
+        y_pred_rounded = output.detach().cpu().numpy()
+        output = y_pred_rounded
+        output_list = output.squeeze().tolist()
+        y_pred_rounded = y_pred_rounded.reshape(1, -1).squeeze()
+        y_pred_rounded = np.round(y_pred_rounded, 0)
+        y_pred_rounded = np.clip(y_pred_rounded, 0, num_class-1)
+        preds = y_pred_rounded.squeeze().tolist()
+    else:    
+        rank = output.argsort()
+        preds = rank[:,-1].data.tolist()
+
+    labels = y_true_orig_shape.data.tolist()
+
+    # Case when we have a single output
+    if type(labels) is not list:
+        labels = [labels]
+    if type(preds) is not list:
+        preds = [preds]
+    if type(output_list) is not list:
+        output_list = [output_list]
+
+    try:
+        labels = [int(cl) for cl in labels]
+        preds = [int(cl) for cl in preds]
+    except TypeError as e:
+        print(labels)
+        print(preds)
+        print("got an error: ", e)
+
+
+    overall_loss = losses + loss_flip_tensor
+    log_vars = dict(loss_label=losses.item(), loss_flip = loss_flip_tensor.item(), loss_all=overall_loss.item())
+    # print('l1', losses, 'l2', loss_flip_tensor)
+
+    try:
+        log_vars['mae_raw'] = mean_absolute_error(labels, output)
+    except:
+        print("labels: ", labels, "output", output)
+        print('input', torch.sum(torch.isnan(data_all)))
+        print('output_all', output_all, 'output_all_flipped', output_all_flipped)
+        raise ValueError('stop')
+    log_vars['mae_rounded'] = mean_absolute_error(labels, preds)
+    output_labels = dict(true=labels, pred=preds, raw_preds=output_list)
+    outputs = dict(loss=overall_loss, log_vars=log_vars, num_samples=len(labels))
+    # print(type(labels), type(preds))
+    # print('this is what we return: ', output_labels)
+    return outputs, output_labels, overall_loss
+
+
+
+
+
+
 
 
 # process a batch of data
