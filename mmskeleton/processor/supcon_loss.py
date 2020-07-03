@@ -83,7 +83,8 @@ class SupConLoss(nn.Module):
             0
         )
         mask = mask * logits_mask
-
+        print("anchor_count: ", anchor_count)
+        print("contrast_feature shape: ", contrast_feature.shape)
         # compute log_prob
         exp_logits = torch.exp(logits) * logits_mask
         log_prob = logits - torch.log(exp_logits.sum(1, keepdim=True))
