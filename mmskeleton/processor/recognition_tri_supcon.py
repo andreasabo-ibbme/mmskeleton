@@ -91,6 +91,7 @@ def train(
         es_patience=10,
         es_start_up=50,
         head='stgcn',
+        freeze_encoder=True,
 ):
     # Set up for logging 
     outcome_label = dataset_cfg[0]['data_source']['outcome_label']
@@ -242,6 +243,27 @@ def train(
             # 
             print("final model for fine_tuning is: ", pretrained_model)
 
+            finetune_model(work_dir,
+                        pretrained_model,
+                        loss_cfg,
+                        datasets,
+                        optimizer_cfg,
+                        batch_size,
+                        total_epochs,
+                        training_hooks,
+                        workflow,
+                        gpus,
+                        log_level,
+                        workers,
+                        resume_from,
+                        load_from,
+                        things_to_log,
+                        early_stopping,
+                        force_run_all_epochs,
+                        es_patience,
+                        es_start_up, 
+                        freeze_encoder)
+
 
             # Final testing
             return
@@ -368,7 +390,7 @@ def train(
 
 def finetune_model(
         work_dir,
-        model_cfg,
+        model,
         loss_cfg,
         datasets,
         optimizer_cfg,
@@ -386,8 +408,45 @@ def finetune_model(
         force_run_all_epochs=True,
         es_patience=10,
         es_start_up=50,
+        freeze_encoder=True, 
 ):
-    pass
+    print("Starting STAGE 2: Fine-tuning...")
+
+    data_loaders = [
+        torch.utils.data.DataLoader(dataset=call_obj(**d),
+                                    batch_size=batch_size,
+                                    shuffle=True,
+                                    num_workers=workers,
+                                    drop_last=False) for d in datasets
+    ]
+
+    global balance_classes
+    global class_weights_dict
+
+    if balance_classes:
+        dataset_train = call_obj(**datasets[0])
+        class_weights_dict = dataset_train.data_source.class_dist
+
+    loss_cfg_local = copy.deepcopy(loss_cfg)
+    training_hooks_local = copy.deepcopy(training_hooks)
+    optimizer_cfg_local = copy.deepcopy(optimizer_cfg)
+
+
+    loss = call_obj(**loss_cfg_local)
+
+    # print('training hooks: ', training_hooks_local)
+    # build runner
+    optimizer = call_obj(params=model.parameters(), **optimizer_cfg_local)
+    runner = Runner(model, batch_processor, optimizer, work_dir, log_level, things_to_log=things_to_log, early_stopping=early_stopping, force_run_all_epochs=force_run_all_epochs, es_patience=es_patience, es_start_up=es_start_up, freeze_encoder=freeze_encoder)
+    runner.register_training_hooks(**training_hooks_local)
+
+    # run
+    workflow = [tuple(w) for w in workflow]
+    # [('train', 5), ('val', 1)]
+    final_model = runner.run(data_loaders, workflow, total_epochs, loss=loss)
+    return final_model
+
+
 
 
 def pretrain_model(
