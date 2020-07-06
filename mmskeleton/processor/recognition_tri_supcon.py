@@ -220,9 +220,9 @@ def train(
                 load_from, 
                 things_to_log,
                 early_stopping,
-                force_run_all_epochs=True,
-                es_patience=es_patience,
-                es_start_up=es_start_up
+                force_run_all_epochs,
+                es_patience,
+                es_start_up
                 )
 
 
