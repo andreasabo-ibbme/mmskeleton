@@ -589,8 +589,6 @@ def batch_processor_pretraining(model, datas, train_mode, loss):
 
 
 
-
-
 # process a batch of data
 def batch_processor(model, datas, train_mode, loss):
     #torch.cuda.empty_cache()
