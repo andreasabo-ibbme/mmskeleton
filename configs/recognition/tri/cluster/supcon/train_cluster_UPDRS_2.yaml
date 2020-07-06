@@ -23,11 +23,14 @@ processor_cfg:
   weight_classes: False
   flip_loss: True
   launch_from_windows: False
-  wandb_project: "supcon_UPDRS_wip"
+  wandb_project: "supcon_UPDRS_wip_jul6"
   early_stopping: True
   force_run_all_epochs: False
-  es_patience: 2
-  es_start_up: 3
+  es_patience_1: 2
+  es_start_up_1: 3
+  es_patience_2: 20
+  es_start_up_2: 5
+  freeze_encoder: True
   head: "stgcn"
 
   # model setting

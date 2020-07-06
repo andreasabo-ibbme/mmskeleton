@@ -88,8 +88,10 @@ def train(
         wandb_project="mmskel",
         early_stopping=False,
         force_run_all_epochs=True,
-        es_patience=10,
-        es_start_up=50,
+        es_patience_1=5,
+        es_start_up_1=5,
+        es_patience_2=10,
+        es_start_up_2=50,
         head='stgcn',
         freeze_encoder=True,
 ):
@@ -198,7 +200,7 @@ def train(
             for ds in datasets:
                 ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
 
-            things_to_log = {'es_start_up': es_start_up, 'es_patience': es_patience, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
+            things_to_log = {'es_start_up': es_start_up, 'es_patience_1': es_patience_1, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
 
 
             print('stage_1_train: ', len(stage_1_train))
@@ -223,8 +225,8 @@ def train(
                 things_to_log,
                 early_stopping,
                 force_run_all_epochs,
-                es_patience,
-                es_start_up
+                es_patience_1,
+                es_start_up_1
                 )
 
 
@@ -240,7 +242,8 @@ def train(
             pretrained_model.module.set_stage_2()
             pretrained_model.module.head.apply(weights_init_xavier)
 
-            # 
+            things_to_log = {'es_start_up': es_start_up, 'es_patience_2': es_patience_2, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
+
             print("final model for fine_tuning is: ", pretrained_model)
 
             finetune_model(work_dir,
@@ -260,66 +263,13 @@ def train(
                         things_to_log,
                         early_stopping,
                         force_run_all_epochs,
-                        es_patience,
-                        es_start_up, 
+                        es_patience_2,
+                        es_start_up_2, 
                         freeze_encoder)
 
 
             # Final testing
             return
-
-
-
-            # test_subj_walks = [i for i in all_files if re.search('ID_'+str(test_id), i) ]
-            # non_test_subj_walks = list(set(all_files).symmetric_difference(set(test_subj_walks)))
-        
-            if exclude_cv: 
-                workflow = [workflow_orig[0], workflow_orig[2]]
-                datasets = [copy.deepcopy(dataset_cfg[0]) for i in range(len(workflow))]
-                datasets[0]['data_source']['data_dir'] = non_test_subj_walks
-                datasets[1]['data_source']['data_dir'] = test_walks
-            else:
-                datasets[0]['data_source']['data_dir'] = train_walks
-                datasets[1]['data_source']['data_dir'] = val_walks
-                datasets[2]['data_source']['data_dir'] = test_walks
-
-                print('size of train set: ', len(datasets[0]['data_source']['data_dir']))
-                print('size of val set: ', len(datasets[1]['data_source']['data_dir']))                
-                print('size of test set: ', len(test_walks))
-
-            work_dir_amb = work_dir + "/" + str(ambid)
-            for ds in datasets:
-                ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
-            # x = dataset_cfg[0]['data_source']['outcome_label']
-    
-            print(workflow)
-            # print(model_cfg['num_class'])
-            things_to_log = {'es_start_up': es_start_up, 'es_patience': es_patience, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
-            print('size of train set: ', len(datasets[0]['data_source']['data_dir']))
-            print('size of test set: ', len(test_walks))
-
-            train_model(
-                        work_dir_amb,
-                        model_cfg,
-                        loss_cfg,
-                        datasets,
-                        optimizer_cfg,
-                        batch_size,
-                        total_epochs,
-                        training_hooks,
-                        workflow,
-                        gpus,
-                        log_level,
-                        workers,
-                        resume_from,
-                        load_from, 
-                        things_to_log,
-                        early_stopping,
-                        force_run_all_epochs,
-                        es_patience,
-                        es_start_up,
-                        )
-
 
     # Compute summary statistics (accuracy and confusion matrices)
     final_results_dir = os.path.join(work_dir, 'all_test', wandb_group)
