@@ -92,7 +92,7 @@ def train(
     # All data dir (use this for finetuning with the flip loss)
     data_dir_all_data = dataset_cfg[0]['data_source']['data_dir']
     all_files = [os.path.join(data_dir_all_data, f) for f in os.listdir(data_dir_all_data)]
-    print("all files: ", len(data_dir_all_data))
+    print("all files: ", len(all_files))
 
     all_file_names_only = os.listdir(data_dir_all_data)
 
