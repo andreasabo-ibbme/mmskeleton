@@ -32,7 +32,7 @@ class ST_GCN_18_ordinal_smaller_2_supcon(nn.Module):
                  graph_cfg,
                  edge_importance_weighting=True,
                  data_bn=True,
-                 head='linear',
+                 head='stgcn',
                  feat_dim=32,
                  **kwargs):
         super().__init__()
@@ -56,6 +56,8 @@ class ST_GCN_18_ordinal_smaller_2_supcon(nn.Module):
                 nn.ReLU(inplace=True),
                 nn.Linear(dim_in, feat_dim)
             )
+        elif head =='stgcn':
+            self.head = nn.Conv2d(dim_in, feat_dim, kernel_size=1)
 
         # print("encoder: ", self.encoder)
         # print('projection head', self.head)

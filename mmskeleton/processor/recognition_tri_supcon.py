@@ -439,11 +439,6 @@ def pretrain_model(
         model = call_obj(**model_cfg_local)
 
 
-    if loss_cfg_local['type'] == 'spacecutter.losses.CumulativeLinkLoss':
-        model = OrdinalLogisticModel(model, model_cfg_local['num_class'])
-
-
-
     # print("These are the model parameters:")
     # for param in model.parameters():
     #     print(param.data)
@@ -466,8 +461,7 @@ def pretrain_model(
     workflow = [tuple(w) for w in workflow]
     # [('train', 5), ('val', 1)]
     pretrained_model = runner.run(data_loaders, workflow, total_epochs, loss=loss, supcon_pretraining=True)
-    print('pretrained model is: ', pretrained_model)
-
+    return pretrained_model
 
 
 # process a batch of data
