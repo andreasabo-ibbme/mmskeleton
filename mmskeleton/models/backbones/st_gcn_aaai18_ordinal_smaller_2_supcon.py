@@ -70,7 +70,7 @@ class ST_GCN_18_ordinal_smaller_2_supcon(nn.Module):
             self.feature_head = nn.Conv2d(dim_in, feat_dim, kernel_size=1)
             self.classification_head = nn.Conv2d(dim_in, 1, kernel_size=1)
 
-        self.head = feature_head
+        self.head = self.feature_head
 
     def use_classification_head(self):
         self.head = self.classification_head
