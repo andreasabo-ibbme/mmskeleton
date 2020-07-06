@@ -165,7 +165,7 @@ def train(
 
             print(f"we have {len(stage_1_train)} stage_1_train and {len(stage_1_val)} stage_1_val. ")
             print(f"we have {len(stage_2_train)} stage_2_train and {len(stage_2_val)} stage_2_val. ")
-            return
+           
 
             # ================================ STAGE 1 ====================================
             # Stage 1 training
