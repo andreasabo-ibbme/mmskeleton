@@ -28,39 +28,6 @@ balance_classes = False
 class_weights_dict = {}
 flip_loss_mult = False
 
-def test(model_cfg, dataset_cfg, checkpoint, batch_size=64, gpus=1, workers=4):
-    dataset = call_obj(**dataset_cfg)
-    data_loader = torch.utils.data.DataLoader(dataset=dataset,
-                                              batch_size=batch_size,
-                                              shuffle=False,
-                                              num_workers=workers)
-
-    # put model on gpus
-    if isinstance(model_cfg, list):
-        model = [call_obj(**c) for c in model_cfg]
-        model = torch.nn.Sequential(*model)
-    else:
-        model = call_obj(**model_cfg)
-    load_checkpoint(model, checkpoint, map_location='cpu')
-    model = MMDataParallel(model, device_ids=range(gpus)).cuda()
-    model.eval()
-
-    results = []
-    labels = []
-    prog_bar = ProgressBar(len(dataset))
-    for data, label in data_loader:
-        with torch.no_grad():
-            output = model(data).data.cpu().numpy()
-        results.append(output)
-        labels.append(label)
-        for i in range(len(data)):
-            prog_bar.update()
-    results = np.concatenate(results)
-    labels = np.concatenate(labels)
-
-    print('Top 1: {:.2f}%'.format(100 * topk_accuracy(results, labels, 1)))
-    print('Top 5: {:.2f}%'.format(100 * topk_accuracy(results, labels, 5)))
-
 
 def train(
         work_dir,
@@ -200,7 +167,7 @@ def train(
             for ds in datasets:
                 ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
 
-            things_to_log = {'es_start_up': es_start_up, 'es_patience_1': es_patience_1, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
+            things_to_log = {'es_start_up_1': es_start_up_1, 'es_patience_1': es_patience_1, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
 
 
             print('stage_1_train: ', len(stage_1_train))
@@ -242,7 +209,7 @@ def train(
             pretrained_model.module.set_stage_2()
             pretrained_model.module.head.apply(weights_init_xavier)
 
-            things_to_log = {'es_start_up': es_start_up, 'es_patience_2': es_patience_2, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
+            things_to_log = {'es_start_up_2': es_start_up_2, 'es_patience_2': es_patience_2, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
 
             print("final model for fine_tuning is: ", pretrained_model)
 
