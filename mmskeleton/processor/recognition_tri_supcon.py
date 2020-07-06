@@ -111,13 +111,20 @@ def train(
 
         # These are all of the walks (both labelled and not) of the test participant and cannot be included in training data at any point (for LOSOCV)
         test_subj_walks_name_only_all = [i for i in all_file_names_only if re.search('ID_'+str(test_id), i) ]
-
         test_subj_walks_name_only_pd_only = [i for i in pd_all_files if re.search('ID_'+str(test_id), i) ]
         
+        print(f"test_subj_walks_name_only_all: {len(test_subj_walks_name_only_all)}")
+        print(f"test_subj_walks_name_only_pd_only: {len(test_subj_walks_name_only_pd_only)}")
+
         # These are the walks that can potentially be included in the train/val sets at some stage
-        non_test_subj_walks_name_only_all = list(set(all_file_names_only).symmetric_difference(set(test_subj_walks_name_only_all)))
+        non_test_subj_walks_name_only_all = list(set(all_file_names_only).difference(set(test_subj_walks_name_only_all)))
         non_test_subj_walks_name_only_pd_only = list(set(pd_all_file_names_only).symmetric_difference(set(test_subj_walks_name_only_pd_only)))
         
+        print(f"non_test_subj_walks_name_only_all: {len(non_test_subj_walks_name_only_all)}")
+        print(f"non_test_subj_walks_name_only_pd_only: {len(non_test_subj_walks_name_only_pd_only)}")
+
+
+
         # These are all of the labelled walks from the current participant that we want to evaluate our eventual model on
         test_walks_pd_labelled = [os.path.join(data_dir_pd_data, f) for f in test_subj_walks_name_only_pd_only]
         non_test_walks_pd_labelled = [os.path.join(data_dir_pd_data, f) for f in non_test_subj_walks_name_only_pd_only]
@@ -136,8 +143,8 @@ def train(
             continue
         
         # data exploration
-        print(f"test_walks_pd_labelled: f{len(test_walks_pd_labelled)}")
-        print(f"non_test_walks_pd_labelled: f{len(non_test_walks_pd_labelled)}")
+        print(f"test_walks_pd_labelled: {len(test_walks_pd_labelled)}")
+        print(f"non_test_walks_pd_labelled: {len(non_test_walks_pd_labelled)}")
 
 
         # Split the non_test walks into train/val
