@@ -135,6 +135,11 @@ def train(
         if len(test_walks_pd_labelled) == 0:
             continue
         
+        # data exploration
+        print(f"test_walks_pd_labelled: f{len(test_walks_pd_labelled)}")
+        print(f"non_test_walks_pd_labelled: f{len(non_test_walks_pd_labelled)}")
+
+
         # Split the non_test walks into train/val
         kf = StratifiedKFold(n_splits=cv, shuffle=True, random_state=1)
         kf.get_n_splits(non_test_walks_all, non_test_is_lablled)
@@ -364,7 +369,7 @@ def finetune_model(
     # print('training hooks: ', training_hooks_local)
     # build runner
     optimizer = call_obj(params=model.parameters(), **optimizer_cfg_local)
-    runner = Runner(model, batch_processor, optimizer, work_dir, log_level, things_to_log=things_to_log, early_stopping=early_stopping, force_run_all_epochs=force_run_all_epochs, es_patience=es_patience, es_start_up=es_start_up, freeze_encoder=freeze_encoder, dont_reinit=True)
+    runner = Runner(model, batch_processor, optimizer, work_dir, log_level, things_to_log=things_to_log, early_stopping=early_stopping, force_run_all_epochs=force_run_all_epochs, es_patience=es_patience, es_start_up=es_start_up, freeze_encoder=freeze_encoder, finetuning=True)
     runner.register_training_hooks(**training_hooks_local)
 
     # run
