@@ -147,7 +147,7 @@ def train(
             # Divide all of the data into:
             # Stage 1 train/val
             # Stage 2 train/val
-
+            print(f"we have {len(non_test_walks_all)} non_test_walks_all")
             print(f"we have {len(train_ids)} train_ids and {len(val_ids)} val_ids. ")
 
             # These are from the full (all) set
