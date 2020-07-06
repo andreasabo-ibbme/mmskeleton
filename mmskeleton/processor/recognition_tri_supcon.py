@@ -148,6 +148,8 @@ def train(
             # Stage 1 train/val
             # Stage 2 train/val
 
+            print(f"we have {len(train_ids)} train_ids and {len(val_ids)} val_ids. ")
+
             # These are from the full (all) set
             stage_2_train = [non_test_walks_all[i] for i in train_ids]
             stage_2_val = [non_test_walks_all[i] for i in val_ids]
@@ -156,6 +158,10 @@ def train(
             stage_1_train = [non_test_walks_pd_labelled[i] for i in train_ids if i < len(non_test_walks_pd_labelled) ]
             stage_1_val = [non_test_walks_pd_labelled[i] for i in val_ids if i < len(non_test_walks_pd_labelled)]
 
+
+            print(f"we have {len(stage_1_train)} stage_1_train and {len(stage_1_val)} stage_1_val. ")
+            print(f"we have {len(stage_2_train)} stage_2_train and {len(stage_2_val)} stage_2_val. ")
+            return
 
             # ================================ STAGE 1 ====================================
             # Stage 1 training
@@ -211,7 +217,7 @@ def train(
 
             things_to_log = {'es_start_up_2': es_start_up_2, 'es_patience_2': es_patience_2, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
 
-            print("final model for fine_tuning is: ", pretrained_model)
+            # print("final model for fine_tuning is: ", pretrained_model)
 
             finetune_model(work_dir,
                         pretrained_model,
