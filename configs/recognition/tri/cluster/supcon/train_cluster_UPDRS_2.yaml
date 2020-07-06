@@ -26,8 +26,8 @@ processor_cfg:
   wandb_project: "supcon_UPDRS_wip"
   early_stopping: True
   force_run_all_epochs: False
-  es_patience: 3
-  es_start_up: 5
+  es_patience: 2
+  es_start_up: 3
   # model setting
   model_cfg:
     type: 'models.backbones.ST_GCN_18_ordinal_smaller_2_supcon'
