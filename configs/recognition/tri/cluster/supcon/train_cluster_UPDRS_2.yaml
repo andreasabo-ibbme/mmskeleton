@@ -26,7 +26,7 @@ processor_cfg:
   wandb_project: "supcon_UPDRS_wip"
   early_stopping: True
   force_run_all_epochs: False
-  es_patience: 10
+  es_patience: 3
   es_start_up: 5
   # model setting
   model_cfg:
