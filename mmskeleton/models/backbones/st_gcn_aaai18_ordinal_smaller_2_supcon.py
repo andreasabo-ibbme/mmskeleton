@@ -50,15 +50,30 @@ class ST_GCN_18_ordinal_smaller_2_supcon(nn.Module):
         # fcn for prediction
         dim_in = self.encoder.output_filters
         if head == 'linear':
-            self.head = nn.Linear(dim_in, feat_dim)
+            self.feature_head = nn.Linear(dim_in, feat_dim)
+            self.classification_head =  nn.Linear(dim_in, 1)
         elif head == 'mlp':
-            self.head = nn.Sequential(
+            self.feature_head = nn.Sequential(
                 nn.Linear(dim_in, dim_in),
                 nn.ReLU(inplace=True),
                 nn.Linear(dim_in, feat_dim)
             )
+
+            self.classification_head = nn.Sequential(
+                nn.Linear(dim_in, dim_in),
+                nn.ReLU(inplace=True),
+                nn.Linear(dim_in, 1)
+            )
+
+
         elif head =='stgcn':
-            self.head = nn.Conv2d(dim_in, feat_dim, kernel_size=1)
+            self.feature_head = nn.Conv2d(dim_in, feat_dim, kernel_size=1)
+            self.classification_head = nn.Conv2d(dim_in, 1, kernel_size=1)
+
+        self.head = feature_head
+
+    def use_classification_head(self):
+        self.head = self.classification_head
 
         # print("encoder: ", self.encoder)
         # print('projection head', self.head)

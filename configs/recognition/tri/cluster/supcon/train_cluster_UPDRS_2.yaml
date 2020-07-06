@@ -28,6 +28,8 @@ processor_cfg:
   force_run_all_epochs: False
   es_patience: 2
   es_start_up: 3
+  head: "stgcn"
+
   # model setting
   model_cfg:
     type: 'models.backbones.ST_GCN_18_ordinal_smaller_2_supcon'

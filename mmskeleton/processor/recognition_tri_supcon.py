@@ -90,6 +90,7 @@ def train(
         force_run_all_epochs=True,
         es_patience=10,
         es_start_up=50,
+        head='stgcn',
 ):
     # Set up for logging 
     outcome_label = dataset_cfg[0]['data_source']['outcome_label']
@@ -235,8 +236,11 @@ def train(
 
 
             # Reset the head
+            pretrained_model.use_classification_head()
             pretrained_model.module.head.apply(weights_init_xavier)
 
+            # 
+            print("final model for fine_tuning is: ", pretrained_model)
 
 
             # Final testing
