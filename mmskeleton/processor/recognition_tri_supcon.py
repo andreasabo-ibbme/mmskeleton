@@ -118,7 +118,7 @@ def train(
 
         # These are the walks that can potentially be included in the train/val sets at some stage
         non_test_subj_walks_name_only_all = list(set(all_file_names_only).difference(set(test_subj_walks_name_only_all)))
-        non_test_subj_walks_name_only_pd_only = list(set(pd_all_file_names_only).symmetric_difference(set(test_subj_walks_name_only_pd_only)))
+        non_test_subj_walks_name_only_pd_only = list(set(pd_all_file_names_only).difference(set(test_subj_walks_name_only_pd_only)))
         
         print(f"non_test_subj_walks_name_only_all: {len(non_test_subj_walks_name_only_all)}")
         print(f"non_test_subj_walks_name_only_pd_only: {len(non_test_subj_walks_name_only_pd_only)}")
