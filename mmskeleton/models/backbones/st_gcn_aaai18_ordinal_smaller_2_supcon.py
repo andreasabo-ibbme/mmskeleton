@@ -46,7 +46,7 @@ class ST_GCN_18_ordinal_smaller_2_supcon(nn.Module):
                  edge_importance_weighting,
                  data_bn,
                  **kwargs)
-      
+        self.stage_2 = False
         # fcn for prediction
         dim_in = self.encoder.output_filters
         if head == 'linear':
@@ -72,12 +72,23 @@ class ST_GCN_18_ordinal_smaller_2_supcon(nn.Module):
 
         self.head = self.feature_head
 
-    def use_classification_head(self):
+    def set_stage_2(self):
         self.head = self.classification_head
+        self.stage_2=True
 
         # print("encoder: ", self.encoder)
         # print('projection head', self.head)
     def forward(self, x):
-        feat = self.encoder(x)
-        feat = F.normalize(self.head(feat), dim=1)
-        return feat
+        # Fine-tuning
+        if self.stage_2:
+            x = self.encoder(x)
+            # prediction
+            x = self.head(x)
+            x = x.view(x.size(0), -1)
+            return x
+
+        # Pretraining
+        else:
+            feat = self.encoder(x)
+            feat = F.normalize(self.head(feat), dim=1)
+            return feat

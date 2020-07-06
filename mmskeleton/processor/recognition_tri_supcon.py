@@ -237,7 +237,7 @@ def train(
 
 
             # Reset the head
-            pretrained_model.module.use_classification_head()
+            pretrained_model.module.set_stage_2()
             pretrained_model.module.head.apply(weights_init_xavier)
 
             # 
