@@ -30,6 +30,7 @@ class ST_GCN_18_ordinal_smaller_2_encoder(nn.Module):
                  in_channels,
                  num_class,
                  graph_cfg,
+                 head="stgcn",
                  edge_importance_weighting=True,
                  data_bn=True,
                  **kwargs):
@@ -41,7 +42,7 @@ class ST_GCN_18_ordinal_smaller_2_encoder(nn.Module):
         A = torch.tensor(
             self.graph.A, dtype=torch.float32, requires_grad=False)
         self.register_buffer('A', A)
-
+        self.head = head
         # build networks
         spatial_kernel_size = A.size(0)
         temporal_kernel_size = 7
@@ -86,8 +87,8 @@ class ST_GCN_18_ordinal_smaller_2_encoder(nn.Module):
         # global pooling
         x = F.avg_pool2d(x, x.size()[2:])
         x = x.view(N, M, -1, 1, 1).mean(dim=1)
-        
-        x = x.view(x.size(0), -1)
+        if not self.head == 'stgcn':
+            x = x.view(x.size(0), -1)
 
         return x
 

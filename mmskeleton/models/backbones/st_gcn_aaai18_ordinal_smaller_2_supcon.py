@@ -42,6 +42,7 @@ class ST_GCN_18_ordinal_smaller_2_supcon(nn.Module):
                  in_channels,
                  num_class,
                  graph_cfg,
+                 head, 
                  edge_importance_weighting,
                  data_bn,
                  **kwargs)
