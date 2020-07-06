@@ -92,12 +92,15 @@ def train(
     # All data dir (use this for finetuning with the flip loss)
     data_dir_all_data = dataset_cfg[0]['data_source']['data_dir']
     all_files = [os.path.join(data_dir_all_data, f) for f in os.listdir(data_dir_all_data)]
+    print("all files: ", len(data_dir_all_data))
+
     all_file_names_only = os.listdir(data_dir_all_data)
 
     # PD lablled dir (only use this data for supervised contrastive)
     data_dir_pd_data = dataset_cfg[1]['data_source']['data_dir']
     pd_all_files = [os.path.join(data_dir_pd_data, f) for f in os.listdir(data_dir_pd_data)]
     pd_all_file_names_only = os.listdir(data_dir_pd_data)
+    print("pd_all_files: ", len(pd_all_files))
 
 
     original_wandb_group = wandb_group
