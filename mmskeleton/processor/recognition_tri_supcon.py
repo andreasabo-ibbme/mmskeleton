@@ -20,7 +20,7 @@ from mmskeleton.processor.supcon_loss import *
 
 
 
-# os.environ['WANDB_MODE'] = 'dryrun'
+os.environ['WANDB_MODE'] = 'dryrun'
 
 # Global variables
 num_class = 3
@@ -458,7 +458,6 @@ def pretrain_model(
     # build runner
 
     loss = SupConLoss()
-    print("the loss is ", loss)
     optimizer = call_obj(params=model.parameters(), **optimizer_cfg_local)
     runner = Runner(model, batch_processor_pretraining, optimizer, work_dir, log_level, things_to_log=things_to_log, early_stopping=early_stopping, force_run_all_epochs=force_run_all_epochs, es_patience=es_patience, es_start_up=es_start_up)
     runner.register_training_hooks(**training_hooks_local)
@@ -466,7 +465,8 @@ def pretrain_model(
     # run
     workflow = [tuple(w) for w in workflow]
     # [('train', 5), ('val', 1)]
-    runner.run(data_loaders, workflow, total_epochs, loss=loss, supcon_pretraining=True)
+    pretrained_model = runner.run(data_loaders, workflow, total_epochs, loss=loss, supcon_pretraining=True)
+    print('pretrained model is: ', pretrained_model)
 
 
 
