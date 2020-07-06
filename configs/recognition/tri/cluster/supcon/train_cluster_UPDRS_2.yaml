@@ -30,7 +30,7 @@ processor_cfg:
   es_start_up_1: 3
   es_patience_2: 20
   es_start_up_2: 5
-  freeze_encoder: True
+  freeze_encoder: False
   head: "stgcn"
 
   # model setting
@@ -40,6 +40,8 @@ processor_cfg:
     num_class: 3
     edge_importance_weighting: True
     dropout: 0.0
+    feat_dim: 128
+
     graph_cfg:
       layout: 'coco_simplified_head'
       strategy: 'spatial'
