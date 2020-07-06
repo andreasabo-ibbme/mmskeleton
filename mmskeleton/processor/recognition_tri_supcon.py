@@ -111,7 +111,7 @@ def train(
 
         # These are all of the walks (both labelled and not) of the test participant and cannot be included in training data at any point (for LOSOCV)
         test_subj_walks_name_only_all = [i for i in all_file_names_only if re.search('ID_'+str(test_id), i) ]
-        test_subj_walks_name_only_pd_only = [i for i in pd_all_files if re.search('ID_'+str(test_id), i) ]
+        test_subj_walks_name_only_pd_only = [i for i in pd_all_file_names_only if re.search('ID_'+str(test_id), i) ]
         
         print(f"test_subj_walks_name_only_all: {len(test_subj_walks_name_only_all)}")
         print(f"test_subj_walks_name_only_pd_only: {len(test_subj_walks_name_only_pd_only)}")
