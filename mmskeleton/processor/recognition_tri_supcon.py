@@ -257,8 +257,6 @@ def train(
                         freeze_encoder)
 
 
-            # Final testing
-            return
 
     # Compute summary statistics (accuracy and confusion matrices)
     final_results_dir = os.path.join(work_dir, 'all_test', wandb_group)
