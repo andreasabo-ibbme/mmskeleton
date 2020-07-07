@@ -164,6 +164,21 @@ def pad_zero(data, size):
             data[data_field] = np_array_paded
     return data
 
+def pad_zero_beginning(data, size):
+    for data_field in data_fields:
+        if data_field not in data.keys():
+            continue
+
+        np_array = data[data_field]
+        T = np_array.shape[2]
+        if T < size:
+            pad_shape = list(np_array.shape)
+            pad_shape[2] = size
+            np_array_paded = np.zeros(pad_shape, dtype=np_array.dtype)
+            np_array_paded[:, :, -T:, :] = np_array
+            data[data_field] = np_array_paded
+    return data
+
 def pad_mean(data, size):
     for data_field in data_fields:
         if data_field not in data.keys():
