@@ -20,7 +20,7 @@ from mmskeleton.processor.supcon_loss import *
 
 
 
-os.environ['WANDB_MODE'] = 'dryrun'
+# os.environ['WANDB_MODE'] = 'dryrun'
 
 # Global variables
 num_class = 3
@@ -201,8 +201,8 @@ def train(
 
             # ================================ STAGE 1 ====================================
             # Stage 1 training
-            datasets[0]['data_source']['data_dir'] = stage_1_train[:50]
-            datasets[1]['data_source']['data_dir'] = stage_1_val[:50]
+            datasets[0]['data_source']['data_dir'] = stage_1_train
+            datasets[1]['data_source']['data_dir'] = stage_1_val
             datasets[2]['data_source']['data_dir'] = test_walks_pd_labelled
             datasets_stage_1 = copy.deepcopy(datasets)
             datasets_stage_1.pop(2)
