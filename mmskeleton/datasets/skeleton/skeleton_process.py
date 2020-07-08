@@ -212,6 +212,21 @@ def random_crop(data, size):
     return data
 
 
+def random_crop_for_joint_prediction(data, size):
+    for data_field in data_fields:
+        if data_field not in data.keys():
+            continue
+        print(data_field)
+        np_array = data[data_field]
+        T = np_array.shape[2]
+        if T > size:
+            begin = random.randint(0, T - size)
+            data[data_field] = np_array[:, :, begin:begin + size, :]
+    return data
+
+
+
+
 def simulate_camera_moving(data,
                            angle_candidate=[-10., -5., 0., 5., 10.],
                            scale_candidate=[0.9, 1.0, 1.1],
