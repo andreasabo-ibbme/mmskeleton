@@ -83,7 +83,7 @@ class ST_GCN_18_ordinal_smaller_2_position_pretrain(nn.Module):
             x = self.head(x)
             print('shape of x before reshaping is: ', x.size())
             # reshape the output to be of size (13x2xnum_ts)
-            x = x.view(x.size(0), 13, 2, -1)
+            x = x.view(x.size(0), 2, 13, -1)
 
             print('shape of x after reshaping is: ', x.size())
 
