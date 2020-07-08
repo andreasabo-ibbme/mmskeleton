@@ -473,7 +473,7 @@ def pretrain_model(
     # print('training hooks: ', training_hooks_local)
     # build runner
 
-    loss = SupConLoss()
+    # loss = SupConLoss()
     optimizer = call_obj(params=model.parameters(), **optimizer_cfg_local)
     runner = Runner(model, batch_processor_position_pretraining, optimizer, work_dir, log_level, things_to_log=things_to_log, early_stopping=early_stopping, force_run_all_epochs=force_run_all_epochs, es_patience=es_patience, es_start_up=es_start_up)
     runner.register_training_hooks(**training_hooks_local)
@@ -496,7 +496,6 @@ def batch_processor_position_pretraining(model, datas, train_mode, loss):
         have_flips = 1
         print("have flip")
 
-    print(label)
     # Even if we have flipped data, we only want to use the original in this stage
 
     data_all = data.cuda()
@@ -505,7 +504,6 @@ def batch_processor_position_pretraining(model, datas, train_mode, loss):
 
     # Predict the future joint positions using all data
     predicted_joint_positions = model(data)
-    print('predicted_joint positions shape: ', predicted_joint_positions.shape)
 
     if torch.sum(predicted_joint_positions) == 0:        
         raise ValueError("=============================== got all zero output...")
