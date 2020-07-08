@@ -76,6 +76,8 @@ class ST_GCN_18_ordinal_smaller_2_position_pretrain(nn.Module):
         # Pretraining
         else:
             x = self.encoder(x)
+            print('shape of x before encoder is: ', x.size())
+
             x = self.head(x)
             print('shape of x before reshaping is: ', x.size())
             # reshape the output to be of size (13x2xnum_ts)

@@ -457,7 +457,7 @@ def pretrain_model(
 
     else:
         model = call_obj(**model_cfg_local)
-
+    print("the model is: ", model)
 
     # print("These are the model parameters:")
     # for param in model.parameters():
