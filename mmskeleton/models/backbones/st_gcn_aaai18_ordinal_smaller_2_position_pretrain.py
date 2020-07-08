@@ -75,16 +75,16 @@ class ST_GCN_18_ordinal_smaller_2_position_pretrain(nn.Module):
 
         # Pretraining
         else:
-            print("============================================")
-            print('input is of size: ', x.size())
+            # print("============================================")
+            # print('input is of size: ', x.size())
             x = self.encoder(x)
-            print('shape of x before encoder is: ', x.size())
+            # print('shape of x before encoder is: ', x.size())
 
             x = self.head(x)
-            print('shape of x before reshaping is: ', x.size())
+            # print('shape of x before reshaping is: ', x.size())
             # reshape the output to be of size (13x2xnum_ts)
             x = x.view(x.size(0), 2, 13, -1)
 
-            print('shape of x after reshaping is: ', x.size())
+            # print('shape of x after reshaping is: ', x.size())
 
         return x
