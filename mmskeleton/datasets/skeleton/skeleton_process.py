@@ -239,6 +239,10 @@ def pad_zero_beginning_for_joint_prediction(data, size, pred_ts):
 
         np_array = data[data_field]
         T = np_array.shape[2] - max_future_ts
+        
+        # Remove the last 'max_future_ts' from the end of the data array
+        np_array = np_array[:T]
+
         if T < size:
             pad_shape = list(np_array.shape)
             pad_shape[2] = size
