@@ -475,7 +475,7 @@ def pretrain_model(
 
     loss = SupConLoss()
     optimizer = call_obj(params=model.parameters(), **optimizer_cfg_local)
-    runner = Runner(model, batch_processor_pretraining, optimizer, work_dir, log_level, things_to_log=things_to_log, early_stopping=early_stopping, force_run_all_epochs=force_run_all_epochs, es_patience=es_patience, es_start_up=es_start_up)
+    runner = Runner(model, batch_processor_position_pretraining, optimizer, work_dir, log_level, things_to_log=things_to_log, early_stopping=early_stopping, force_run_all_epochs=force_run_all_epochs, es_patience=es_patience, es_start_up=es_start_up)
     runner.register_training_hooks(**training_hooks_local)
 
     # run
@@ -486,7 +486,7 @@ def pretrain_model(
 
 
 # process a batch of data
-def batch_processor_pretraining(model, datas, train_mode, loss):
+def batch_processor_position_pretraining(model, datas, train_mode, loss):
 
     try:
         data, label = datas
@@ -499,25 +499,13 @@ def batch_processor_pretraining(model, datas, train_mode, loss):
 
     data_all = data.cuda()
     label = label.cuda()
-
-    # Remove the -1 labels
-    y_true = label.data.reshape(-1, 1).float()
-    condition = y_true >= 0.
-    row_cond = condition.all(1)
-    y_true = y_true[row_cond, :]
-    data = data_all.data[row_cond, :]
     num_valid_samples = data.shape[0]
 
-    # For supervised contrastive learning, we only use the data that has labels
-    labelled_data = data
-    labelled_data_true_labels = y_true
+    # Predict the future joint positions using all data
+    predicted_joint_positions = model(data)
+    print('predicted_joint positions shape: ', predicted_joint_positions.shape())
 
-    # Get predictions from the model
-    labelled_data_predicted_features= model(labelled_data)
-    labelled_data_predicted_features = labelled_data_predicted_features.view(labelled_data_predicted_features.shape[0], 1, -1)
-
-
-    if torch.sum(labelled_data_predicted_features) == 0:        
+    if torch.sum(predicted_joint_positions) == 0:        
         raise ValueError("=============================== got all zero output...")
 
 
