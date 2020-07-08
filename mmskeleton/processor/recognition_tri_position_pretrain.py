@@ -201,9 +201,9 @@ def train(
 
             # ================================ STAGE 1 ====================================
             # Stage 1 training
-            datasets[0]['data_source']['data_dir'] = stage_1_train
-            datasets[1]['data_source']['data_dir'] = stage_1_val
-            datasets[2]['data_source']['data_dir'] = test_walks_pd_labelled
+            datasets[0]['data_source']['data_dir'] = stage_1_train[:50]
+            datasets[1]['data_source']['data_dir'] = stage_1_val[:50]
+            datasets[2]['data_source']['data_dir'] = test_walks_pd_labelled[:50]
 
             work_dir_amb = work_dir + "/" + str(ambid)
             for ds in datasets:
