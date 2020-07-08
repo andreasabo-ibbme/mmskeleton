@@ -514,8 +514,8 @@ def batch_processor_position_pretraining(model, datas, train_mode, loss):
     # Calculate the supcon loss for this data
     try:
 
-        batch_loss = loss(labelled_data_predicted_features, labelled_data_true_labels)
-        # print("the supcon batch loss is: ", batch_loss)
+        batch_loss = loss(predicted_joint_positions, label)
+        print("the batch loss is: ", batch_loss)
     except Exception as e:
         logging.exception("loss calc message=================================================")
     # raise ValueError("the supcon batch loss is: ", batch_loss)
