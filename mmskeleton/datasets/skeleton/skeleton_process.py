@@ -239,7 +239,7 @@ def pad_zero_beginning_for_joint_prediction(data, size, pred_ts):
 
         all_data = data[data_field]
         T = all_data.shape[2] - max_future_ts
-        np_array = np_array[:, :, :T, :]
+        np_array = all_data[:, :, :T, :]
 
 
         if T < size:
