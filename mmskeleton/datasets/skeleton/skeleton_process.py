@@ -214,16 +214,29 @@ def random_crop(data, size):
 
 def random_crop_for_joint_prediction(data, size, pred_ts):
     max_future_ts = max(pred_ts)
-
+    begin = -1
     for data_field in data_fields:
         if data_field not in data.keys():
             print(data_field)
             continue
+
+        all_data = data[data_field]
         np_array = data[data_field]
         T = np_array.shape[2] - max_future_ts # This is number of admissible timesteps in the walk
         if T > size:
-            begin = random.randint(0, T - size)
+            if begin is -1:
+                begin = random.randint(0, T - size)
             data[data_field] = np_array[:, :, begin:begin + size, :]
+
+            output_target = np.zeros([2, data.shape(1), len(pred_ts)], dtype=np_array.dtype)
+
+            # add the targets for future prediction
+            for i in range(len(pred_ts)):
+                t_ind = begin + size + pred_ts[i] 
+                joint_data = all_data[0:2, :, t_ind]
+                joint_data = joint_data.squeeze()
+                output_target[:, :, i] = joint_data
+                data['category_id'] = output_target
 
 
 
@@ -242,7 +255,7 @@ def pad_zero_beginning_for_joint_prediction(data, size, pred_ts):
         np_array = all_data[:, :, :T, :]
 
 
-        if T < size:
+        if T <= size:
             pad_shape = list(np_array.shape)
             pad_shape[2] = size
             np_array_paded = np.zeros(pad_shape, dtype=np_array.dtype)
@@ -251,14 +264,14 @@ def pad_zero_beginning_for_joint_prediction(data, size, pred_ts):
             data[data_field] = np_array_paded
 
             # Add the future timesteps for prediction to the categrory_id
-            print('data shape: ', np_array_paded.shape)
+            # print('data shape: ', np_array_paded.shape)
             output_target = np.zeros([2, pad_shape[1], len(pred_ts)], dtype=np_array.dtype)
             for i in range(len(pred_ts)):
-                
-                joint_data = all_data[0:2, :, pred_ts[i]]
+                t_ind = max_future_ts - pred_ts[i] + 1
+                joint_data = all_data[0:2, :, -t_ind]
                 joint_data = joint_data.squeeze()
-                output_target[:, :, i] = joint_data
-
+                output_target[:, :, pred_ts] = joint_data
+                data['category_id'] = output_target
 
     return data
 
