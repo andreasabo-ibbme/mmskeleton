@@ -222,13 +222,16 @@ def random_crop_for_joint_prediction(data, size, pred_ts):
 
         all_data = data[data_field]
         np_array = data[data_field]
+
+        input_shape = list(np_array.shape)
+        num_joints = input_shape[1]
         T = np_array.shape[2] - max_future_ts # This is number of admissible timesteps in the walk
         if T > size:
             if begin is -1:
                 begin = random.randint(0, T - size)
             data[data_field] = np_array[:, :, begin:begin + size, :]
 
-            output_target = np.zeros([2, all_data.shape(1), len(pred_ts)], dtype=np_array.dtype)
+            output_target = np.zeros([2, num_joints, len(pred_ts)], dtype=np_array.dtype)
 
             # add the targets for future prediction
             for i in range(len(pred_ts)):
