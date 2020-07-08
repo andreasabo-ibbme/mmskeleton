@@ -232,7 +232,7 @@ def random_crop_for_joint_prediction(data, size, pred_ts):
             data[data_field] = np_array[:, :, begin:begin + size, :]
 
             output_target = np.zeros([2, num_joints, len(pred_ts)], dtype=np_array.dtype)
-
+            print("outptu target shape: ", output_target.shape)
             # add the targets for future prediction
             for i in range(len(pred_ts)):
                 t_ind = begin + size + pred_ts[i] 
@@ -269,6 +269,8 @@ def pad_zero_beginning_for_joint_prediction(data, size, pred_ts):
             # Add the future timesteps for prediction to the categrory_id
             # print('data shape: ', np_array_paded.shape)
             output_target = np.zeros([2, pad_shape[1], len(pred_ts)], dtype=np_array.dtype)
+            print("outptu target shape: ", output_target.shape)
+
             for i in range(len(pred_ts)):
                 t_ind = max_future_ts - pred_ts[i] + 1
                 joint_data = all_data[0:2, :, -t_ind]
