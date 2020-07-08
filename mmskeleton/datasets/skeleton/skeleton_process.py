@@ -212,19 +212,43 @@ def random_crop(data, size):
     return data
 
 
-def random_crop_for_joint_prediction(data, size):
+def random_crop_for_joint_prediction(data, size, pred_ts):
+    max_future_ts = max(pred_ts)
+
     for data_field in data_fields:
         if data_field not in data.keys():
+            print(data_field)
             continue
-        print(data_field)
         np_array = data[data_field]
-        T = np_array.shape[2]
+        T = np_array.shape[2] - max_future_ts # This is number of admissible timesteps in the walk
         if T > size:
             begin = random.randint(0, T - size)
             data[data_field] = np_array[:, :, begin:begin + size, :]
+
+
+
+
     return data
 
+def pad_zero_beginning_for_joint_prediction(data, size, pred_ts):
+    max_future_ts = max(pred_ts)
 
+    for data_field in data_fields:
+        if data_field not in data.keys():
+            continue
+
+        np_array = data[data_field]
+        T = np_array.shape[2] - max_future_ts
+        if T < size:
+            pad_shape = list(np_array.shape)
+            pad_shape[2] = size
+            np_array_paded = np.zeros(pad_shape, dtype=np_array.dtype)
+            np_array_paded[:, :, -T:, :] = np_array
+            data[data_field] = np_array_paded
+
+
+
+    return data
 
 
 def simulate_camera_moving(data,
