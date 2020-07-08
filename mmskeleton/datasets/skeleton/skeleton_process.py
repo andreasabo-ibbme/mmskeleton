@@ -237,8 +237,8 @@ def pad_zero_beginning_for_joint_prediction(data, size, pred_ts):
         if data_field not in data.keys():
             continue
 
-        np_array = data[data_field]
-        T = np_array.shape[2] - max_future_ts
+        all_data = data[data_field]
+        T = all_data.shape[2] - max_future_ts
         np_array = np_array[:, :, :T, :]
 
 
@@ -252,8 +252,12 @@ def pad_zero_beginning_for_joint_prediction(data, size, pred_ts):
 
             # Add the future timesteps for prediction to the categrory_id
             print('data shape: ', np_array_paded.shape)
-
-
+            output_target = np.zeros([2, pad_shape[1], len(pred_ts)], dtype=np_array.dtype)
+            for i in range(len(pred_ts)):
+                
+                joint_data = all_data[0:2, :, pred_ts[i]]
+                joint_data = joint_data.squeeze()
+                output_target[:, :, i] = joint_data
 
 
     return data
