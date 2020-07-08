@@ -231,7 +231,7 @@ def train(
                 batch_size,
                 total_epochs,
                 training_hooks,
-                workflow,
+                workflow_stage_1,
                 gpus,
                 log_level,
                 workers,
