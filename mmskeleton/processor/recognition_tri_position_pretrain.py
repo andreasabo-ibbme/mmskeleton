@@ -246,8 +246,10 @@ def train(
 
 
             # ================================ STAGE 2 ====================================
+            # Make sure we're using the correct dataset
             datasets = [copy.deepcopy(dataset_cfg[1]) for i in range(len(workflow))]
-
+            for ds in datasets:
+                ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
 
             # Stage 2 training
             datasets[0]['data_source']['data_dir'] = stage_2_train
@@ -398,6 +400,8 @@ def finetune_model(
 
 
     loss = call_obj(**loss_cfg_local)
+
+    loss = torch.nn.L1Loss()
 
     # print('training hooks: ', training_hooks_local)
     # build runner
