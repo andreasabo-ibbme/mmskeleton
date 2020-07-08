@@ -246,6 +246,8 @@ def train(
 
 
             # ================================ STAGE 2 ====================================
+            datasets = [copy.deepcopy(dataset_cfg[1]) for i in range(len(workflow))]
+
 
             # Stage 2 training
             datasets[0]['data_source']['data_dir'] = stage_2_train
