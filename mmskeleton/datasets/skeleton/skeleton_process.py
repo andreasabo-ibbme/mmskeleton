@@ -228,7 +228,7 @@ def random_crop_for_joint_prediction(data, size, pred_ts):
                 begin = random.randint(0, T - size)
             data[data_field] = np_array[:, :, begin:begin + size, :]
 
-            output_target = np.zeros([2, data.shape(1), len(pred_ts)], dtype=np_array.dtype)
+            output_target = np.zeros([2, all_data.shape(1), len(pred_ts)], dtype=np_array.dtype)
 
             # add the targets for future prediction
             for i in range(len(pred_ts)):
