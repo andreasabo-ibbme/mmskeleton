@@ -20,7 +20,7 @@ processor_cfg:
   exclude_cv: False
   notes: "two_part_loss"
   group_notes: "150_nonorm_2_pd_only"
-  weight_classes: False
+  weight_classes: True
   flip_loss: True
   launch_from_windows: False
   wandb_project: "SAS_es50_weighted_front_pad"

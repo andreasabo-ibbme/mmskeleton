@@ -99,7 +99,6 @@ def log_weighted_mse_loss(input, target, weights):
         numerator += weights[key]
 
     inv_weights_list = [numerator / weights[int(i.data.tolist()[0])]  for i in target]
-    print("weights are: ", weights)
 
     weight_tensor = torch.FloatTensor(inv_weights_list)
     weight_tensor = torch.log(weight_tensor) # Take log of the tensor

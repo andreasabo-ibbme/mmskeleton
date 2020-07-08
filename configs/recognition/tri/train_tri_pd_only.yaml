@@ -19,7 +19,7 @@ processor_cfg:
   cv: 5
   notes: "regression, normalized -shoulder, centered at 100"
   group_notes: "smaller3_fix_kp_order_add_labelled_flips"
-  weight_classes: False
+  weight_classes: True
 
   # model setting
   model_cfg:
