@@ -75,6 +75,8 @@ class ST_GCN_18_ordinal_smaller_2_position_pretrain(nn.Module):
 
         # Pretraining
         else:
+            print("============================================")
+            print('input is of size: ', x.size())
             x = self.encoder(x)
             print('shape of x before encoder is: ', x.size())
 
