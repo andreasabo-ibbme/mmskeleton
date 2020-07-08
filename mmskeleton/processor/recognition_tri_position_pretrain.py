@@ -489,12 +489,14 @@ def pretrain_model(
 def batch_processor_position_pretraining(model, datas, train_mode, loss):
 
     try:
+        print("have No flip")
         data, label = datas
     except:
         data, data_flipped, label = datas
         have_flips = 1
+        print("have flip")
 
-
+    print(label)
     # Even if we have flipped data, we only want to use the original in this stage
 
     data_all = data.cuda()
@@ -503,7 +505,7 @@ def batch_processor_position_pretraining(model, datas, train_mode, loss):
 
     # Predict the future joint positions using all data
     predicted_joint_positions = model(data)
-    print('predicted_joint positions shape: ', predicted_joint_positions.shape())
+    print('predicted_joint positions shape: ', predicted_joint_positions.shape)
 
     if torch.sum(predicted_joint_positions) == 0:        
         raise ValueError("=============================== got all zero output...")
