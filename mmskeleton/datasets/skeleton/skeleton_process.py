@@ -217,7 +217,6 @@ def random_crop_for_joint_prediction(data, size, pred_ts):
     begin = -1
     for data_field in data_fields:
         if data_field not in data.keys():
-            print(data_field)
             continue
 
         all_data = data[data_field]
@@ -234,7 +233,7 @@ def random_crop_for_joint_prediction(data, size, pred_ts):
             output_target = np.zeros([2, num_joints, len(pred_ts)], dtype=np_array.dtype)
             # add the targets for future prediction
             for i in range(len(pred_ts)):
-                t_ind = begin + size + pred_ts[i] 
+                t_ind = begin + size + pred_ts[i] - 1 
                 joint_data = all_data[0:2, :, t_ind]
                 joint_data = joint_data.squeeze()
                 output_target[:, :, i] = joint_data
@@ -247,7 +246,6 @@ def random_crop_for_joint_prediction(data, size, pred_ts):
 
 def pad_zero_beginning_for_joint_prediction(data, size, pred_ts):
     max_future_ts = max(pred_ts)
-    print(data.keys())
     for data_field in data_fields:
         if data_field not in data.keys():
             continue
