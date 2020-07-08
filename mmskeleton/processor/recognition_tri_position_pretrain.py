@@ -489,8 +489,8 @@ def pretrain_model(
 def batch_processor_position_pretraining(model, datas, train_mode, loss):
 
     try:
-        print("have No flip")
         data, label = datas
+        print('dont have flip')
     except:
         data, data_flipped, label = datas
         have_flips = 1
