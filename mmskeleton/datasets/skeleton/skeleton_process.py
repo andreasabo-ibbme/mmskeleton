@@ -276,7 +276,7 @@ def pad_zero_beginning_for_joint_prediction(data, size, pred_ts):
                 joint_data = all_data[0:2, :, -t_ind]
                 joint_data = joint_data.squeeze()
                 print("joint_data: ", joint_data.shape)
-                output_target[:, :, pred_ts] = joint_data
+                output_target[:, :, i] = joint_data
                 data['category_id'] = output_target
 
     return data
