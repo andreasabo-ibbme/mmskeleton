@@ -110,7 +110,7 @@ processor_cfg:
 
   # runtime setting
   workflow: [['train', 1], ['val', 1], ['test', 1]]
-  work_dir: ./work_dir/recognition/tri_all/dataset_example/v2/UPDRS/supcon_UPDRS_2_120_no_norm_64_feat
+  work_dir: ./work_dir/recognition/tri_all/dataset_example/v2/UPDRS/pretrain_UPDRS_2_nonorm
   total_epochs: 200
   training_hooks:
     lr_config:
