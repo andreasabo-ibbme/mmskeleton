@@ -490,11 +490,9 @@ def batch_processor_position_pretraining(model, datas, train_mode, loss):
 
     try:
         data, label = datas
-        print('dont have flip')
     except:
         data, data_flipped, label = datas
         have_flips = 1
-        print("have flip")
 
     # Even if we have flipped data, we only want to use the original in this stage
 
@@ -521,75 +519,19 @@ def batch_processor_position_pretraining(model, datas, train_mode, loss):
     preds = []
     raw_preds = []
 
-    labels = labelled_data_true_labels.data.tolist()
+    label_placeholders = [-1 for i in range(num_valid_samples)]
 
     # Case when we have a single output
-    if type(labels) is not list:
-        labels = [labels]
+    if type(label_placeholders) is not list:
+        label_placeholders = [label_placeholders]
 
-    log_vars = dict(loss_pretrain=batch_loss.item())
-    output_labels = dict(true=labels, pred=preds, raw_preds=raw_preds)
-    outputs = dict(loss=batch_loss, log_vars=log_vars, num_samples=len(labelled_data_true_labels))
+    log_vars = dict(loss_pretrain_position=batch_loss.item())
+    output_labels = dict(true=label_placeholders, pred=preds, raw_preds=raw_preds)
+    outputs = dict(loss=batch_loss, log_vars=log_vars, num_samples=num_valid_samples)
 
     return outputs, output_labels, batch_loss.item()
     
 
-
-    # y_true_orig_shape = y_true.reshape(1,-1).squeeze()
-    # losses = loss(output, y_true)
-
-
-    # if type(loss) == type(mse_loss):
-    #     if balance_classes:
-    #         losses = log_weighted_mse_loss(output, y_true, class_weights_dict)
-    #     # Convert the output to classes and clip from 0 to number of classes
-    #     y_pred_rounded = output.detach().cpu().numpy()
-    #     output = y_pred_rounded
-    #     output_list = output.squeeze().tolist()
-    #     y_pred_rounded = y_pred_rounded.reshape(1, -1).squeeze()
-    #     y_pred_rounded = np.round(y_pred_rounded, 0)
-    #     y_pred_rounded = np.clip(y_pred_rounded, 0, num_class-1)
-    #     preds = y_pred_rounded.squeeze().tolist()
-    # else:    
-    #     rank = output.argsort()
-    #     preds = rank[:,-1].data.tolist()
-
-    # labels = y_true_orig_shape.data.tolist()
-
-    # # Case when we have a single output
-    # if type(labels) is not list:
-    #     labels = [labels]
-    # if type(preds) is not list:
-    #     preds = [preds]
-    # if type(output_list) is not list:
-    #     output_list = [output_list]
-
-    # try:
-    #     labels = [int(cl) for cl in labels]
-    #     preds = [int(cl) for cl in preds]
-    # except TypeError as e:
-    #     print(labels)
-    #     print(preds)
-    #     print("got an error: ", e)
-
-
-    # overall_loss = losses + loss_flip_tensor
-    # log_vars = dict(loss_label=losses.item(), loss_flip = loss_flip_tensor.item(), loss_all=overall_loss.item())
-    # # print('l1', losses, 'l2', loss_flip_tensor)
-
-    # try:
-    #     log_vars['mae_raw'] = mean_absolute_error(labels, output)
-    # except:
-    #     print("labels: ", labels, "output", output)
-    #     print('input', torch.sum(torch.isnan(data_all)))
-    #     print('output_all', output_all, 'output_all_flipped', output_all_flipped)
-    #     raise ValueError('stop')
-    # log_vars['mae_rounded'] = mean_absolute_error(labels, preds)
-    # output_labels = dict(true=labels, pred=preds, raw_preds=output_list)
-    # outputs = dict(loss=batch_loss, log_vars=log_vars, num_samples=len(labels))
-    # # print(type(labels), type(preds))
-    # # print('this is what we return: ', output_labels)
-    # return outputs, output_labels, batch_loss
 
 
 
