@@ -251,14 +251,18 @@ def pad_zero_beginning_for_joint_prediction(data, size, pred_ts):
             continue
 
         all_data = data[data_field]
-        T = all_data.shape[2] - max_future_ts
+        T = all_data.shape[2] - max_future_ts # This is the number of valid timesteps
         np_array = all_data[:, :, :T, :]
-
+        print('all_data: ', all_data.shape)
+        print('np_array: ', np_array.shape)
 
         if T <= size:
             pad_shape = list(np_array.shape)
             pad_shape[2] = size
             np_array_paded = np.zeros(pad_shape, dtype=np_array.dtype)
+            print('np_array_paded: ', np_array_paded.shape)
+            print('T: ', T)
+            print('max_future_ts: ', max_future_ts)
 
             np_array_paded[:, :, -T:, :] = np_array
             data[data_field] = np_array_paded
