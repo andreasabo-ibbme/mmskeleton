@@ -265,7 +265,7 @@ def train(
 
             # print("final model for fine_tuning is: ", pretrained_model)
 
-            finetune_model(work_dir,
+            finetune_model(work_dir_amb,
                         pretrained_model,
                         loss_cfg,
                         datasets,
