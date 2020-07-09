@@ -57,7 +57,7 @@ processor_cfg:
     - type: "datasets.DataPipeline"
       data_source:
         type: "datasets.SkeletonLoaderTRI"
-        data_dir: /home/asabo/projects/def-btaati/asabo/skel_data/stgcn_normalized_100_center_pd_no_norm
+        data_dir: /home/asabo/projects/def-btaati/asabo/skel_data/stgcn_normalized_100_center_all_no_norm
         num_track: 1
         num_keypoints: 13
         repeat: 1
