@@ -343,16 +343,26 @@ def train(
         class_names = [str(i) for i in range(num_class)]
 
         fig = plot_confusion_matrix( true_labels,preds, class_names)
-        wandb.log({"early_stop_eval/final_confusion_matrix.png": fig})
-        fig_title = "Regression for ALL unseen participants"
+        wandb.log({"early_stop_eval/" + mode + "_final_confusion_matrix.png": fig})
+        fig_title = "Regression for ALL participants - " + mode
         reg_fig = regressionPlot(true_labels, preds_raw, class_names, fig_title)
         try:
-            wandb.log({"early_stop_eval/final_regression_plot.png": [wandb.Image(reg_fig)]})
+            wandb.log({"early_stop_eval/" + mode + "_final_regression_plot.png": [wandb.Image(reg_fig)]})
         except:
             try:
-                wandb.log({"early_stop_eval/final_regression_plot.png": reg_fig})
+                wandb.log({"early_stop_eval/" + mode + "_final_regression_plot.png": reg_fig})
             except:
                 print("failed to log regression plot")
+
+        # Log the final dataframe to wandb for future analysis
+        header = ['amb', 'true_score', 'pred_round', 'pred_raw']
+        try:
+            wandb.log({"final_results_csv/"+mode: wandb.Table(data=df, columns=header)})
+        except: 
+            logging.exception("Could not save final table =================================================\n")
+
+
+
 
 
 def finetune_model(

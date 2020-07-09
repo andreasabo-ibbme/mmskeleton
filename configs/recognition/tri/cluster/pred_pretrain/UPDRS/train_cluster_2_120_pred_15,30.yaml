@@ -26,10 +26,10 @@ processor_cfg:
   wandb_project: "position_pretrain_UPDRS_pad_front"
   early_stopping: True
   force_run_all_epochs: False
-  es_patience_1: 10
-  es_start_up_1: 50
-  es_patience_2: 15
-  es_start_up_2: 50
+  es_patience_1: 1
+  es_start_up_1: 5
+  es_patience_2: 1
+  es_start_up_2: 5
   freeze_encoder: False
   head: "stgcn"
 
