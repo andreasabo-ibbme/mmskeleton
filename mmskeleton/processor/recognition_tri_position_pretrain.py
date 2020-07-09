@@ -572,7 +572,7 @@ def batch_processor(model, datas, train_mode, loss):
     y_true = y_true[row_cond, :]
     data = data_all.data[row_cond, :]
     num_valid_samples = data.shape[0]
-
+    print('number of labelled samples: ', len(y_true))
 
     if have_flips:
         data_all = data_all.data
