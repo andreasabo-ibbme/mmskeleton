@@ -19,7 +19,7 @@ processor_cfg:
   cv: 5
   exclude_cv: False
   notes: "two_part_loss"
-  group_notes: "dev_v2"
+  group_notes: "dev_v3"
   weight_classes: True
   flip_loss: True
   launch_from_windows: False
@@ -27,7 +27,7 @@ processor_cfg:
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 10
-  es_start_up_1: 100
+  es_start_up_1: 50
   es_patience_2: 15
   es_start_up_2: 50
   freeze_encoder: False
@@ -57,7 +57,7 @@ processor_cfg:
     - type: "datasets.DataPipeline"
       data_source:
         type: "datasets.SkeletonLoaderTRI"
-        data_dir: /home/asabo/projects/def-btaati/asabo/skel_data/stgcn_normalized_100_center_all_no_norm
+        data_dir: /home/asabo/projects/def-btaati/asabo/skel_data/stgcn_normalized_100_center_pd_no_norm
         num_track: 1
         num_keypoints: 13
         repeat: 1
@@ -103,10 +103,10 @@ processor_cfg:
   # optimizer setting
   optimizer_cfg:
     type: 'torch.optim.SGD'
-    lr: 0.0001
+    lr: 0.001
     momentum: 0.9
     nesterov: true
-    weight_decay: 0.00001
+    weight_decay: 0.0001
 
   # runtime setting
   workflow: [['train', 1], ['val', 1], ['test', 1]]
