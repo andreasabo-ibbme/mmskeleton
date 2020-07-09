@@ -191,8 +191,8 @@ def train(
                     break
                 num_reps_pd += 1
 
-                stage_2_train = [non_test_walks_all_no_pd_label[i] for i in train_ids_pd]
-                stage_2_val = [non_test_walks_all_no_pd_label[i] for i in val_ids_pd]
+                stage_2_train = [non_test_walks_pd_labelled[i] for i in train_ids_pd]
+                stage_2_val = [non_test_walks_pd_labelled[i] for i in val_ids_pd]
 
 
             print(f"we have {len(stage_1_train)} stage_1_train and {len(stage_1_val)} stage_1_val. ")
