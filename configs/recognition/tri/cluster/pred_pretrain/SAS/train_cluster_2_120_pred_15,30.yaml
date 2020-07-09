@@ -23,7 +23,7 @@ processor_cfg:
   weight_classes: True
   flip_loss: True
   launch_from_windows: False
-  wandb_project: "position_pretrain_UPDRS_pad_front"
+  wandb_project: "position_pretrain_SAS_pad_front"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 15
@@ -61,7 +61,7 @@ processor_cfg:
         num_track: 1
         num_keypoints: 13
         repeat: 1
-        outcome_label: UPDRS_gait
+        outcome_label: SAS_gait
         csv_loader: True
         missing_joint_val: mean
         cache: True
@@ -83,7 +83,7 @@ processor_cfg:
         num_track: 1
         num_keypoints: 13
         repeat: 1
-        outcome_label: UPDRS_gait
+        outcome_label: SAS_gait
         csv_loader: True
         missing_joint_val: mean
         cache: True
@@ -110,7 +110,7 @@ processor_cfg:
 
   # runtime setting
   workflow: [['train', 1], ['val', 1], ['test', 1]]
-  work_dir: ./work_dir/recognition/tri_all/dataset_example/v2/UPDRS/120_v2_pred15,30_no_norm
+  work_dir: ./work_dir/recognition/tri_all/dataset_example/v2/SAS/120_v2_pred15,30_no_norm
   total_epochs: 200
   training_hooks:
     lr_config:

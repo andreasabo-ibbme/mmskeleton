@@ -15,6 +15,7 @@ from spacecutter.models import OrdinalLogisticModel
 import spacecutter
 import pandas as pd
 import pickle
+import shutil
 from mmskeleton.processor.utils_recognition import *
 from mmskeleton.processor.supcon_loss import *
 
@@ -286,7 +287,11 @@ def train(
                         es_start_up_2, 
                         freeze_encoder)
 
-
+        # Done with this participant, we can delete the temp foldeer
+        try:
+            shutil.rmtree(work_dir_amb)
+        except:
+            print('failed to delete the participant folder')
 
     # Compute summary statistics (accuracy and confusion matrices)
     final_results_dir = os.path.join(work_dir, 'all_test', wandb_group)
