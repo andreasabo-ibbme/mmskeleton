@@ -401,8 +401,6 @@ def finetune_model(
 
     loss = call_obj(**loss_cfg_local)
 
-    loss = torch.nn.L1Loss()
-
     # print('training hooks: ', training_hooks_local)
     # build runner
     optimizer = call_obj(params=model.parameters(), **optimizer_cfg_local)

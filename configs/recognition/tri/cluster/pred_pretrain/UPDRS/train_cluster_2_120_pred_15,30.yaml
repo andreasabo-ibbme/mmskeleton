@@ -19,7 +19,7 @@ processor_cfg:
   cv: 5
   exclude_cv: False
   notes: "two_part_loss"
-  group_notes: "dev_no_wd_MAE_loss_pretrain"
+  group_notes: "dev_v2"
   weight_classes: True
   flip_loss: True
   launch_from_windows: False
@@ -103,10 +103,10 @@ processor_cfg:
   # optimizer setting
   optimizer_cfg:
     type: 'torch.optim.SGD'
-    lr: 0.001
+    lr: 0.0001
     momentum: 0.9
     nesterov: true
-    weight_decay: 0.0000
+    weight_decay: 0.00001
 
   # runtime setting
   workflow: [['train', 1], ['val', 1], ['test', 1]]
