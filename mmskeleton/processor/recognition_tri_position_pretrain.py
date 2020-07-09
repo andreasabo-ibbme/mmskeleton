@@ -357,7 +357,7 @@ def train(
         # Log the final dataframe to wandb for future analysis
         header = ['amb', 'true_score', 'pred_round', 'pred_raw']
         try:
-            wandb.log({"final_results_csv/"+mode: wandb.Table(data=df, columns=header)})
+            wandb.log({"final_results_csv/"+mode: wandb.Table(data=df.values.tolist(), columns=header)})
         except: 
             logging.exception("Could not save final table =================================================\n")
 
