@@ -59,7 +59,6 @@ def train(
         es_start_up_1=5,
         es_patience_2=10,
         es_start_up_2=50,
-        head='stgcn',
         freeze_encoder=True,
 ):
     # Set up for logging 
@@ -231,11 +230,11 @@ def train(
             pretrained_model.module.set_stage_2()
             pretrained_model.module.head.apply(weights_init_xavier)
 
-            things_to_log = {'supcon_head': head, 'freeze_encoder': freeze_encoder, 'es_start_up_2': es_start_up_2, 'es_patience_2': es_patience_2, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
+            things_to_log = {'supcon_head': model_cfg['head'], 'freeze_encoder': freeze_encoder, 'es_start_up_2': es_start_up_2, 'es_patience_2': es_patience_2, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
 
             # print("final model for fine_tuning is: ", pretrained_model)
 
-            finetune_model(work_dir,
+            finetune_model(work_dir_amb,
                         pretrained_model,
                         loss_cfg,
                         datasets,
@@ -313,16 +312,23 @@ def train(
         class_names = [str(i) for i in range(num_class)]
 
         fig = plot_confusion_matrix( true_labels,preds, class_names)
-        wandb.log({"early_stop_eval/final_confusion_matrix.png": fig})
-        fig_title = "Regression for ALL unseen participants"
+        wandb.log({"early_stop_eval/" + mode + "_final_confusion_matrix.png": fig})
+        fig_title = "Regression for ALL participants - " + mode
         reg_fig = regressionPlot(true_labels, preds_raw, class_names, fig_title)
         try:
-            wandb.log({"early_stop_eval/final_regression_plot.png": [wandb.Image(reg_fig)]})
+            wandb.log({"early_stop_eval/" + mode + "_final_regression_plot.png": [wandb.Image(reg_fig)]})
         except:
             try:
-                wandb.log({"early_stop_eval/final_regression_plot.png": reg_fig})
+                wandb.log({"early_stop_eval/" + mode + "_final_regression_plot.png": reg_fig})
             except:
                 print("failed to log regression plot")
+
+        # Log the final dataframe to wandb for future analysis
+        header = ['amb', 'true_score', 'pred_round', 'pred_raw']
+        try:
+            wandb.log({"final_results_csv/"+mode: wandb.Table(data=df.values.tolist(), columns=header)})
+        except: 
+            logging.exception("Could not save final table =================================================\n")
 
 
 def finetune_model(

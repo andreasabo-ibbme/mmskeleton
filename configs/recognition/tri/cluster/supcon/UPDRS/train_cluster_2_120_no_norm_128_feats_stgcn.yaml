@@ -19,7 +19,7 @@ processor_cfg:
   cv: 5
   exclude_cv: False
   notes: "two_part_loss"
-  group_notes: "supcon_UPDRS_2_120_no_norm_64_feat"
+  group_notes: "supcon_UPDRS_2_120_no_norm_128_feat_mlp"
   weight_classes: True
   flip_loss: True
   launch_from_windows: False
@@ -31,7 +31,6 @@ processor_cfg:
   es_patience_2: 15
   es_start_up_2: 50
   freeze_encoder: False
-  head: "stgcn"
 
   # model setting
   model_cfg:
@@ -40,7 +39,8 @@ processor_cfg:
     num_class: 3
     edge_importance_weighting: True
     dropout: 0.0
-    feat_dim: 64
+    feat_dim: 128
+    head: "mlp"
 
     graph_cfg:
       layout: 'coco_simplified_head'
@@ -110,7 +110,7 @@ processor_cfg:
 
   # runtime setting
   workflow: [['train', 1], ['val', 1], ['test', 1]]
-  work_dir: ./work_dir/recognition/tri_all/dataset_example/v2/UPDRS/supcon_UPDRS_2_120_no_norm_64_feat
+  work_dir: ./work_dir/recognition/tri_all/dataset_example/v2/UPDRS/supcon_UPDRS_2_120_no_norm_128_feat_mlp
   total_epochs: 200
   training_hooks:
     lr_config:
