@@ -107,191 +107,198 @@ def train(
     original_wandb_group = wandb_group
     workflow_orig = copy.deepcopy(workflow)
     for test_id in test_ids:
-        plt.close('all')
-        ambid = id_mapping[test_id]
+        try:
 
-        # These are all of the walks (both labelled and not) of the test participant and cannot be included in training data at any point (for LOSOCV)
-        test_subj_walks_name_only_all = [i for i in all_file_names_only if re.search('ID_'+str(test_id), i) ]
-        test_subj_walks_name_only_pd_only = [i for i in pd_all_file_names_only if re.search('ID_'+str(test_id), i) ]
-        
-        print(f"test_subj_walks_name_only_all: {len(test_subj_walks_name_only_all)}")
-        print(f"test_subj_walks_name_only_pd_only: {len(test_subj_walks_name_only_pd_only)}")
-
-        # These are the walks that can potentially be included in the train/val sets at some stage
-        non_test_subj_walks_name_only_all = list(set(all_file_names_only).difference(set(test_subj_walks_name_only_all)))
-        non_test_subj_walks_name_only_pd_only = list(set(pd_all_file_names_only).difference(set(test_subj_walks_name_only_pd_only)))
-        non_test_subj_walks_name_only_non_pd_only = list(set(non_test_subj_walks_name_only_all).difference(set(non_test_subj_walks_name_only_pd_only)))
-
-
-        print(f"non_test_subj_walks_name_only_all: {len(non_test_subj_walks_name_only_all)}")
-        print(f"non_test_subj_walks_name_only_pd_only: {len(non_test_subj_walks_name_only_pd_only)}")
-
-
-
-        # These are all of the labelled walks from the current participant that we want to evaluate our eventual model on
-        test_walks_pd_labelled = [os.path.join(data_dir_pd_data, f) for f in test_subj_walks_name_only_pd_only]
-        non_test_walks_pd_labelled = [os.path.join(data_dir_pd_data, f) for f in non_test_subj_walks_name_only_pd_only]
-        non_test_walks_all = [os.path.join(data_dir_all_data, f) for f in non_test_subj_walks_name_only_all]
-        non_test_walks_all_no_pd_label = [os.path.join(data_dir_all_data, f) for f in non_test_subj_walks_name_only_non_pd_only]
-
-
-
-        # A list of whether a walk from the non_test_walks_all list has a pd label as well
-        non_test_is_lablled = [1 if i in non_test_walks_pd_labelled else 0 for i in non_test_walks_all]
-
-
-
-        datasets = [copy.deepcopy(dataset_cfg[0]) for i in range(len(workflow))]
-        work_dir_amb = work_dir + "/" + str(ambid)
-        for ds in datasets:
-            ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
-
-        # Don't bother training if we have no test data
-        if len(test_walks_pd_labelled) == 0:
-            continue
-        
-        # data exploration
-        print(f"test_walks_pd_labelled: {len(test_walks_pd_labelled)}")
-        print(f"non_test_walks_pd_labelled: {len(non_test_walks_pd_labelled)}")
-
-
-        # Split the non_test walks into train/val
-        kf = KFold(n_splits=cv, shuffle=True, random_state=1)
-        kf.get_n_splits(non_test_walks_all_no_pd_label)
-
-        # PD labelled walks only
-        kf_pd = KFold(n_splits=cv, shuffle=True, random_state=1)
-        kf_pd.get_n_splits(non_test_walks_pd_labelled)
-
-
-        num_reps = 1
-        for train_ids, val_ids in kf.split(non_test_walks_all_no_pd_label):
-            if num_reps > 1:
-                break
-            
             plt.close('all')
             ambid = id_mapping[test_id]
-            num_reps += 1
-
-            # Divide all of the data into:
-            # Stage 1 train/val
-            # Stage 2 train/val
-            print(f"we have {len(non_test_walks_all_no_pd_label)} non_test_walks_all")
-            print(f"we have {len(train_ids)} train_ids and {len(val_ids)} val_ids. ")
-
-            # These are from the walks without pd labels (for pretraining)
-            stage_1_train = [non_test_walks_all_no_pd_label[i] for i in train_ids]
-            stage_1_val = [non_test_walks_all_no_pd_label[i] for i in val_ids]
-
-
-
-            # These are from the pd labelled set
-            num_reps_pd = 1
-            for train_ids_pd, val_ids_pd in kf.split(non_test_walks_pd_labelled):
-                if num_reps_pd > 1:
-                    break
-                num_reps_pd += 1
-
-                stage_2_train = [non_test_walks_pd_labelled[i] for i in train_ids_pd]
-                stage_2_val = [non_test_walks_pd_labelled[i] for i in val_ids_pd]
-
-
-            print(f"we have {len(stage_1_train)} stage_1_train and {len(stage_1_val)} stage_1_val. ")
-            print(f"we have {len(stage_2_train)} stage_2_train and {len(stage_2_val)} stage_2_val. ")
-           
-
-            # ================================ STAGE 1 ====================================
-            # Stage 1 training
-            datasets[0]['data_source']['data_dir'] = stage_1_train[:50]
-            datasets[1]['data_source']['data_dir'] = stage_1_val[:50]
-            datasets[2]['data_source']['data_dir'] = test_walks_pd_labelled[:50]
-            datasets_stage_1 = copy.deepcopy(datasets)
-            datasets_stage_1.pop(2)
-
-            workflow_stage_1 = copy.deepcopy(workflow)
-            workflow_stage_1.pop(2)
-
             work_dir_amb = work_dir + "/" + str(ambid)
+
+            # These are all of the walks (both labelled and not) of the test participant and cannot be included in training data at any point (for LOSOCV)
+            test_subj_walks_name_only_all = [i for i in all_file_names_only if re.search('ID_'+str(test_id), i) ]
+            test_subj_walks_name_only_pd_only = [i for i in pd_all_file_names_only if re.search('ID_'+str(test_id), i) ]
+            
+            print(f"test_subj_walks_name_only_all: {len(test_subj_walks_name_only_all)}")
+            print(f"test_subj_walks_name_only_pd_only: {len(test_subj_walks_name_only_pd_only)}")
+
+            # These are the walks that can potentially be included in the train/val sets at some stage
+            non_test_subj_walks_name_only_all = list(set(all_file_names_only).difference(set(test_subj_walks_name_only_all)))
+            non_test_subj_walks_name_only_pd_only = list(set(pd_all_file_names_only).difference(set(test_subj_walks_name_only_pd_only)))
+            non_test_subj_walks_name_only_non_pd_only = list(set(non_test_subj_walks_name_only_all).difference(set(non_test_subj_walks_name_only_pd_only)))
+
+
+            print(f"non_test_subj_walks_name_only_all: {len(non_test_subj_walks_name_only_all)}")
+            print(f"non_test_subj_walks_name_only_pd_only: {len(non_test_subj_walks_name_only_pd_only)}")
+
+
+
+            # These are all of the labelled walks from the current participant that we want to evaluate our eventual model on
+            test_walks_pd_labelled = [os.path.join(data_dir_pd_data, f) for f in test_subj_walks_name_only_pd_only]
+            non_test_walks_pd_labelled = [os.path.join(data_dir_pd_data, f) for f in non_test_subj_walks_name_only_pd_only]
+            non_test_walks_all = [os.path.join(data_dir_all_data, f) for f in non_test_subj_walks_name_only_all]
+            non_test_walks_all_no_pd_label = [os.path.join(data_dir_all_data, f) for f in non_test_subj_walks_name_only_non_pd_only]
+
+
+
+            # A list of whether a walk from the non_test_walks_all list has a pd label as well
+            non_test_is_lablled = [1 if i in non_test_walks_pd_labelled else 0 for i in non_test_walks_all]
+
+
+
+            datasets = [copy.deepcopy(dataset_cfg[0]) for i in range(len(workflow))]
             for ds in datasets:
                 ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
 
-            things_to_log = {'num_ts_predicting': model_cfg['num_ts_predicting'], 'es_start_up_1': es_start_up_1, 'es_patience_1': es_patience_1, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
-
-            # print("train walks: ", stage_1_train)
-
-            print('stage_1_train: ', len(stage_1_train))
-            print('stage_1_val: ', len(stage_1_val))
-            print('test_walks_pd_labelled: ', len(test_walks_pd_labelled))
-
-            pretrained_model = pretrain_model(
-                work_dir_amb,
-                model_cfg,
-                loss_cfg,
-                datasets,
-                optimizer_cfg,
-                batch_size,
-                total_epochs,
-                training_hooks,
-                workflow,
-                gpus,
-                log_level,
-                workers,
-                resume_from,
-                load_from, 
-                things_to_log,
-                early_stopping,
-                force_run_all_epochs,
-                es_patience_1,
-                es_start_up_1
-                )
+            # Don't bother training if we have no test data
+            if len(test_walks_pd_labelled) == 0:
+                continue
+            
+            # data exploration
+            print(f"test_walks_pd_labelled: {len(test_walks_pd_labelled)}")
+            print(f"non_test_walks_pd_labelled: {len(non_test_walks_pd_labelled)}")
 
 
-            # ================================ STAGE 2 ====================================
-            # Make sure we're using the correct dataset
-            datasets = [copy.deepcopy(dataset_cfg[1]) for i in range(len(workflow))]
-            for ds in datasets:
-                ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
+            # Split the non_test walks into train/val
+            kf = KFold(n_splits=cv, shuffle=True, random_state=1)
+            kf.get_n_splits(non_test_walks_all_no_pd_label)
 
-            # Stage 2 training
-            datasets[0]['data_source']['data_dir'] = stage_2_train
-            datasets[1]['data_source']['data_dir'] = stage_2_val
-            datasets[2]['data_source']['data_dir'] = test_walks_pd_labelled
+            # PD labelled walks only
+            kf_pd = KFold(n_splits=cv, shuffle=True, random_state=1)
+            kf_pd.get_n_splits(non_test_walks_pd_labelled)
 
 
-            # Reset the head
-            pretrained_model.module.set_stage_2()
-            pretrained_model.module.head.apply(weights_init_xavier)
+            num_reps = 1
+            for train_ids, val_ids in kf.split(non_test_walks_all_no_pd_label):
+                if num_reps > 1:
+                    break
+                
+                plt.close('all')
+                ambid = id_mapping[test_id]
+                num_reps += 1
 
-            things_to_log = {'supcon_head': head, 'freeze_encoder': freeze_encoder, 'es_start_up_2': es_start_up_2, 'es_patience_2': es_patience_2, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
+                # Divide all of the data into:
+                # Stage 1 train/val
+                # Stage 2 train/val
+                print(f"we have {len(non_test_walks_all_no_pd_label)} non_test_walks_all")
+                print(f"we have {len(train_ids)} train_ids and {len(val_ids)} val_ids. ")
 
-            # print("final model for fine_tuning is: ", pretrained_model)
+                # These are from the walks without pd labels (for pretraining)
+                stage_1_train = [non_test_walks_all_no_pd_label[i] for i in train_ids]
+                stage_1_val = [non_test_walks_all_no_pd_label[i] for i in val_ids]
 
-            finetune_model(work_dir_amb,
-                        pretrained_model,
-                        loss_cfg,
-                        datasets,
-                        optimizer_cfg,
-                        batch_size,
-                        total_epochs,
-                        training_hooks,
-                        workflow,
-                        gpus,
-                        log_level,
-                        workers,
-                        resume_from,
-                        load_from,
-                        things_to_log,
-                        early_stopping,
-                        force_run_all_epochs,
-                        es_patience_2,
-                        es_start_up_2, 
-                        freeze_encoder)
 
-        # Done with this participant, we can delete the temp foldeer
-        try:
-            shutil.rmtree(work_dir_amb)
+
+                # These are from the pd labelled set
+                num_reps_pd = 1
+                for train_ids_pd, val_ids_pd in kf.split(non_test_walks_pd_labelled):
+                    if num_reps_pd > 1:
+                        break
+                    num_reps_pd += 1
+
+                    stage_2_train = [non_test_walks_pd_labelled[i] for i in train_ids_pd]
+                    stage_2_val = [non_test_walks_pd_labelled[i] for i in val_ids_pd]
+
+
+                print(f"we have {len(stage_1_train)} stage_1_train and {len(stage_1_val)} stage_1_val. ")
+                print(f"we have {len(stage_2_train)} stage_2_train and {len(stage_2_val)} stage_2_val. ")
+            
+
+                # ================================ STAGE 1 ====================================
+                # Stage 1 training
+                datasets[0]['data_source']['data_dir'] = stage_1_train[:50]
+                datasets[1]['data_source']['data_dir'] = stage_1_val[:50]
+                datasets[2]['data_source']['data_dir'] = test_walks_pd_labelled[:50]
+                datasets_stage_1 = copy.deepcopy(datasets)
+                datasets_stage_1.pop(2)
+
+                workflow_stage_1 = copy.deepcopy(workflow)
+                workflow_stage_1.pop(2)
+
+                work_dir_amb = work_dir + "/" + str(ambid)
+                for ds in datasets:
+                    ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
+
+                things_to_log = {'num_ts_predicting': model_cfg['num_ts_predicting'], 'es_start_up_1': es_start_up_1, 'es_patience_1': es_patience_1, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
+
+                # print("train walks: ", stage_1_train)
+
+                print('stage_1_train: ', len(stage_1_train))
+                print('stage_1_val: ', len(stage_1_val))
+                print('test_walks_pd_labelled: ', len(test_walks_pd_labelled))
+
+                pretrained_model = pretrain_model(
+                    work_dir_amb,
+                    model_cfg,
+                    loss_cfg,
+                    datasets,
+                    optimizer_cfg,
+                    batch_size,
+                    total_epochs,
+                    training_hooks,
+                    workflow,
+                    gpus,
+                    log_level,
+                    workers,
+                    resume_from,
+                    load_from, 
+                    things_to_log,
+                    early_stopping,
+                    force_run_all_epochs,
+                    es_patience_1,
+                    es_start_up_1
+                    )
+
+
+                # ================================ STAGE 2 ====================================
+                # Make sure we're using the correct dataset
+                datasets = [copy.deepcopy(dataset_cfg[1]) for i in range(len(workflow))]
+                for ds in datasets:
+                    ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
+
+                # Stage 2 training
+                datasets[0]['data_source']['data_dir'] = stage_2_train
+                datasets[1]['data_source']['data_dir'] = stage_2_val
+                datasets[2]['data_source']['data_dir'] = test_walks_pd_labelled
+
+
+                # Reset the head
+                pretrained_model.module.set_stage_2()
+                pretrained_model.module.head.apply(weights_init_xavier)
+
+                things_to_log = {'supcon_head': head, 'freeze_encoder': freeze_encoder, 'es_start_up_2': es_start_up_2, 'es_patience_2': es_patience_2, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
+
+                # print("final model for fine_tuning is: ", pretrained_model)
+
+                finetune_model(work_dir_amb,
+                            pretrained_model,
+                            loss_cfg,
+                            datasets,
+                            optimizer_cfg,
+                            batch_size,
+                            total_epochs,
+                            training_hooks,
+                            workflow,
+                            gpus,
+                            log_level,
+                            workers,
+                            resume_from,
+                            load_from,
+                            things_to_log,
+                            early_stopping,
+                            force_run_all_epochs,
+                            es_patience_2,
+                            es_start_up_2, 
+                            freeze_encoder)
+            try:
+                shutil.rmtree(work_dir_amb)
+            except:
+                print('failed to delete the participant folder')
+
         except:
-            print('failed to delete the participant folder')
+            # Done with this participant, we can delete the temp foldeer
+            try:
+                shutil.rmtree(work_dir_amb)
+            except:
+                print('failed to delete the participant folder')
 
     # Compute summary statistics (accuracy and confusion matrices)
     final_results_dir = os.path.join(work_dir, 'all_test', wandb_group)
@@ -516,10 +523,8 @@ def batch_processor_position_pretraining(model, datas, train_mode, loss):
         data, label = datas
     except:
         data, data_flipped, label = datas
-        have_flips = 1
 
     # Even if we have flipped data, we only want to use the original in this stage
-
     data_all = data.cuda()
     label = label.cuda()
     num_valid_samples = data.shape[0]
