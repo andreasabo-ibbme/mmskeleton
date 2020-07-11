@@ -23,7 +23,7 @@ processor_cfg:
   weight_classes: True
   flip_loss: True
   launch_from_windows: False
-  wandb_project: "cnn_UPDRS_v1"
+  wandb_project: "cnn_UPDRS_v2"
   early_stopping: True
   force_run_all_epochs: False
   es_patience: 15

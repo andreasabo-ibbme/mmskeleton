@@ -32,7 +32,7 @@ class cnn_custom_4(nn.Module):
                  graph_cfg,
                  edge_importance_weighting=True,
                  data_bn=True,
-                 input_timesteps=150,
+                 input_timesteps=120,
                  **kwargs):
         super().__init__()
         print('In CNN custom: ', graph_cfg)
@@ -60,10 +60,7 @@ class cnn_custom_4(nn.Module):
         self.num_features_before_fc = (input_timesteps-2*(self.temporal_kernel-1)) * self.conv3_filters
 
         self.fc = nn.Linear(self.num_features_before_fc, 1)
-        
-        
-        self.fc1 = nn.Linear(self.num_features_before_fc, self.fc1_out)
-        self.fc2 = nn.Linear(self.fc1_out, 1)
+
  
 # class Net(nn.Module):
 #     def __init__(self):

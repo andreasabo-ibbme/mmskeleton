@@ -32,7 +32,7 @@ class cnn_custom_1(nn.Module):
                  graph_cfg,
                  edge_importance_weighting=True,
                  data_bn=True,
-                 input_timesteps=150,
+                 input_timesteps=120,
                  **kwargs):
         super().__init__()
         print('In CNN custom: ', graph_cfg)

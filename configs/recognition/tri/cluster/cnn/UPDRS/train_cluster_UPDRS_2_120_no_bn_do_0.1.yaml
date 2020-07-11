@@ -15,27 +15,29 @@ argparse_cfg:
 processor_cfg:
   type: 'processor.recognition_tri_cnn.train'
   workers: 1
-  test_ids: [47, 34, 37, 27, 39, 46, 48, 50, 52, 55, 57, 59, 66, 33]
+  test_ids: [34, 37, 27, 47, 39, 46, 48, 50, 52, 55, 57, 59, 66, 33]
   cv: 5
   exclude_cv: False
   notes: "two_part_loss"
-  group_notes: "UPDRS_2_150_bigger"
+  group_notes: "UPDRS_2_120_do_0.1"
   weight_classes: True
-  flip_loss: False
+  flip_loss: True
   launch_from_windows: False
-  wandb_project: "cnn_UPDRS_wip"
-  early_stopping: False
+  wandb_project: "cnn_UPDRS_v2"
+  early_stopping: True
   force_run_all_epochs: False
   es_patience: 15
   es_start_up: 50
+
   # model setting
   model_cfg:
     type: 'models.backbones.cnn_custom_2'
     in_channels: 3
     num_class: 3
     edge_importance_weighting: True
-    input_timesteps: 150
-    dropout: 0.0
+    input_timesteps: 120
+    dropout: 0.1
+    data_bn: False
     graph_cfg:
       layout: 'coco_simplified_head'
       strategy: 'spatial'
@@ -51,7 +53,7 @@ processor_cfg:
     - type: "datasets.DataPipeline"
       data_source:
         type: "datasets.SkeletonLoaderTRI"
-        data_dir: /home/asabo/projects/def-btaati/asabo/skel_data/stgcn_normalized_100_center_pd_no_norm
+        data_dir: /home/asabo/projects/def-btaati/asabo/skel_data/stgcn_normalized_100_center_all_no_norm
         num_track: 1
         num_keypoints: 13
         repeat: 1
@@ -64,8 +66,8 @@ processor_cfg:
       pipeline:
         - {type: "datasets.skeleton.normalize_by_resolution"}
         - {type: "datasets.skeleton.mask_by_visibility"}
-        - {type: "datasets.skeleton.pad_zero_beginning", size: 150 }
-        - {type: "datasets.skeleton.random_crop", size: 150 }
+        - {type: "datasets.skeleton.pad_zero_beginning", size: 120 }
+        - {type: "datasets.skeleton.random_crop", size: 120 }
         - {type: "datasets.skeleton.transpose", order: [0, 2, 1, 3]}
         - {type: "datasets.skeleton.to_tuple"}
 
@@ -86,8 +88,8 @@ processor_cfg:
       pipeline:
         - {type: "datasets.skeleton.normalize_by_resolution"}
         - {type: "datasets.skeleton.mask_by_visibility"}
-        - {type: "datasets.skeleton.pad_zero_beginning", size: 150 }
-        - {type: "datasets.skeleton.random_crop", size: 150 }
+        - {type: "datasets.skeleton.pad_zero_beginning", size: 120 }
+        - {type: "datasets.skeleton.random_crop", size: 120 }
         - {type: "datasets.skeleton.transpose", order: [0, 2, 1, 3]}
         - {type: "datasets.skeleton.to_tuple"}
   # dataloader setting
@@ -104,12 +106,12 @@ processor_cfg:
 
   # runtime setting
   workflow: [['train', 1], ['val', 1], ['test', 1]]
-  work_dir: ./work_dir/recognition/tri_all/dataset_example/v2/UPDRS/UPDRS_2
-  total_epochs: 200
+  work_dir: ./work_dir/recognition/tri_all/dataset_example/cnn/UPDRS/UPDRS_2_120_do_0.1
+  total_epochs: 150
   training_hooks:
     lr_config:
       policy: 'step'
-      step: [50, 100, 150]
+      step: [50, 100, 120]
     log_config:
       interval: 100
       hooks:

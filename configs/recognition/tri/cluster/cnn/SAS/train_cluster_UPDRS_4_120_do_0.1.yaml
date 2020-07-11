@@ -23,7 +23,7 @@ processor_cfg:
   weight_classes: True
   flip_loss: True
   launch_from_windows: False
-  wandb_project: "cnn_SAS_v1"
+  wandb_project: "cnn_SAS_v2"
   early_stopping: True
   force_run_all_epochs: False
   es_patience: 15
@@ -33,7 +33,7 @@ processor_cfg:
   model_cfg:
     type: 'models.backbones.cnn_custom_4'
     in_channels: 3
-    num_class: 3
+    num_class: 4
     edge_importance_weighting: True
     input_timesteps: 120
     dropout: 0.1
