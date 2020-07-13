@@ -249,99 +249,108 @@ def train(
         except:
             print('failed to delete the participant folder')
 
+    try:
+        # Compute summary statistics (accuracy and confusion matrices)
+        final_results_dir = os.path.join(work_dir, 'all_test', wandb_group)
+        wandb.init(name="ALL", project=wandb_project, group=wandb_group, tags=['summary'], reinit=True)
+        print(final_results_dir)
+        for e in range(0, total_epochs):
+            log_vars = {}
+            results_file = os.path.join(final_results_dir, "test_" + str(e + 1) + ".csv")
+            try:
+                df = pd.read_csv(results_file)
+            except:
+                break
+            true_labels = df['true_score']
+            preds = df['pred_round']
+            preds_raw = df['pred_raw']
 
-    # Compute summary statistics (accuracy and confusion matrices)
-    final_results_dir = os.path.join(work_dir, 'all_test', wandb_group)
-    wandb.init(name="ALL", project=wandb_project, group=wandb_group, tags=['summary'], reinit=True)
-    print(final_results_dir)
-    for e in range(0, total_epochs):
-        log_vars = {}
-        results_file = os.path.join(final_results_dir, "test_" + str(e + 1) + ".csv")
-        try:
-            df = pd.read_csv(results_file)
-        except:
-            break
-        true_labels = df['true_score']
-        preds = df['pred_round']
-        preds_raw = df['pred_raw']
+            log_vars['eval/mae_rounded'] = mean_absolute_error(true_labels, preds)
+            log_vars['eval/mae_raw'] = mean_absolute_error(true_labels, preds_raw)
+            log_vars['eval/accuracy'] = accuracy_score(true_labels, preds)
+            wandb.log(log_vars, step=e+1)
 
-        log_vars['eval/mae_rounded'] = mean_absolute_error(true_labels, preds)
-        log_vars['eval/mae_raw'] = mean_absolute_error(true_labels, preds_raw)
-        log_vars['eval/accuracy'] = accuracy_score(true_labels, preds)
-        wandb.log(log_vars, step=e+1)
+            if e % 5 == 0:
+                class_names = [str(i) for i in range(num_class)]
 
-        if e % 5 == 0:
+                fig = plot_confusion_matrix( true_labels,preds, class_names)
+                wandb.log({"confusion_matrix/eval_"+ str(e)+".png": fig}, step=e+1)
+                fig_title = "Regression for ALL unseen participants"
+                reg_fig = regressionPlot(true_labels,preds_raw, class_names, fig_title)
+                try:
+                    wandb.log({"regression/eval_"+ str(e)+".png": [wandb.Image(reg_fig)]}, step=e+1)
+                except:
+                    pass
+
+        # final results +++++++++++++++++++++++++++++++++++++++++
+        final_results_dir_v2 = os.path.join(work_dir, 'all_eval', wandb_group)
+
+        for i, flow in enumerate(workflow):
+            mode, _ = flow
+
             class_names = [str(i) for i in range(num_class)]
+            class_names_int = [int(i) for i in range(num_class)]
 
+            log_vars = {}
+            results_file = os.path.join(final_results_dir_v2, mode+".csv")
+            print("loading from: ", results_file)
+            df = pd.read_csv(results_file)
+            true_labels = df['true_score']
+            preds = df['pred_round']
+            preds_raw = df['pred_raw']
+
+            # Calculate the mean metrics across classes
+            average_types = ['macro', 'micro', 'weighted']
+            average_metrics_to_log = ['precision', 'recall', 'f1score', 'support']
+            average_dict = {}
+            prefix_name = 'final/'+ mode + '/'
+            for av in average_types:
+                results_tuple = precision_recall_fscore_support(true_labels, preds, average=av)
+                for m in range(len(average_metrics_to_log)):      
+                    average_dict[prefix_name + '_'+ average_metrics_to_log[m] +'_average_' + av] = results_tuple[m]
+
+            wandb.log(average_dict)
+
+            # Calculate metrics per class
+            results_tuple = precision_recall_fscore_support(true_labels, preds, average=None, labels=class_names_int)
+
+            per_class_stats = {}
+            for c in range(len(average_metrics_to_log)):
+                cur_metrics = results_tuple[c]
+                print(cur_metrics)
+                for s in range(len(class_names_int)):
+                    per_class_stats[prefix_name + str(class_names_int[s]) + '_'+ average_metrics_to_log[c]] = cur_metrics[s]
+
+            wandb.log(per_class_stats)
+
+
+            # Keep the original metrics for backwards compatibility
+            log_vars['early_stop_eval/'+mode+ '/mae_rounded'] = mean_absolute_error(true_labels, preds)
+            log_vars['early_stop_eval/'+mode+ '/mae_raw'] = mean_absolute_error(true_labels, preds_raw)
+            log_vars['early_stop_eval/'+mode+ '/accuracy'] = accuracy_score(true_labels, preds)
+            wandb.log(log_vars)
+
+            
             fig = plot_confusion_matrix( true_labels,preds, class_names)
-            wandb.log({"confusion_matrix/eval_"+ str(e)+".png": fig}, step=e+1)
+            wandb.log({"early_stop_eval/final_confusion_matrix.png": fig})
             fig_title = "Regression for ALL unseen participants"
-            reg_fig = regressionPlot(true_labels,preds_raw, class_names, fig_title)
+            reg_fig = regressionPlot(true_labels, preds_raw, class_names, fig_title)
             try:
-                wandb.log({"regression/eval_"+ str(e)+".png": [wandb.Image(reg_fig)]}, step=e+1)
+                wandb.log({"early_stop_eval/final_regression_plot.png": [wandb.Image(reg_fig)]})
             except:
-                pass
-
-    # final results +++++++++++++++++++++++++++++++++++++++++
-    final_results_dir = os.path.join(work_dir, 'all_eval', wandb_group)
-
-    for i, flow in enumerate(workflow):
-        mode, _ = flow
-
-        class_names = [str(i) for i in range(num_class)]
-        class_names_int = [int(i) for i in range(num_class)]
-
-        log_vars = {}
-        results_file = os.path.join(final_results_dir, mode+".csv")
-        print("loading from: ", results_file)
-        df = pd.read_csv(results_file)
-        true_labels = df['true_score']
-        preds = df['pred_round']
-        preds_raw = df['pred_raw']
-
-        # Calculate the mean metrics across classes
-        average_types = ['macro', 'micro', 'weighted']
-        average_metrics_to_log = ['precision', 'recall', 'f1score', 'support']
-        average_dict = {}
-        prefix_name = 'final/'+ mode + '/'
-        for av in average_types:
-            results_tuple = precision_recall_fscore_support(true_labels, preds, average=av)
-            for m in range(len(average_metrics_to_log)):      
-                average_dict[prefix_name + '_'+ average_metrics_to_log[m] +'_average_' + av] = results_tuple[m]
-
-        wandb.log(average_dict)
-
-        # Calculate metrics per class
-        results_tuple = precision_recall_fscore_support(true_labels, preds, average=None, labels=class_names_int)
-
-        per_class_stats = {}
-        for c in range(len(average_metrics_to_log)):
-            cur_metrics = results_tuple[c]
-            print(cur_metrics)
-            for s in range(len(class_names_int)):
-                per_class_stats[prefix_name + str(class_names_int[s]) + '_'+ average_metrics_to_log[c]] = cur_metrics[s]
-
-        wandb.log(per_class_stats)
-
-
-        # Keep the original metrics for backwards compatibility
-        log_vars['early_stop_eval/'+mode+ '/mae_rounded'] = mean_absolute_error(true_labels, preds)
-        log_vars['early_stop_eval/'+mode+ '/mae_raw'] = mean_absolute_error(true_labels, preds_raw)
-        log_vars['early_stop_eval/'+mode+ '/accuracy'] = accuracy_score(true_labels, preds)
-        wandb.log(log_vars)
-
+                try:
+                    wandb.log({"early_stop_eval/final_regression_plot.png": reg_fig})
+                except:
+                    print("failed to log regression plot")
         
-        fig = plot_confusion_matrix( true_labels,preds, class_names)
-        wandb.log({"early_stop_eval/final_confusion_matrix.png": fig})
-        fig_title = "Regression for ALL unseen participants"
-        reg_fig = regressionPlot(true_labels, preds_raw, class_names, fig_title)
-        try:
-            wandb.log({"early_stop_eval/final_regression_plot.png": [wandb.Image(reg_fig)]})
-        except:
-            try:
-                wandb.log({"early_stop_eval/final_regression_plot.png": reg_fig})
-            except:
-                print("failed to log regression plot")
+        # Remove the files generated so we don't take up this space
+        shutil.rmtree(final_results_dir)
+        shutil.rmtree(final_results_dir_v2)
+
+
+    except:
+        print('something when wrong in the summary stats')
+        logging.exception("Error message =================================================")
 
 
 def train_model(
