@@ -22,7 +22,7 @@ processor_cfg:
   group_notes: "150_shoulder_10_pd_only"
   weight_classes: True
   flip_loss: True
-  launch_from_windows: False
+  launch_from_local: False
   wandb_project: "weighted_UPDRS_es50_front_pad"
   early_stopping: True
   force_run_all_epochs: False

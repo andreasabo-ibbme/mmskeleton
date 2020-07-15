@@ -51,7 +51,7 @@ def train(
         flip_loss=0,
         weight_classes=False,
         group_notes='',
-        launch_from_windows=False,
+        launch_from_local=False,
         wandb_project="mmskel",
         early_stopping=False,
         force_run_all_epochs=True,
@@ -474,9 +474,9 @@ def pretrain_model(
 def batch_processor_pretraining(model, datas, train_mode, loss):
 
     try:
-        data, label = datas
+        data, label , name = datas
     except:
-        data, data_flipped, label = datas
+        data, data_flipped, label, name = datas
         have_flips = 1
 
 
@@ -603,9 +603,9 @@ def batch_processor(model, datas, train_mode, loss):
     model_2 = copy.deepcopy(model)
     have_flips = 0
     try:
-        data, label = datas
+        data, label , name = datas
     except:
-        data, data_flipped, label = datas
+        data, data_flipped, label, name = datas
         have_flips = 1
 
     data_all = data.cuda()

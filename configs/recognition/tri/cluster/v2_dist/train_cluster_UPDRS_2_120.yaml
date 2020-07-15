@@ -22,7 +22,7 @@ processor_cfg:
   group_notes: "120_shoulder_2_dist"
   weight_classes: True
   flip_loss: True
-  launch_from_windows: False
+  launch_from_local: False
   wandb_project: "mmskel_v4"
   
   # model setting

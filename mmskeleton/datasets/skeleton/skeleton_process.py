@@ -112,7 +112,7 @@ def transpose(data, order, key=None):
 def to_tuple(data):
     keys=['data', 'category_id'] # category_id is the score label or the future joint positions we want to predict
     if 'data_flipped' in data.keys():
-        keys=['data', 'data_flipped',  'category_id']
+        keys=['data', 'data_flipped',  'category_id', 'name']
 
     return tuple([data[k] for k in keys])
 
@@ -146,6 +146,27 @@ def temporal_repeat(data, size, random_crop=False):
             np_array = np_array[:, :, selected_index]
 
         data[data_field] = np_array
+    return data
+
+
+def select_joints_for_label(data, joints):
+# from loader_tri.py
+# self.layout == 'coco_simplified_head':
+#             num_kp = 13
+#             order_of_keypoints = ['Nose', 
+#                 'LShoulder', 'RShoulder',
+#                 'LElbow', 'RElbow', 
+#                 'LWrist', 'RWrist', 
+#                 'LHip', 'RHip',
+#                 'LKnee', 'RKnee',
+#                 'LAnkle', 'RAnkle',
+#             ]
+
+
+    np_array = data['category_id']
+    test = np_array[:, joints, :]
+    data['category_id'] = test
+
     return data
 
 

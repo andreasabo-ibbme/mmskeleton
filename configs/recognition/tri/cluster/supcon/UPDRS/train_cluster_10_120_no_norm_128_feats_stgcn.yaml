@@ -22,7 +22,7 @@ processor_cfg:
   group_notes: "supcon_UPDRS_10_120_no_norm_128_feat_stgcn"
   weight_classes: True
   flip_loss: True
-  launch_from_windows: False
+  launch_from_local: False
   wandb_project: "supcon_UPDRS_pad_front"
   early_stopping: True
   force_run_all_epochs: False

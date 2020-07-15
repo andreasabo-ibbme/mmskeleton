@@ -123,9 +123,9 @@ def batch_processor(model, datas, train_mode, loss):
     model_2 = copy.deepcopy(model)
     have_flips = 0
     try:
-        data, label = datas
+        data, label , name = datas
     except:
-        data, data_flipped, label = datas
+        data, data_flipped, label, name = datas
         have_flips = 1
 
     data_all = data.cuda()

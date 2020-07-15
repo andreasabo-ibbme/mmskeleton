@@ -22,7 +22,7 @@ processor_cfg:
   group_notes: "120_nonorm_2_uniform"
   weight_classes: True
   flip_loss: True
-  launch_from_windows: False
+  launch_from_local: False
   wandb_project: "mmskel_v4"
   
   # model setting

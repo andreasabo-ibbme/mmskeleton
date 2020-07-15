@@ -22,7 +22,7 @@ processor_cfg:
   group_notes: "SAS_1_120"
   weight_classes: True
   flip_loss: True
-  launch_from_windows: False
+  launch_from_local: False
   wandb_project: "cnn_SAS_v2"
   early_stopping: True
   force_run_all_epochs: False

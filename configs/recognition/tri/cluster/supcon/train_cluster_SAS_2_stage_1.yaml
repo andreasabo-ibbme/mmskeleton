@@ -22,7 +22,7 @@ processor_cfg:
   group_notes: "150_all_simplified_2"
   weight_classes: True
   flip_loss: True
-  launch_from_windows: False
+  launch_from_local: False
   wandb_project: "supcon_1"
   
   # model setting

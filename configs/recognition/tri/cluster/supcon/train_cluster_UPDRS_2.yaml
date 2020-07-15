@@ -22,7 +22,7 @@ processor_cfg:
   group_notes: "supcon_UPDRS_2_150_lin_temp_0.05,base_0.25_32_feats"
   weight_classes: True
   flip_loss: True
-  launch_from_windows: False
+  launch_from_local: False
   wandb_project: "supcon_UPDRS_wip_jul6"
   early_stopping: True
   force_run_all_epochs: False

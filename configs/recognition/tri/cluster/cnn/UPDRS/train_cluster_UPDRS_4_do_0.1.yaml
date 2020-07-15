@@ -22,7 +22,7 @@ processor_cfg:
   group_notes: "UPDRS_4_150_bn_do_0.1"
   weight_classes: True
   flip_loss: True
-  launch_from_windows: False
+  launch_from_local: False
   wandb_project: "cnn_UPDRS_v2"
   early_stopping: True
   force_run_all_epochs: False

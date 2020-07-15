@@ -20,14 +20,18 @@ from mmskeleton.processor.utils_recognition import *
 from mmskeleton.processor.supcon_loss import *
 
 
-
-# os.environ['WANDB_MODE'] = 'dryrun'
+fast_dev = True
+os.environ['WANDB_MODE'] = 'dryrun'
 
 # Global variables
 num_class = 3
 balance_classes = False
 class_weights_dict = {}
 flip_loss_mult = False
+
+local_data_base = '/home/saboa/data'
+cluster_data_base = '/home/asabo/projects/def-btaati/asabo'
+local_output_base = '/home/saboa/data/mmskel_out'
 
 
 def train(
@@ -52,7 +56,7 @@ def train(
         flip_loss=0,
         weight_classes=False,
         group_notes='',
-        launch_from_windows=False,
+        launch_from_local=False,
         wandb_project="mmskel",
         early_stopping=False,
         force_run_all_epochs=True,
@@ -89,6 +93,18 @@ def train(
     print("==================================")
     print('have cuda: ', torch.cuda.is_available())
     print('using device: ', torch.cuda.get_device_name())
+
+
+    # Correctly set the full data path
+    if launch_from_local:
+        work_dir = os.path.join(local_data_base, work_dir)
+
+        for i in range(len(dataset_cfg)):
+            dataset_cfg[i]['data_source']['data_dir'] = os.path.join(local_data_base, dataset_cfg[i]['data_source']['data_dir'])
+    else:
+        for i in range(len(dataset_cfg)):
+            dataset_cfg[i]['data_source']['data_dir'] = os.path.join(cluster_data_base, dataset_cfg[i]['data_source']['data_dir'])
+
 
     # All data dir (use this for finetuning with the flip loss)
     data_dir_all_data = dataset_cfg[0]['data_source']['data_dir']
@@ -207,17 +223,29 @@ def train(
                 datasets[0]['data_source']['data_dir'] = stage_1_train
                 datasets[1]['data_source']['data_dir'] = stage_1_val
                 datasets[2]['data_source']['data_dir'] = test_walks_pd_labelled
+
+                if fast_dev:
+                    datasets[0]['data_source']['data_dir'] = stage_1_train[:50]
+                    datasets[1]['data_source']['data_dir'] = stage_1_val[:50]
+                    datasets[2]['data_source']['data_dir'] = test_walks_pd_labelled[:50]
+
+
                 datasets_stage_1 = copy.deepcopy(datasets)
                 datasets_stage_1.pop(2)
 
                 workflow_stage_1 = copy.deepcopy(workflow)
                 workflow_stage_1.pop(2)
 
+
+                optimizer_cfg_stage_1 = optimizer_cfg[0]
+
+                print('optimizer_cfg_stage_1 ', optimizer_cfg_stage_1)
+
                 work_dir_amb = work_dir + "/" + str(ambid)
                 for ds in datasets:
                     ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
 
-                things_to_log = {'num_ts_predicting': model_cfg['num_ts_predicting'], 'es_start_up_1': es_start_up_1, 'es_patience_1': es_patience_1, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
+                things_to_log = {'num_ts_predicting': model_cfg['num_ts_predicting'], 'es_start_up_1': es_start_up_1, 'es_patience_1': es_patience_1, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg_stage_1, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
 
                 # print("train walks: ", stage_1_train)
 
@@ -230,7 +258,7 @@ def train(
                     model_cfg,
                     loss_cfg,
                     datasets,
-                    optimizer_cfg,
+                    optimizer_cfg_stage_1,
                     batch_size,
                     total_epochs,
                     training_hooks,
@@ -251,6 +279,7 @@ def train(
                 # ================================ STAGE 2 ====================================
                 # Make sure we're using the correct dataset
                 datasets = [copy.deepcopy(dataset_cfg[1]) for i in range(len(workflow))]
+                print(datasets)
                 for ds in datasets:
                     ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
 
@@ -259,12 +288,16 @@ def train(
                 datasets[1]['data_source']['data_dir'] = stage_2_val
                 datasets[2]['data_source']['data_dir'] = test_walks_pd_labelled
 
+                optimizer_cfg_stage_2 = optimizer_cfg[1]
+
+                print('optimizer_cfg_stage_2 ', optimizer_cfg_stage_2)
+
 
                 # Reset the head
                 pretrained_model.module.set_stage_2()
-                pretrained_model.module.head.apply(weights_init_xavier)
+                pretrained_model.module.head.apply(weights_init)
 
-                things_to_log = {'supcon_head': head, 'freeze_encoder': freeze_encoder, 'es_start_up_2': es_start_up_2, 'es_patience_2': es_patience_2, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
+                things_to_log = {'supcon_head': head, 'freeze_encoder': freeze_encoder, 'es_start_up_2': es_start_up_2, 'es_patience_2': es_patience_2, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg_stage_2, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
 
                 # print("final model for fine_tuning is: ", pretrained_model)
 
@@ -272,7 +305,7 @@ def train(
                             pretrained_model,
                             loss_cfg,
                             datasets,
-                            optimizer_cfg,
+                            optimizer_cfg_stage_2,
                             batch_size,
                             total_epochs,
                             training_hooks,
@@ -333,12 +366,14 @@ def train(
                 except:
                     pass
 
-        # final results
+        # final results +++++++++++++++++++++++++++++++++++++++++
         final_results_dir_v2 = os.path.join(work_dir, 'all_eval', wandb_group)
 
         for i, flow in enumerate(workflow):
             mode, _ = flow
 
+            class_names = [str(i) for i in range(num_class)]
+            class_names_int = [int(i) for i in range(num_class)]
 
             log_vars = {}
             results_file = os.path.join(final_results_dir_v2, mode+".csv")
@@ -348,40 +383,58 @@ def train(
             preds = df['pred_round']
             preds_raw = df['pred_raw']
 
+            # Calculate the mean metrics across classes
+            average_types = ['macro', 'micro', 'weighted']
+            average_metrics_to_log = ['precision', 'recall', 'f1score', 'support']
+            average_dict = {}
+            prefix_name = 'final/'+ mode + '/'
+            for av in average_types:
+                results_tuple = precision_recall_fscore_support(true_labels, preds, average=av)
+                for m in range(len(average_metrics_to_log)):      
+                    average_dict[prefix_name + '_'+ average_metrics_to_log[m] +'_average_' + av] = results_tuple[m]
+
+            wandb.log(average_dict)
+
+            # Calculate metrics per class
+            results_tuple = precision_recall_fscore_support(true_labels, preds, average=None, labels=class_names_int)
+
+            per_class_stats = {}
+            for c in range(len(average_metrics_to_log)):
+                cur_metrics = results_tuple[c]
+                print(cur_metrics)
+                for s in range(len(class_names_int)):
+                    per_class_stats[prefix_name + str(class_names_int[s]) + '_'+ average_metrics_to_log[c]] = cur_metrics[s]
+
+            wandb.log(per_class_stats)
+
+
+            # Keep the original metrics for backwards compatibility
             log_vars['early_stop_eval/'+mode+ '/mae_rounded'] = mean_absolute_error(true_labels, preds)
             log_vars['early_stop_eval/'+mode+ '/mae_raw'] = mean_absolute_error(true_labels, preds_raw)
             log_vars['early_stop_eval/'+mode+ '/accuracy'] = accuracy_score(true_labels, preds)
             wandb.log(log_vars)
 
-            class_names = [str(i) for i in range(num_class)]
-
+            
             fig = plot_confusion_matrix( true_labels,preds, class_names)
-            wandb.log({"early_stop_eval/" + mode + "_final_confusion_matrix.png": fig})
-            fig_title = "Regression for ALL participants - " + mode
+            wandb.log({"early_stop_eval/final_confusion_matrix.png": fig})
+            fig_title = "Regression for ALL unseen participants"
             reg_fig = regressionPlot(true_labels, preds_raw, class_names, fig_title)
             try:
-                wandb.log({"early_stop_eval/" + mode + "_final_regression_plot.png": [wandb.Image(reg_fig)]})
+                wandb.log({"early_stop_eval/final_regression_plot.png": [wandb.Image(reg_fig)]})
             except:
                 try:
-                    wandb.log({"early_stop_eval/" + mode + "_final_regression_plot.png": reg_fig})
+                    wandb.log({"early_stop_eval/final_regression_plot.png": reg_fig})
                 except:
                     print("failed to log regression plot")
-
-            # Log the final dataframe to wandb for future analysis
-            header = ['amb', 'true_score', 'pred_round', 'pred_raw']
-            try:
-                wandb.log({"final_results_csv/"+mode: wandb.Table(data=df.values.tolist(), columns=header)})
-            except: 
-                logging.exception("Could not save final table =================================================\n")
-
+        
         # Remove the files generated so we don't take up this space
         shutil.rmtree(final_results_dir)
         shutil.rmtree(final_results_dir_v2)
-        
+
+
     except:
         print('something when wrong in the summary stats')
         logging.exception("Error message =================================================")
-
 
 
 def finetune_model(
@@ -466,7 +519,7 @@ def pretrain_model(
         es_patience=10,
         es_start_up=50,
 ):
-    print("Starting STAGE 1: Pretraining...")
+    print("============= Starting STAGE 1: Pretraining...")
 
     data_loaders = [
         torch.utils.data.DataLoader(dataset=call_obj(**d),
@@ -479,9 +532,9 @@ def pretrain_model(
     global balance_classes
     global class_weights_dict
 
-    if balance_classes:
-        dataset_train = call_obj(**datasets[0])
-        class_weights_dict = dataset_train.data_source.class_dist
+    # if balance_classes:
+    #     dataset_train = call_obj(**datasets[0])
+    #     class_weights_dict = dataset_train.data_source.class_dist
 
     model_cfg_local = copy.deepcopy(model_cfg)
     loss_cfg_local = copy.deepcopy(loss_cfg)
@@ -503,17 +556,19 @@ def pretrain_model(
     #     print(param.data)
 
     # Step 1: Initialize the model with random weights, 
-    model.apply(weights_init_xavier)
+    model.apply(weights_init)
     model = MMDataParallel(model, device_ids=range(gpus)).cuda()
     torch.cuda.set_device(0)
     loss = call_obj(**loss_cfg_local)
+    loss = WingLoss()
+
+    visualize_preds = {'visualize': True, 'epochs_to_visualize': ['first', 'last']}
 
     # print('training hooks: ', training_hooks_local)
     # build runner
-
     # loss = SupConLoss()
     optimizer = call_obj(params=model.parameters(), **optimizer_cfg_local)
-    runner = Runner(model, batch_processor_position_pretraining, optimizer, work_dir, log_level, things_to_log=things_to_log, early_stopping=early_stopping, force_run_all_epochs=force_run_all_epochs, es_patience=es_patience, es_start_up=es_start_up)
+    runner = Runner(model, batch_processor_position_pretraining, optimizer, work_dir, log_level, things_to_log=things_to_log, early_stopping=early_stopping, force_run_all_epochs=force_run_all_epochs, es_patience=es_patience, es_start_up=es_start_up, visualize_preds=visualize_preds)
     runner.register_training_hooks(**training_hooks_local)
 
     # run
@@ -527,9 +582,9 @@ def pretrain_model(
 def batch_processor_position_pretraining(model, datas, train_mode, loss):
 
     try:
-        data, label = datas
+        data, label, name = datas
     except:
-        data, data_flipped, label = datas
+        data, data_flipped, label, name = datas
 
     # Even if we have flipped data, we only want to use the original in this stage
     data_all = data.cuda()
@@ -537,7 +592,7 @@ def batch_processor_position_pretraining(model, datas, train_mode, loss):
     num_valid_samples = data.shape[0]
 
     # Predict the future joint positions using all data
-    predicted_joint_positions = model(data)
+    predicted_joint_positions = model(data_all)
 
     if torch.sum(predicted_joint_positions) == 0:        
         raise ValueError("=============================== got all zero output...")
@@ -563,7 +618,7 @@ def batch_processor_position_pretraining(model, datas, train_mode, loss):
 
     log_vars = dict(loss_pretrain_position=batch_loss.item())
     output_labels = dict(true=label_placeholders, pred=preds, raw_preds=raw_preds)
-    outputs = dict(loss=batch_loss, log_vars=log_vars, num_samples=num_valid_samples)
+    outputs = dict(predicted_joint_positions=predicted_joint_positions, loss=batch_loss, log_vars=log_vars, num_samples=num_valid_samples)
 
     return outputs, output_labels, batch_loss.item()
     
@@ -584,9 +639,9 @@ def batch_processor(model, datas, train_mode, loss):
     model_2 = copy.deepcopy(model)
     have_flips = 0
     try:
-        data, label = datas
+        data, label , name = datas
     except:
-        data, data_flipped, label = datas
+        data, data_flipped, label, name = datas
         have_flips = 1
 
     data_all = data.cuda()
@@ -611,7 +666,7 @@ def batch_processor(model, datas, train_mode, loss):
 
     # Get predictions from the model
     output_all = model(data_all)
-
+    # print(output_all)
     if torch.sum(output_all) == 0:        
         raise ValueError("=============================== got all zero output...")
     output = output_all[row_cond]

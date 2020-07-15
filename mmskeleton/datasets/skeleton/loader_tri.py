@@ -334,6 +334,10 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
         temp_flipped = flipped_data['data_flipped']
         flipped_data['data_flipped'] = flipped_data['data']
         flipped_data['data'] = temp_flipped
+        flipped_data['name'] = self.files[file_index] + "_flipped"
+
+        data['name'] = self.files[file_index]
+
         if self.cache:
             self.cached_data[index] = data
 

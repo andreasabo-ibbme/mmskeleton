@@ -80,7 +80,7 @@ def train(
         flip_loss=0,
         weight_classes=False,
         group_notes='',
-        launch_from_windows=False,
+        launch_from_local=False,
         wandb_project="mmskel",
         early_stopping=False,
         force_run_all_epochs=True,
@@ -187,7 +187,7 @@ def train(
                 print('size of train set: ', len(datasets[0]['data_source']['data_dir']))
                 print('size of test set: ', len(test_walks))
 
-                if launch_from_windows:
+                if launch_from_local:
 
                     file_path = 'C:/Users/Andrea/andrea/mmskeleton/mmskeleton/processor/recognition_tri_win_train.py'
                     pkl_file = os.path.join(work_dir, 'obj.pkl')
@@ -445,9 +445,9 @@ def batch_processor(model, datas, train_mode, loss):
     model_2 = copy.deepcopy(model)
     have_flips = 0
     try:
-        data, label = datas
+        data, label , name = datas
     except:
-        data, data_flipped, label = datas
+        data, data_flipped, label, name = datas
         have_flips = 1
 
     data_all = data.cuda()
