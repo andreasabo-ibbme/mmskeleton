@@ -20,8 +20,8 @@ from mmskeleton.processor.utils_recognition import *
 from mmskeleton.processor.supcon_loss import *
 
 
-fast_dev = True
-os.environ['WANDB_MODE'] = 'dryrun'
+fast_dev = False
+# os.environ['WANDB_MODE'] = 'dryrun'
 
 # Global variables
 num_class = 3
@@ -32,7 +32,7 @@ flip_loss_mult = False
 local_data_base = '/home/saboa/data'
 cluster_data_base = '/home/asabo/projects/def-btaati/asabo'
 local_output_base = '/home/saboa/data/mmskel_out'
-
+local_long_term_base = '/home/saboa/data/mmskel_long_term'
 
 def train(
         work_dir,
@@ -97,8 +97,9 @@ def train(
 
     # Correctly set the full data path
     if launch_from_local:
+        simple_work_dir = work_dir
         work_dir = os.path.join(local_data_base, work_dir)
-
+        
         for i in range(len(dataset_cfg)):
             dataset_cfg[i]['data_source']['data_dir'] = os.path.join(local_data_base, dataset_cfg[i]['data_source']['data_dir'])
     else:
@@ -242,6 +243,7 @@ def train(
                 print('optimizer_cfg_stage_1 ', optimizer_cfg_stage_1)
 
                 work_dir_amb = work_dir + "/" + str(ambid)
+                simple_work_dir_amb = simple_work_dir + "/" + str(ambid)
                 for ds in datasets:
                     ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
 
@@ -255,6 +257,7 @@ def train(
 
                 pretrained_model = pretrain_model(
                     work_dir_amb,
+                    simple_work_dir_amb,
                     model_cfg,
                     loss_cfg,
                     datasets,
@@ -500,6 +503,7 @@ def finetune_model(
 
 def pretrain_model(
         work_dir,
+        simple_work_dir_amb,
         model_cfg,
         loss_cfg,
         datasets,
@@ -562,7 +566,7 @@ def pretrain_model(
     loss = call_obj(**loss_cfg_local)
     loss = WingLoss()
 
-    visualize_preds = {'visualize': True, 'epochs_to_visualize': ['first', 'last']}
+    visualize_preds = {'visualize': True, 'epochs_to_visualize': ['first', 'last'], 'output_dir': os.path.join(local_long_term_base, simple_work_dir_amb)}
 
     # print('training hooks: ', training_hooks_local)
     # build runner
@@ -582,9 +586,9 @@ def pretrain_model(
 def batch_processor_position_pretraining(model, datas, train_mode, loss):
 
     try:
-        data, label, name = datas
-    except:
         data, data_flipped, label, name = datas
+    except:
+        data, data_flipped, label, name, true_future_ts = datas
 
     # Even if we have flipped data, we only want to use the original in this stage
     data_all = data.cuda()

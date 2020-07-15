@@ -67,7 +67,7 @@ processor_cfg:
         flip_skels: True
 
       pipeline:
-        # - {type: "datasets.skeleton.normalize_by_resolution"}
+        - {type: "datasets.skeleton.normalize_by_resolution"}
         - {type: "datasets.skeleton.mask_by_visibility"}
         - {type: "datasets.skeleton.pad_zero_beginning_for_joint_prediction", size: 120, pred_ts: [15]  }
         - {type: "datasets.skeleton.random_crop_for_joint_prediction", size: 120, pred_ts: [15] }
@@ -90,7 +90,7 @@ processor_cfg:
         flip_skels: True
 
       pipeline:
-        # - {type: "datasets.skeleton.normalize_by_resolution"}
+        - {type: "datasets.skeleton.normalize_by_resolution"}
         - {type: "datasets.skeleton.mask_by_visibility"}
         - {type: "datasets.skeleton.pad_zero_beginning", size: 120 }
         - {type: "datasets.skeleton.random_crop", size: 120 }
@@ -118,7 +118,7 @@ processor_cfg:
 
   # runtime setting
   workflow: [['train', 1], ['val', 1], ['test', 1]]
-  work_dir: ./work_dir/recognition/tri_all/dataset_example/v2/UPDRS/120_v2_pred15_ankles_wrists
+  work_dir: ./work_dir/recognition/tri_all/dataset_example/v2/UPDRS/120_v2_pred15_ankles_wrists_res_norm
   total_epochs: 1000
   training_hooks:
     lr_config:

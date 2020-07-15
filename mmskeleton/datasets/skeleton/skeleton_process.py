@@ -110,9 +110,12 @@ def transpose(data, order, key=None):
 
 
 def to_tuple(data):
-    keys=['data', 'category_id'] # category_id is the score label or the future joint positions we want to predict
+    keys=['data', 'category_id', 'name'] # category_id is the score label or the future joint positions we want to predict
     if 'data_flipped' in data.keys():
         keys=['data', 'data_flipped',  'category_id', 'name']
+
+        if 'full_future_pred' in data.keys():
+            keys=['data', 'data_flipped',  'category_id', 'name', 'full_future_pred']
 
     return tuple([data[k] for k in keys])
 
@@ -165,6 +168,8 @@ def select_joints_for_label(data, joints):
 
     np_array = data['category_id']
     test = np_array[:, joints, :]
+
+    data['full_future_pred'] = {'true_skel': data['category_id'], 'joints': joints, 'pred_ts': data['pred_ts']}
     data['category_id'] = test
 
     return data
@@ -236,6 +241,7 @@ def random_crop(data, size):
 def random_crop_for_joint_prediction(data, size, pred_ts):
     max_future_ts = max(pred_ts)
     begin = -1
+    data['pred_ts'] = pred_ts
     for data_field in data_fields:
         if data_field not in data.keys():
             continue
