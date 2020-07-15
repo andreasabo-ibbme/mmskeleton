@@ -29,6 +29,11 @@ class_weights_dict = {}
 flip_loss_mult = False
 
 
+local_data_base = '/home/saboa/data'
+cluster_data_base = '/home/asabo/projects/def-btaati/asabo'
+local_output_base = '/home/saboa/data/mmskel_out'
+local_long_term_base = '/home/saboa/data/mmskel_long_term'
+
 def train(
         work_dir,
         model_cfg,
@@ -88,6 +93,20 @@ def train(
     print('have cuda: ', torch.cuda.is_available())
     print('using device: ', torch.cuda.get_device_name())
 
+    # Correctly set the full data path
+    if launch_from_local:
+        simple_work_dir = work_dir
+        work_dir = os.path.join(local_data_base, work_dir)
+        
+        for i in range(len(dataset_cfg)):
+            dataset_cfg[i]['data_source']['data_dir'] = os.path.join(local_data_base, dataset_cfg[i]['data_source']['data_dir'])
+    else:
+        for i in range(len(dataset_cfg)):
+            dataset_cfg[i]['data_source']['data_dir'] = os.path.join(cluster_data_base, dataset_cfg[i]['data_source']['data_dir'])
+
+
+
+
     # All data dir (use this for finetuning with the flip loss)
     data_dir_all_data = dataset_cfg[0]['data_source']['data_dir']
     all_files = [os.path.join(data_dir_all_data, f) for f in os.listdir(data_dir_all_data)]
@@ -100,6 +119,8 @@ def train(
     pd_all_files = [os.path.join(data_dir_pd_data, f) for f in os.listdir(data_dir_pd_data)]
     pd_all_file_names_only = os.listdir(data_dir_pd_data)
     print("pd_all_files: ", len(pd_all_files))
+
+
 
 
     original_wandb_group = wandb_group

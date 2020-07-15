@@ -24,39 +24,10 @@ balance_classes = False
 class_weights_dict = {}
 flip_loss_mult = False
 
-def test(model_cfg, dataset_cfg, checkpoint, batch_size=64, gpus=1, workers=4):
-    dataset = call_obj(**dataset_cfg)
-    data_loader = torch.utils.data.DataLoader(dataset=dataset,
-                                              batch_size=batch_size,
-                                              shuffle=False,
-                                              num_workers=workers)
-
-    # put model on gpus
-    if isinstance(model_cfg, list):
-        model = [call_obj(**c) for c in model_cfg]
-        model = torch.nn.Sequential(*model)
-    else:
-        model = call_obj(**model_cfg)
-    load_checkpoint(model, checkpoint, map_location='cpu')
-    model = MMDataParallel(model, device_ids=range(gpus)).cuda()
-    model.eval()
-
-    results = []
-    labels = []
-    prog_bar = ProgressBar(len(dataset))
-    for data, label in data_loader:
-        with torch.no_grad():
-            output = model(data).data.cpu().numpy()
-        results.append(output)
-        labels.append(label)
-        for i in range(len(data)):
-            prog_bar.update()
-    results = np.concatenate(results)
-    labels = np.concatenate(labels)
-
-    print('Top 1: {:.2f}%'.format(100 * topk_accuracy(results, labels, 1)))
-    print('Top 5: {:.2f}%'.format(100 * topk_accuracy(results, labels, 5)))
-
+local_data_base = '/home/saboa/data'
+cluster_data_base = '/home/asabo/projects/def-btaati/asabo'
+local_output_base = '/home/saboa/data/mmskel_out'
+local_long_term_base = '/home/saboa/data/mmskel_long_term'
 
 def train(
         work_dir,
@@ -112,6 +83,21 @@ def train(
     print("==================================")
     print('have cuda: ', torch.cuda.is_available())
     print('using device: ', torch.cuda.get_device_name())
+
+    # Correctly set the full data path
+    if launch_from_local:
+        simple_work_dir = work_dir
+        work_dir = os.path.join(local_data_base, work_dir)
+        
+        for i in range(len(dataset_cfg)):
+            dataset_cfg[i]['data_source']['data_dir'] = os.path.join(local_data_base, dataset_cfg[i]['data_source']['data_dir'])
+    else:
+        for i in range(len(dataset_cfg)):
+            dataset_cfg[i]['data_source']['data_dir'] = os.path.join(cluster_data_base, dataset_cfg[i]['data_source']['data_dir'])
+
+
+
+
     # print(dataset_cfg[0])
     # assert len(dataset_cfg) == 1
     data_dir = dataset_cfg[0]['data_source']['data_dir']
