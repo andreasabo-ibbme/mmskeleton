@@ -23,11 +23,11 @@ processor_cfg:
   weight_classes: True
   flip_loss: True
   launch_from_local: False
-  wandb_project: "supcon_SAS_pad_front"
+  wandb_project: "supcon_SAS_pad_front_v2"
   early_stopping: True
   force_run_all_epochs: False
-  es_patience_1: 5
-  es_start_up_1: 10
+  es_patience_1: 15
+  es_start_up_1: 50
   es_patience_2: 15
   es_start_up_2: 50
   freeze_encoder: False
