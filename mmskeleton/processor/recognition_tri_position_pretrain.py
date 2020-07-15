@@ -566,7 +566,7 @@ def pretrain_model(
     loss = call_obj(**loss_cfg_local)
     loss = WingLoss()
 
-    visualize_preds = {'visualize': True, 'epochs_to_visualize': ['first', 'last'], 'output_dir': os.path.join(local_long_term_base, simple_work_dir_amb)}
+    visualize_preds = {'visualize': False, 'epochs_to_visualize': ['first', 'last'], 'output_dir': os.path.join(local_long_term_base, simple_work_dir_amb)}
 
     # print('training hooks: ', training_hooks_local)
     # build runner
@@ -721,7 +721,7 @@ def batch_processor(model, datas, train_mode, loss):
         output_list = output.squeeze().tolist()
         y_pred_rounded = y_pred_rounded.reshape(1, -1).squeeze()
         y_pred_rounded = np.round(y_pred_rounded, 0)
-        y_pred_rounded = np.clip(y_pred_rounded, 0, num_class-1)
+        y_pred_rounded = np.clip(y_pred_rounded, 0, 3)
         preds = y_pred_rounded.squeeze().tolist()
     else:    
         rank = output.argsort()

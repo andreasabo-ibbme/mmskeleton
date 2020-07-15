@@ -510,7 +510,7 @@ def batch_processor(model, datas, train_mode, loss):
         output_list = output.squeeze().tolist()
         y_pred_rounded = y_pred_rounded.reshape(1, -1).squeeze()
         y_pred_rounded = np.round(y_pred_rounded, 0)
-        y_pred_rounded = np.clip(y_pred_rounded, 0, num_class-1)
+        y_pred_rounded = np.clip(y_pred_rounded, 0, 3)
         preds = y_pred_rounded.squeeze().tolist()
     else:    
         rank = output.argsort()
