@@ -68,6 +68,8 @@ class ST_GCN_18_ordinal_smaller_6(nn.Module):
 
         # fcn for prediction
         self.fcn = nn.Conv2d(64, 1, kernel_size=1)
+        self.num_class = num_class
+
 
     def forward(self, x):
 
@@ -91,6 +93,7 @@ class ST_GCN_18_ordinal_smaller_6(nn.Module):
         # prediction
         x = self.fcn(x)
         x = x.view(x.size(0), -1)
+        torch.clamp(x, min=0, max=self.num_class-1)
 
         return x
 

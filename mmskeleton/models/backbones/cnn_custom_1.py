@@ -63,7 +63,8 @@ class cnn_custom_1(nn.Module):
 
         self.fc1 = nn.Linear(self.num_features_before_fc, self.fc1_out)
         self.fc2 = nn.Linear(self.fc1_out, 1)
- 
+        self.num_class = num_class
+
 # class Net(nn.Module):
 #     def __init__(self):
 #         super(Net, self).__init__()
@@ -101,6 +102,7 @@ class cnn_custom_1(nn.Module):
 
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
+        torch.clamp(x, min=0, max=self.num_class-1)
 
 
 

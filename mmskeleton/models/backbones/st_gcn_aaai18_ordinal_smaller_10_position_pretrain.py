@@ -62,6 +62,10 @@ class ST_GCN_18_ordinal_smaller_10_position_pretrain(nn.Module):
 
         self.head = self.pretrain_head
 
+
+
+        self.num_class = num_class
+
     def set_stage_2(self):
         self.head = self.classification_head
         self.stage_2=True
@@ -75,6 +79,7 @@ class ST_GCN_18_ordinal_smaller_10_position_pretrain(nn.Module):
             # prediction
             x = self.head(x)
             x = x.view(x.size(0), -1)
+            torch.clamp(x, min=0, max=self.num_class-1)
 
         # Pretraining
         else:
