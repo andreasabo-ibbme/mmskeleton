@@ -20,11 +20,11 @@ from mmskeleton.processor.utils_recognition import *
 from mmskeleton.processor.supcon_loss import *
 
 
-fast_dev = False
+fast_dev = True
 # os.environ['WANDB_MODE'] = 'dryrun'
 
 # Global variables
-num_class = 3
+num_class = 4
 balance_classes = False
 class_weights_dict = {}
 flip_loss_mult = False
@@ -76,8 +76,8 @@ def train(
     global balance_classes
     balance_classes = weight_classes
 
-    global num_class
-    num_class = model_cfg['num_class']
+    # global num_class
+    # num_class = model_cfg['num_class']
     wandb_group = wandb.util.generate_id() + "_" + outcome_label + "_" + group_notes
     print("ANDREA - TRI-recognition: ", wandb_group)
 
@@ -341,6 +341,9 @@ def train(
         final_results_dir = os.path.join(work_dir, 'all_test', wandb_group)
         wandb.init(name="ALL", project=wandb_project, group=wandb_group, tags=['summary'], reinit=True)
         print(final_results_dir)
+
+        class_names = [str(i) for i in range(num_class)]
+        class_names_int = [int(i) for i in range(num_class)]
         for e in range(0, total_epochs):
             log_vars = {}
             results_file = os.path.join(final_results_dir, "test_" + str(e + 1) + ".csv")
@@ -358,9 +361,8 @@ def train(
             wandb.log(log_vars, step=e+1)
 
             if e % 5 == 0:
-                class_names = [str(i) for i in range(num_class)]
 
-                fig = plot_confusion_matrix( true_labels,preds, class_names)
+                fig = plot_confusion_matrix( true_labels,preds, class_names_int)
                 wandb.log({"confusion_matrix/eval_"+ str(e)+".png": fig}, step=e+1)
                 fig_title = "Regression for ALL unseen participants"
                 reg_fig = regressionPlot(true_labels,preds_raw, class_names, fig_title)
@@ -375,8 +377,7 @@ def train(
         for i, flow in enumerate(workflow):
             mode, _ = flow
 
-            class_names = [str(i) for i in range(num_class)]
-            class_names_int = [int(i) for i in range(num_class)]
+
 
             log_vars = {}
             results_file = os.path.join(final_results_dir_v2, mode+".csv")
@@ -418,18 +419,24 @@ def train(
             wandb.log(log_vars)
 
             
-            fig = plot_confusion_matrix( true_labels,preds, class_names)
+            fig = plot_confusion_matrix( true_labels,preds, class_names_int)
             wandb.log({"early_stop_eval/final_confusion_matrix.png": fig})
             fig_title = "Regression for ALL unseen participants"
             reg_fig = regressionPlot(true_labels, preds_raw, class_names, fig_title)
             try:
-                wandb.log({"early_stop_eval/final_regression_plot.png": [wandb.Image(reg_fig)]})
+                wandb.log({"early_stop_eval/" + mode + "_final_regression_plot.png": [wandb.Image(reg_fig)]})
             except:
                 try:
-                    wandb.log({"early_stop_eval/final_regression_plot.png": reg_fig})
+                    wandb.log({"early_stop_eval/" + mode + "_final_regression_plot.png": reg_fig})
                 except:
                     print("failed to log regression plot")
-        
+
+            # Log the final dataframe to wandb for future analysis
+            header = ['amb', 'true_score', 'pred_round', 'pred_raw']
+            try:
+                wandb.log({"final_results_csv/"+mode: wandb.Table(data=df.values.tolist(), columns=header)})
+            except: 
+                logging.exception("Could not save final table =================================================\n")
         # Remove the files generated so we don't take up this space
         shutil.rmtree(final_results_dir)
         shutil.rmtree(final_results_dir_v2)
@@ -662,10 +669,9 @@ def batch_processor(model, datas, train_mode, loss):
     if have_flips:
         data_all = data_all.data
         data_all_flipped = data_flipped.cuda()
-        data_all_flipped = data_all_flipped.data
-        # print('input_flipped', torch.sum(torch.isnan(data_all_flipped)))     
-        # print('raw', torch.sum(torch.isnan(data_all)))   
+        data_all_flipped = data_all_flipped.data 
         output_all_flipped = model_2(data_all_flipped)
+        torch.clamp(output_all_flipped, min=0, max=num_class-1)
 
 
     # Get predictions from the model
@@ -675,6 +681,9 @@ def batch_processor(model, datas, train_mode, loss):
         raise ValueError("=============================== got all zero output...")
     output = output_all[row_cond]
     loss_flip_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
+
+    # Clip the predictions to avoid large loss that would otherwise be dealt with using 
+    torch.clamp(output_all, min=0, max=num_class-1)
 
     if have_flips:
         loss_flip_tensor = mse_loss(output_all_flipped, output_all)
@@ -721,7 +730,7 @@ def batch_processor(model, datas, train_mode, loss):
         output_list = output.squeeze().tolist()
         y_pred_rounded = y_pred_rounded.reshape(1, -1).squeeze()
         y_pred_rounded = np.round(y_pred_rounded, 0)
-        y_pred_rounded = np.clip(y_pred_rounded, 0, 3)
+        y_pred_rounded = np.clip(y_pred_rounded, 0, num_class-1)
         preds = y_pred_rounded.squeeze().tolist()
     else:    
         rank = output.argsort()

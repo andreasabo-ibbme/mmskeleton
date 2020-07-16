@@ -323,12 +323,19 @@ def train(
             fig_title = "Regression for ALL unseen participants"
             reg_fig = regressionPlot(true_labels, preds_raw, class_names, fig_title)
             try:
-                wandb.log({"early_stop_eval/final_regression_plot.png": [wandb.Image(reg_fig)]})
+                wandb.log({"early_stop_eval/" + mode + "_final_regression_plot.png": [wandb.Image(reg_fig)]})
             except:
                 try:
-                    wandb.log({"early_stop_eval/final_regression_plot.png": reg_fig})
+                    wandb.log({"early_stop_eval/" + mode + "_final_regression_plot.png": reg_fig})
                 except:
                     print("failed to log regression plot")
+
+            # Log the final dataframe to wandb for future analysis
+            header = ['amb', 'true_score', 'pred_round', 'pred_raw']
+            try:
+                wandb.log({"final_results_csv/"+mode: wandb.Table(data=df.values.tolist(), columns=header)})
+            except: 
+                logging.exception("Could not save final table =================================================\n")
 
         # Remove the files generated so we don't take up this space
         shutil.rmtree(final_results_dir)

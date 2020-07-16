@@ -15,7 +15,7 @@ argparse_cfg:
 processor_cfg:
   type: 'processor.recognition_tri_position_pretrain.train'
   workers: 1
-  test_ids: [48, 47, 34, 37, 27, 39, 46, 50, 52, 55, 57, 59, 66, 33]
+  test_ids: [48] #, 47, 34, 37, 27, 39, 46, 50, 52, 55, 57, 59, 66, 33]
   cv: 5
   exclude_cv: False
   notes: "two_part_loss"
@@ -23,11 +23,11 @@ processor_cfg:
   weight_classes: True
   flip_loss: True
   launch_from_local: True
-  wandb_project: "DEV_position_pretrain_UPDRS_pad_front"
+  wandb_project: "WIP_DEV_position_pretrain_UPDRS_pad_front"
   early_stopping: True
   force_run_all_epochs: False
-  es_patience_1: 15
-  es_start_up_1: 50
+  es_patience_1: 5
+  es_start_up_1: 5
   es_patience_2: 15
   es_start_up_2: 50
   freeze_encoder: False
