@@ -97,7 +97,6 @@ def train(
 
     # Correctly set the full data path
     if launch_from_local:
-        simple_work_dir = work_dir
         work_dir = os.path.join(local_data_base, work_dir)
         
         for i in range(len(dataset_cfg)):
@@ -106,6 +105,7 @@ def train(
         for i in range(len(dataset_cfg)):
             dataset_cfg[i]['data_source']['data_dir'] = os.path.join(cluster_data_base, dataset_cfg[i]['data_source']['data_dir'])
 
+    simple_work_dir = work_dir
 
     # All data dir (use this for finetuning with the flip loss)
     data_dir_all_data = dataset_cfg[0]['data_source']['data_dir']
