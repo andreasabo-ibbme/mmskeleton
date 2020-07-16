@@ -23,7 +23,7 @@ processor_cfg:
   weight_classes: True
   flip_loss: True
   launch_from_local: False
-  wandb_project: "supcon_UPDRS_pad_front_v2"
+  wandb_project: "supcon_UPDRS_pad_front_v3"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 15
@@ -115,7 +115,7 @@ processor_cfg:
   training_hooks:
     lr_config:
       policy: 'step'
-      step: [40, 80, 120]
+      step: [20, 50, 80]
     log_config:
       interval: 100
       hooks:

@@ -274,120 +274,12 @@ def train(
                         force_run_all_epochs,
                         es_patience_2,
                         es_start_up_2, 
-                        freeze_encoder)
+                        freeze_encoder, 
+                        num_class)
 
 
-
-    try:
-        # Compute summary statistics (accuracy and confusion matrices)
-        final_results_dir = os.path.join(work_dir, 'all_test', wandb_group)
-        wandb.init(name="ALL", project=wandb_project, group=wandb_group, tags=['summary'], reinit=True)
-        print(final_results_dir)
-        for e in range(0, total_epochs):
-            log_vars = {}
-            results_file = os.path.join(final_results_dir, "test_" + str(e + 1) + ".csv")
-            try:
-                df = pd.read_csv(results_file)
-            except:
-                break
-            true_labels = df['true_score']
-            preds = df['pred_round']
-            preds_raw = df['pred_raw']
-
-            log_vars['eval/mae_rounded'] = mean_absolute_error(true_labels, preds)
-            log_vars['eval/mae_raw'] = mean_absolute_error(true_labels, preds_raw)
-            log_vars['eval/accuracy'] = accuracy_score(true_labels, preds)
-            wandb.log(log_vars, step=e+1)
-
-            if e % 5 == 0:
-                class_names = [str(i) for i in range(num_class)]
-
-                fig = plot_confusion_matrix( true_labels,preds, class_names)
-                wandb.log({"confusion_matrix/eval_"+ str(e)+".png": fig}, step=e+1)
-                fig_title = "Regression for ALL unseen participants"
-                reg_fig = regressionPlot(true_labels,preds_raw, class_names, fig_title)
-                try:
-                    wandb.log({"regression/eval_"+ str(e)+".png": [wandb.Image(reg_fig)]}, step=e+1)
-                except:
-                    pass
-
-        # final results +++++++++++++++++++++++++++++++++++++++++
-        final_results_dir_v2 = os.path.join(work_dir, 'all_eval', wandb_group)
-
-        for i, flow in enumerate(workflow):
-            mode, _ = flow
-
-            class_names = [str(i) for i in range(num_class)]
-            class_names_int = [int(i) for i in range(num_class)]
-
-            log_vars = {}
-            results_file = os.path.join(final_results_dir_v2, mode+".csv")
-            print("loading from: ", results_file)
-            df = pd.read_csv(results_file)
-            true_labels = df['true_score']
-            preds = df['pred_round']
-            preds_raw = df['pred_raw']
-
-            # Calculate the mean metrics across classes
-            average_types = ['macro', 'micro', 'weighted']
-            average_metrics_to_log = ['precision', 'recall', 'f1score', 'support']
-            average_dict = {}
-            prefix_name = 'final/'+ mode + '/'
-            for av in average_types:
-                results_tuple = precision_recall_fscore_support(true_labels, preds, average=av)
-                for m in range(len(average_metrics_to_log)):      
-                    average_dict[prefix_name + '_'+ average_metrics_to_log[m] +'_average_' + av] = results_tuple[m]
-
-            wandb.log(average_dict)
-
-            # Calculate metrics per class
-            results_tuple = precision_recall_fscore_support(true_labels, preds, average=None, labels=class_names_int)
-
-            per_class_stats = {}
-            for c in range(len(average_metrics_to_log)):
-                cur_metrics = results_tuple[c]
-                print(cur_metrics)
-                for s in range(len(class_names_int)):
-                    per_class_stats[prefix_name + str(class_names_int[s]) + '_'+ average_metrics_to_log[c]] = cur_metrics[s]
-
-            wandb.log(per_class_stats)
-
-
-            # Keep the original metrics for backwards compatibility
-            log_vars['early_stop_eval/'+mode+ '/mae_rounded'] = mean_absolute_error(true_labels, preds)
-            log_vars['early_stop_eval/'+mode+ '/mae_raw'] = mean_absolute_error(true_labels, preds_raw)
-            log_vars['early_stop_eval/'+mode+ '/accuracy'] = accuracy_score(true_labels, preds)
-            wandb.log(log_vars)
-
-            
-            fig = plot_confusion_matrix( true_labels,preds, class_names)
-            wandb.log({"early_stop_eval/final_confusion_matrix.png": fig})
-            fig_title = "Regression for ALL unseen participants"
-            reg_fig = regressionPlot(true_labels, preds_raw, class_names, fig_title)
-            try:
-                wandb.log({"early_stop_eval/" + mode + "_final_regression_plot.png": [wandb.Image(reg_fig)]})
-            except:
-                try:
-                    wandb.log({"early_stop_eval/" + mode + "_final_regression_plot.png": reg_fig})
-                except:
-                    print("failed to log regression plot")
-
-            # Log the final dataframe to wandb for future analysis
-            header = ['amb', 'true_score', 'pred_round', 'pred_raw']
-            try:
-                wandb.log({"final_results_csv/"+mode: wandb.Table(data=df.values.tolist(), columns=header)})
-            except: 
-                logging.exception("Could not save final table =================================================\n")
-        
-        # Remove the files generated so we don't take up this space
-        shutil.rmtree(final_results_dir)
-        shutil.rmtree(final_results_dir_v2)
-
-
-    except:
-        print('something when wrong in the summary stats')
-        logging.exception("Error message =================================================")
-
+    final_stats(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow)
+    
 
 def finetune_model(
         work_dir,
@@ -410,6 +302,7 @@ def finetune_model(
         es_patience=10,
         es_start_up=50,
         freeze_encoder=False, 
+        num_class=4, 
 ):
     print("Starting STAGE 2: Fine-tuning...")
 
@@ -438,7 +331,7 @@ def finetune_model(
     # print('training hooks: ', training_hooks_local)
     # build runner
     optimizer = call_obj(params=model.parameters(), **optimizer_cfg_local)
-    runner = Runner(model, batch_processor, optimizer, work_dir, log_level, things_to_log=things_to_log, early_stopping=early_stopping, force_run_all_epochs=force_run_all_epochs, es_patience=es_patience, es_start_up=es_start_up, freeze_encoder=freeze_encoder, finetuning=True)
+    runner = Runner(model, batch_processor, optimizer, work_dir, log_level, num_class=num_class, things_to_log=things_to_log, early_stopping=early_stopping, force_run_all_epochs=force_run_all_epochs, es_patience=es_patience, es_start_up=es_start_up, freeze_encoder=freeze_encoder, finetuning=True)
     runner.register_training_hooks(**training_hooks_local)
 
     # run
@@ -529,7 +422,7 @@ def pretrain_model(
 
 
 # process a batch of data
-def batch_processor_pretraining(model, datas, train_mode, loss):
+def batch_processor_pretraining(model, datas, train_mode, loss, num_class, **kwargs):
 
     try:
         data, label , name = datas
@@ -588,198 +481,3 @@ def batch_processor_pretraining(model, datas, train_mode, loss):
 
     return outputs, output_labels, batch_loss.item()
     
-
-
-    # y_true_orig_shape = y_true.reshape(1,-1).squeeze()
-    # losses = loss(output, y_true)
-
-
-    # if type(loss) == type(mse_loss):
-    #     if balance_classes:
-    #         losses = log_weighted_mse_loss(output, y_true, class_weights_dict)
-    #     # Convert the output to classes and clip from 0 to number of classes
-    #     y_pred_rounded = output.detach().cpu().numpy()
-    #     output = y_pred_rounded
-    #     output_list = output.squeeze().tolist()
-    #     y_pred_rounded = y_pred_rounded.reshape(1, -1).squeeze()
-    #     y_pred_rounded = np.round(y_pred_rounded, 0)
-    #     y_pred_rounded = np.clip(y_pred_rounded, 0, num_class-1)
-    #     preds = y_pred_rounded.squeeze().tolist()
-    # else:    
-    #     rank = output.argsort()
-    #     preds = rank[:,-1].data.tolist()
-
-    # labels = y_true_orig_shape.data.tolist()
-
-    # # Case when we have a single output
-    # if type(labels) is not list:
-    #     labels = [labels]
-    # if type(preds) is not list:
-    #     preds = [preds]
-    # if type(output_list) is not list:
-    #     output_list = [output_list]
-
-    # try:
-    #     labels = [int(cl) for cl in labels]
-    #     preds = [int(cl) for cl in preds]
-    # except TypeError as e:
-    #     print(labels)
-    #     print(preds)
-    #     print("got an error: ", e)
-
-
-    # overall_loss = losses + loss_flip_tensor
-    # log_vars = dict(loss_label=losses.item(), loss_flip = loss_flip_tensor.item(), loss_all=overall_loss.item())
-    # # print('l1', losses, 'l2', loss_flip_tensor)
-
-    # try:
-    #     log_vars['mae_raw'] = mean_absolute_error(labels, output)
-    # except:
-    #     print("labels: ", labels, "output", output)
-    #     print('input', torch.sum(torch.isnan(data_all)))
-    #     print('output_all', output_all, 'output_all_flipped', output_all_flipped)
-    #     raise ValueError('stop')
-    # log_vars['mae_rounded'] = mean_absolute_error(labels, preds)
-    # output_labels = dict(true=labels, pred=preds, raw_preds=output_list)
-    # outputs = dict(loss=batch_loss, log_vars=log_vars, num_samples=len(labels))
-    # # print(type(labels), type(preds))
-    # # print('this is what we return: ', output_labels)
-    # return outputs, output_labels, batch_loss
-
-
-
-
-
-
-# process a batch of data
-def batch_processor(model, datas, train_mode, loss):
-    #torch.cuda.empty_cache()
-    #print('have cuda: ', torch.cuda.is_available())
-    #print('using device: ', torch.cuda.get_device_name())
-    
-    mse_loss = torch.nn.MSELoss()
-    model_2 = copy.deepcopy(model)
-    have_flips = 0
-    try:
-        data, label , name = datas
-    except:
-        data, data_flipped, label, name = datas
-        have_flips = 1
-
-    data_all = data.cuda()
-    label = label.cuda()
-
-    # Remove the -1 labels
-    y_true = label.data.reshape(-1, 1).float()
-    condition = y_true >= 0.
-    row_cond = condition.all(1)
-    y_true = y_true[row_cond, :]
-    data = data_all.data[row_cond, :]
-    num_valid_samples = data.shape[0]
-
-
-    if have_flips:
-        data_all = data_all.data
-        data_all_flipped = data_flipped.cuda()
-        data_all_flipped = data_all_flipped.data
-        # print('input_flipped', torch.sum(torch.isnan(data_all_flipped)))     
-        # print('raw', torch.sum(torch.isnan(data_all)))   
-        output_all_flipped = model_2(data_all_flipped)
-
-
-    # Get predictions from the model
-    output_all = model(data_all)
-
-    if torch.sum(output_all) == 0:        
-        raise ValueError("=============================== got all zero output...")
-    output = output_all[row_cond]
-    loss_flip_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
-
-    if have_flips:
-        loss_flip_tensor = mse_loss(output_all_flipped, output_all)
-        if loss_flip_tensor.data > 10:
-            pass
-            # print('output_all_flipped', output_all_flipped, 'output_all', output_all)
-
-    if not flip_loss_mult:
-        loss_flip_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
-        loss_flip_tensor = loss_flip_tensor.cuda()
-    else:
-        loss_flip_tensor = loss_flip_tensor * flip_loss_mult
-
-    # if we don't have any valid labels for this batch...
-    if num_valid_samples < 1:
-        labels = []
-        preds = []
-        raw_preds = []
-        # loss_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
-        # loss_tensor = loss_tensor.cuda()
-
-
-
-        log_vars = dict(loss_label=0, loss_flip = loss_flip_tensor.item(), loss_all=loss_flip_tensor.item())
-        log_vars['mae_raw'] = 0
-        log_vars['mae_rounded'] = 0
-        output_labels = dict(true=labels, pred=preds, raw_preds=raw_preds)
-        outputs = dict(loss=loss_flip_tensor, log_vars=log_vars, num_samples=0)
-
-        return outputs, output_labels, loss_flip_tensor.item()
-    
-
-
-    y_true_orig_shape = y_true.reshape(1,-1).squeeze()
-    losses = loss(output, y_true)
-
-
-    if type(loss) == type(mse_loss):
-        if balance_classes:
-            losses = log_weighted_mse_loss(output, y_true, class_weights_dict)
-        # Convert the output to classes and clip from 0 to number of classes
-        y_pred_rounded = output.detach().cpu().numpy()
-        output = y_pred_rounded
-        output_list = output.squeeze().tolist()
-        y_pred_rounded = y_pred_rounded.reshape(1, -1).squeeze()
-        y_pred_rounded = np.round(y_pred_rounded, 0)
-        y_pred_rounded = np.clip(y_pred_rounded, 0, 3)
-        preds = y_pred_rounded.squeeze().tolist()
-    else:    
-        rank = output.argsort()
-        preds = rank[:,-1].data.tolist()
-
-    labels = y_true_orig_shape.data.tolist()
-
-    # Case when we have a single output
-    if type(labels) is not list:
-        labels = [labels]
-    if type(preds) is not list:
-        preds = [preds]
-    if type(output_list) is not list:
-        output_list = [output_list]
-
-    try:
-        labels = [int(cl) for cl in labels]
-        preds = [int(cl) for cl in preds]
-    except TypeError as e:
-        print(labels)
-        print(preds)
-        print("got an error: ", e)
-
-
-    overall_loss = losses + loss_flip_tensor
-    log_vars = dict(loss_label=losses.item(), loss_flip = loss_flip_tensor.item(), loss_all=overall_loss.item())
-    # print('l1', losses, 'l2', loss_flip_tensor)
-
-    try:
-        log_vars['mae_raw'] = mean_absolute_error(labels, output)
-    except:
-        print("labels: ", labels, "output", output)
-        print('input', torch.sum(torch.isnan(data_all)))
-        print('output_all', output_all, 'output_all_flipped', output_all_flipped)
-        raise ValueError('stop')
-    log_vars['mae_rounded'] = mean_absolute_error(labels, preds)
-    output_labels = dict(true=labels, pred=preds, raw_preds=output_list)
-    outputs = dict(loss=overall_loss, log_vars=log_vars, num_samples=len(labels))
-    # print(type(labels), type(preds))
-    # print('this is what we return: ', output_labels)
-    return outputs, output_labels, overall_loss
-

@@ -124,7 +124,7 @@ processor_cfg:
     lr_config:
       policy: 'step'
       # step: [40, 80, 120]
-      step: [20, 50, 70]
+      step: [20, 50, 80]
     log_config:
       interval: 1000
       hooks:
