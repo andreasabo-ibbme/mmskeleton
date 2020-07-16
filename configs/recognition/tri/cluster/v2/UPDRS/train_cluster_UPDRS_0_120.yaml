@@ -19,20 +19,20 @@ processor_cfg:
   cv: 5
   exclude_cv: False
   notes: "two_part_loss"
-  group_notes: "120_shoulder_2"
+  group_notes: "120_shoulder_0"
   weight_classes: True
   flip_loss: True
   launch_from_local: False
-  wandb_project: "weighted_SAS_es50_front_pad"
+  wandb_project: "jul16_weighted_UPDRS_es50"
   early_stopping: True
   force_run_all_epochs: False
   es_patience: 15
   es_start_up: 50  
   # model setting
   model_cfg:
-    type: 'models.backbones.ST_GCN_18_ordinal_smaller_2'
+    type: 'models.backbones.ST_GCN_18_ordinal'
     in_channels: 3
-    num_class: 4
+    num_class: 3
     edge_importance_weighting: True
     dropout: 0.0
     graph_cfg:
@@ -54,7 +54,7 @@ processor_cfg:
         num_track: 1
         num_keypoints: 13
         repeat: 1
-        outcome_label: SAS_gait
+        outcome_label: UPDRS_gait
         csv_loader: True
         missing_joint_val: mean
         cache: True
@@ -75,7 +75,7 @@ processor_cfg:
         num_track: 1
         num_keypoints: 13
         repeat: 1
-        outcome_label: SAS_gait
+        outcome_label: UPDRS_gait
         csv_loader: True
         missing_joint_val: mean
         cache: True
@@ -103,7 +103,7 @@ processor_cfg:
 
   # runtime setting
   workflow: [['train', 1], ['val', 1], ['test', 1]]
-  work_dir: ./work_dir/recognition/tri_all/dataset_example/v2/SAS/SAS_2_120
+  work_dir: ./work_dir/recognition/tri_all/dataset_example/v2/UPDRS/120_shoulder_0
   total_epochs: 200
   training_hooks:
     lr_config:
