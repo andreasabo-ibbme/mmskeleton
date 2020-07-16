@@ -23,7 +23,7 @@ processor_cfg:
   weight_classes: True
   flip_loss: True
   launch_from_local: False
-  wandb_project: "supcon_UPDRS_pad_front_v3"
+  wandb_project: "jul_16_supcon_UPDRS"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 15
