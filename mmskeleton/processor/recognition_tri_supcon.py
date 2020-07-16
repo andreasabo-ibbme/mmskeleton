@@ -17,7 +17,7 @@ import pandas as pd
 import pickle
 from mmskeleton.processor.utils_recognition import *
 from mmskeleton.processor.supcon_loss import *
-
+import shutil
 
 
 # os.environ['WANDB_MODE'] = 'dryrun'
