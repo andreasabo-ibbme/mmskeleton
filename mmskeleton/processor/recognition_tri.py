@@ -291,3 +291,7 @@ def train_model(
     workflow = [tuple(w) for w in workflow]
     # [('train', 5), ('val', 1)]
     runner.run(data_loaders, workflow, total_epochs, loss=loss)
+    try:
+        shutil.rmtree(wandb.run.dir)
+    except:
+        print('failed to delete the wandb folder')

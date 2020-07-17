@@ -277,7 +277,10 @@ def train(
                         freeze_encoder, 
                         num_class)
 
-
+            try:
+                shutil.rmtree(work_dir_amb)
+            except:
+                print('failed to delete the participant folder')
     final_stats(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow)
     
 
@@ -338,6 +341,11 @@ def finetune_model(
     workflow = [tuple(w) for w in workflow]
     # [('train', 5), ('val', 1)]
     final_model = runner.run(data_loaders, workflow, total_epochs, loss=loss)
+
+    try:
+        shutil.rmtree(wandb.run.dir)
+    except:
+        print('failed to delete the wandb folder')
     return final_model
 
 
@@ -418,6 +426,11 @@ def pretrain_model(
     workflow = [tuple(w) for w in workflow]
     # [('train', 5), ('val', 1)]
     pretrained_model = runner.run(data_loaders, workflow, total_epochs, loss=loss, supcon_pretraining=True)
+    try:
+        shutil.rmtree(wandb.run.dir)
+    except:
+        print('failed to delete the wandb folder')
+
     return pretrained_model
 
 

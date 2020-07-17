@@ -403,6 +403,11 @@ def finetune_model(
     workflow = [tuple(w) for w in workflow]
     # [('train', 5), ('val', 1)]
     final_model = runner.run(data_loaders, workflow, total_epochs, loss=loss, flip_loss_mult=flip_loss_mult, balance_classes=balance_classes, class_weights_dict=class_weights_dict)
+    try:
+        shutil.rmtree(wandb.run.dir)
+    except:
+        print('failed to delete the wandb folder')    
+    
     return final_model
 
 
@@ -483,6 +488,12 @@ def pretrain_model(
     workflow = [tuple(w) for w in workflow]
     # [('train', 5), ('val', 1)]
     pretrained_model = runner.run(data_loaders, workflow, total_epochs, loss=loss, supcon_pretraining=True)
+    
+    try:
+        shutil.rmtree(wandb.run.dir)
+    except:
+        print('failed to delete the wandb folder')
+
     return pretrained_model
 
 
