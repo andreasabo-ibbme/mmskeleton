@@ -3,7 +3,7 @@
 #SBATCH --mem=8000               # memory (per node)
 #SBATCH --cpus-per-task=8
 #SBATCH --time=0-14:00            # time (DD-HH:MM)
-#SBATCH --job-name=SAS_2_120_pred_15
+#SBATCH --job-name=UPDRS_2_120_pred_15
 #SBATCH --output=%x-%j_32hour.out
 #SBATCH --account=def-btaati
 
@@ -18,4 +18,4 @@ module load cuda/10.1
 source ~/ENV/bin/activate
 
 cd /home/asabo/projects/def-btaati/asabo/mmskeleton
-python mmskl.py configs/recognition/tri/cluster/pred_pretrain/SAS/v2/train_cluster_0_120_pred_15_4_joints_do_0.1.yaml
+python mmskl.py configs/recognition/tri/cluster/pred_pretrain/UPDRS/v2/train_cluster_0_120_pred_15_4_joints_do_0.1.yaml
