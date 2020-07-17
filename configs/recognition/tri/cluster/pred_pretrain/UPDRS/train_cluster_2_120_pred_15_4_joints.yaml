@@ -23,7 +23,7 @@ processor_cfg:
   weight_classes: True
   flip_loss: 1
   launch_from_local: True
-  wandb_project: "jul_17_position_pretrain_UPDRS_pad_front"
+  wandb_project: "jul_18_position_pretrain_UPDRS_pad_front"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 15

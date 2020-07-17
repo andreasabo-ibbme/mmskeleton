@@ -2,7 +2,7 @@
 #SBATCH --gres=gpu:1              # Number of GPUs (per node)
 #SBATCH --mem=8000               # memory (per node)
 #SBATCH --cpus-per-task=8
-#SBATCH --time=0-14:00            # time (DD-HH:MM)
+#SBATCH --time=0-20:00            # time (DD-HH:MM)
 #SBATCH --job-name=UPDRS_2_120_pred_15
 #SBATCH --output=%x-%j_32hour.out
 #SBATCH --account=def-btaati
