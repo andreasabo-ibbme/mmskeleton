@@ -22,8 +22,8 @@ processor_cfg:
   group_notes: "120_nonorm_2"
   weight_classes: True
   flip_loss: True
-  launch_from_local: False
-  wandb_project: "jul_18_position_pretrain_UPDRS"
+  launch_from_local: True
+  wandb_project: "DEV_position_pretrain_UPDRS"
   early_stopping: True
   force_run_all_epochs: False
   es_patience: 15

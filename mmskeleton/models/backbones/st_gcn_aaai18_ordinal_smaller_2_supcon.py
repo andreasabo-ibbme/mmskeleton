@@ -86,7 +86,7 @@ class ST_GCN_18_ordinal_smaller_2_supcon(nn.Module):
             # prediction
             x = self.head(x)
             x = x.view(x.size(0), -1)
-            torch.clamp(x, min=0, max=self.num_class-1)
+            torch.clamp(x, min=-1, max=self.num_class)
 
 
             return x

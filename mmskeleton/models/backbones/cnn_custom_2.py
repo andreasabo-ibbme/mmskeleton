@@ -98,7 +98,8 @@ class cnn_custom_2(nn.Module):
         x = x.view(-1, self.num_features_before_fc)
 
         x = F.relu(self.fc(x))
-        torch.clamp(x, min=0, max=self.num_class-1)
+        torch.clamp(x, min=-1, max=self.num_class)
+
 
 
 

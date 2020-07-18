@@ -127,7 +127,7 @@ class SkeletonLoaderTRI_joint_position_pretrain(torch.utils.data.Dataset):
                     'LAnkle', 'RAnkle',
                 ]
 
-            elif self.layout == 'coco_simplified_head':
+            elif self.layout == 'coco_simplified_head' or self.layout == 'coco_simplified_head_extra_connections':
                 num_kp = 13
                 order_of_keypoints = ['Nose', 
                     'LShoulder', 'RShoulder',

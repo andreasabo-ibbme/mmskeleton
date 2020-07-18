@@ -95,6 +95,19 @@ class Graph():
             neighbor_link = [(i - 1, j - 1) for (i, j) in neighbor_1base]
             self.edge = self_link + neighbor_link
             self.center = 0
+
+        elif layout == 'coco_simplified_head_extra_connections':
+            self.num_node = 13
+            self_link = [(i, i) for i in range(self.num_node)]
+            neighbor_1base = [[13, 12], # ankle to ankle
+                              [6, 13], [7, 12], # ankles to wrists
+                              [13, 11], [12, 10], [11, 9], [10, 8], [9, 8],
+                              [8, 2], [9, 3], [3, 2], [2, 4], [3, 5], 
+                              [5, 7], [1, 3], [1, 2]]
+            neighbor_link = [(i - 1, j - 1) for (i, j) in neighbor_1base]
+            self.edge = self_link + neighbor_link
+            self.center = 0
+            
         # elif layout=='customer settings'
         #     pass
         else:

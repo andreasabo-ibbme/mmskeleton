@@ -340,7 +340,7 @@ def finetune_model(
     # run
     workflow = [tuple(w) for w in workflow]
     # [('train', 5), ('val', 1)]
-    final_model = runner.run(data_loaders, workflow, total_epochs, loss=loss)
+    final_model, _ = runner.run(data_loaders, workflow, total_epochs, loss=loss)
 
     try:
         shutil.rmtree(wandb.run.dir)
@@ -425,7 +425,7 @@ def pretrain_model(
     # run
     workflow = [tuple(w) for w in workflow]
     # [('train', 5), ('val', 1)]
-    pretrained_model = runner.run(data_loaders, workflow, total_epochs, loss=loss, supcon_pretraining=True)
+    pretrained_model, _ = runner.run(data_loaders, workflow, total_epochs, loss=loss, supcon_pretraining=True)
     try:
         shutil.rmtree(wandb.run.dir)
     except:

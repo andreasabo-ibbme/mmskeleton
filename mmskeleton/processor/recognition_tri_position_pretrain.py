@@ -20,7 +20,7 @@ from mmskeleton.processor.utils_recognition import *
 from mmskeleton.processor.supcon_loss import *
 
 
-fast_dev = False
+fast_dev = True
 # os.environ['WANDB_MODE'] = 'dryrun'
 
 # Global variables
@@ -402,7 +402,7 @@ def finetune_model(
     # run
     workflow = [tuple(w) for w in workflow]
     # [('train', 5), ('val', 1)]
-    final_model = runner.run(data_loaders, workflow, total_epochs, loss=loss, flip_loss_mult=flip_loss_mult, balance_classes=balance_classes, class_weights_dict=class_weights_dict)
+    final_model, _ = runner.run(data_loaders, workflow, total_epochs, loss=loss, flip_loss_mult=flip_loss_mult, balance_classes=balance_classes, class_weights_dict=class_weights_dict)
     try:
         shutil.rmtree(wandb.run.dir)
     except:
@@ -487,7 +487,7 @@ def pretrain_model(
     # run
     workflow = [tuple(w) for w in workflow]
     # [('train', 5), ('val', 1)]
-    pretrained_model = runner.run(data_loaders, workflow, total_epochs, loss=loss, supcon_pretraining=True)
+    pretrained_model, _ = runner.run(data_loaders, workflow, total_epochs, loss=loss, supcon_pretraining=True)
     
     try:
         shutil.rmtree(wandb.run.dir)

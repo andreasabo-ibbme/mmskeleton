@@ -68,7 +68,7 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
         data_all_flipped = data_flipped.cuda()
         data_all_flipped = data_all_flipped.data 
         output_all_flipped = model_2(data_all_flipped)
-        torch.clamp(output_all_flipped, min=0, max=num_class-1)
+        torch.clamp(output_all_flipped, min=-1, max=num_class)
 
 
     # Get predictions from the model
@@ -79,8 +79,8 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
     output = output_all[row_cond]
     loss_flip_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
 
-    # Clip the predictions to avoid large loss that would otherwise be dealt with using 
-    torch.clamp(output_all, min=0, max=num_class-1)
+    # Clip the predictions to avoid large loss that would otherwise be dealt with using the raw predictions
+    torch.clamp(output_all, min=-1, max=num_class)
 
     if have_flips:
         loss_flip_tensor = mse_loss(output_all_flipped, output_all)
@@ -171,12 +171,107 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
     return outputs, output_labels, overall_loss
 
 
+def set_up_results_table(workflow, num_class):
+    col_names = []
+    for i, flow in enumerate(workflow):
+        mode, _ = flow
+        class_names_int = [int(i) for i in range(num_class)]
+
+        # Calculate the mean metrics across classes
+        average_types = ['macro', 'micro', 'weighted']
+        average_metrics_to_log = ['precision', 'recall', 'f1score', 'support']
+        prefix_name = mode + '/'
+        for av in average_types:
+            for m in average_metrics_to_log:
+                col_names.append(prefix_name + m +'_average_' + av)
+
+
+        # Calculate metrics per class
+        for c in range(len(average_metrics_to_log)):
+            for s in range(len(class_names_int)):
+                col_names.append(prefix_name + str(class_names_int[s]) + '_'+ average_metrics_to_log[c])
+
+        col_names.append(prefix_name + 'mae_rounded')
+        col_names.append(prefix_name + 'mae_raw')
+        col_names.append(prefix_name + 'accuracy')
+
+
+    df = pd.DataFrame(columns=col_names)
+    return df
+
+def final_stats_per_trial(final_results_local_path, wandb_group, wandb_project, num_class, workflow, num_epochs, results_table):
+    try:
+        # Compute summary statistics (accuracy and confusion matrices)
+        print("getting final results from: ", final_results_local_path)
+        log_vars = {'num_epochs': num_epochs}
+
+        # final results +++++++++++++++++++++++++++++++++++++++++
+        for i, flow in enumerate(workflow):
+            mode, _ = flow
+
+            class_names = [str(i) for i in range(num_class)]
+            class_names_int = [int(i) for i in range(num_class)]
+            results_file = os.path.join(final_results_local_path, mode+".csv")
+
+            print("loading from: ", results_file)
+            df = pd.read_csv(results_file)
+            true_labels = df['true_score']
+            preds = df['pred_round']
+            preds_raw = df['pred_raw']
+
+            # Calculate the mean metrics across classes
+            average_types = ['macro', 'micro', 'weighted']
+            average_metrics_to_log = ['precision', 'recall', 'f1score', 'support']
+            prefix_name = mode + '/'
+            for av in average_types:
+                results_tuple = precision_recall_fscore_support(true_labels, preds, average=av)
+                for m in range(len(average_metrics_to_log)):      
+                    log_vars[prefix_name +  average_metrics_to_log[m] +'_average_' + av] = results_tuple[m]
+
+
+            # Calculate metrics per class
+            results_tuple = precision_recall_fscore_support(true_labels, preds, average=None, labels=class_names_int)
+
+            for c in range(len(average_metrics_to_log)):
+                cur_metrics = results_tuple[c]
+                print(cur_metrics)
+                for s in range(len(class_names_int)):
+                    log_vars[prefix_name + str(class_names_int[s]) + '_'+ average_metrics_to_log[c]] = cur_metrics[s]
+
+
+            # Keep the original metrics for backwards compatibility
+            log_vars[prefix_name + 'mae_rounded'] = mean_absolute_error(true_labels, preds)
+            log_vars[prefix_name + 'mae_raw'] = mean_absolute_error(true_labels, preds_raw)
+            log_vars[prefix_name + 'accuracy'] = accuracy_score(true_labels, preds)
+
+        # print(log_vars)
+        # print(results_table.columns)
+        df = pd.DataFrame(log_vars, index=[0])
+        results_table = results_table.append(df)
+
+        return results_table
+    except:
+        logging.exception("in batch stats after trials: \n")
+
+
+def final_stats_variance(results_df, wandb_group, wandb_project, total_epochs, num_class, workflow):
+    wandb.init(name="ALL", project=wandb_project, group=wandb_group, tags=['summary'], reinit=True)
+    stdev = results_df.std().to_dict()
+    means = results_df.mean().to_dict()
+    all_stats = dict()
+    for k,v in stdev.items():
+        all_stats[k + "_stdev"] = stdev[k]
+        all_stats[k + "_mean"] = means[k]
+
+
+    wandb.log(all_stats)
+
 
 def final_stats(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow):
     try:
-        max_label =num_class
+        max_label = num_class
         # Compute summary statistics (accuracy and confusion matrices)
-        final_results_dir = os.path.join(work_dir, 'all_test', wandb_group)
+        final_results_dir = os.path.join(work_dir, 'all_final_eval', wandb_group)
         wandb.init(name="ALL", project=wandb_project, group=wandb_group, tags=['summary'], reinit=True)
         print("getting final results from: ", final_results_dir)
         for e in range(0, total_epochs):
@@ -257,7 +352,8 @@ def final_stats(work_dir, wandb_group, wandb_project, total_epochs, num_class, w
 
             
             fig = plot_confusion_matrix( true_labels,preds, class_names, max_label)
-            wandb.log({"early_stop_eval/final_confusion_matrix.png": fig})
+            
+            wandb.log({"early_stop_eval/" + mode + "_final_confusion_matrix.png": fig})
             fig_title = "Regression for ALL unseen participants"
             reg_fig = regressionPlot(true_labels, preds_raw, class_names, fig_title)
             try:

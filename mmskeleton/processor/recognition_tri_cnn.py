@@ -199,6 +199,10 @@ def train(
         except Exception as e: 
             print("caught error ==========================", e)
 
+        try:
+            shutil.rmtree(wandb.run.dir)
+        except:
+            print('failed to delete the wandb folder')
         # Done with this participant, we can delete the temp foldeer
 
         try:

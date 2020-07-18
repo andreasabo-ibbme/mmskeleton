@@ -102,7 +102,8 @@ class cnn_custom_1(nn.Module):
 
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
-        torch.clamp(x, min=0, max=self.num_class-1)
+        torch.clamp(x, min=-1, max=self.num_class)
+
 
 
 
