@@ -22,7 +22,7 @@ processor_cfg:
   group_notes: "labelled_with_flip_two_part_loss"
   weight_classes: True
   flip_loss: True
-  launch_from_local: True
+  launch_from_local: False
 
   # model setting
   model_cfg:

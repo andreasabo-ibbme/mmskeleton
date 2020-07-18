@@ -303,7 +303,7 @@ def final_stats(work_dir, wandb_group, wandb_project, total_epochs, num_class, w
                     pass
 
         # final results +++++++++++++++++++++++++++++++++++++++++
-        final_results_dir_v2 = os.path.join(work_dir, 'all_eval', wandb_group)
+        final_results_dir_v2 = os.path.join(work_dir, 'all_final_eval', wandb_group)
 
         for i, flow in enumerate(workflow):
             mode, _ = flow
