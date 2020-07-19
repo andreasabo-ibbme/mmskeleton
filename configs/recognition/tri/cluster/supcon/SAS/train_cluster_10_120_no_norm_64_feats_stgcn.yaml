@@ -22,8 +22,8 @@ processor_cfg:
   group_notes: "supcon_SAS_10_120_no_norm_64_feat_stgcn"
   weight_classes: True
   flip_loss: True
-  launch_from_local: True
-  wandb_project: "jul_18_supcon_SAS"
+  launch_from_local: False
+  wandb_project: "jul_19_supcon_SAS"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 15

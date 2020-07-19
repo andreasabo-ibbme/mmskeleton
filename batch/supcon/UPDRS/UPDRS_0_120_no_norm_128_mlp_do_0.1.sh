@@ -18,5 +18,5 @@ module load cuda/10.1
 source ~/ENV/bin/activate
 
 cd /home/asabo/projects/def-btaati/asabo/mmskeleton
-python mmskl.py configs/recognition/tri/cluster/supcon/SAS/train_cluster_0_120_no_norm_128_feats_mlp.yaml
+python mmskl.py configs/recognition/tri/cluster/supcon/UPDRS/train_cluster_0_120_no_norm_128_feats_mlp_do_0.1.yaml
 

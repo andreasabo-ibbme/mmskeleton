@@ -19,7 +19,7 @@ processor_cfg:
   cv: 5
   exclude_cv: False
   notes: "two_part_loss"
-  group_notes: "supcon_SAS_10_120_no_norm_128_feat_stgcn"
+  group_notes: "supcon_SAS_0_120_no_norm_64_feat_mlp_do_0.1"
   weight_classes: True
   flip_loss: True
   launch_from_local: False
@@ -34,13 +34,13 @@ processor_cfg:
 
   # model setting
   model_cfg:
-    type: 'models.backbones.ST_GCN_18_ordinal_smaller_10_supcon'
+    type: 'models.backbones.ST_GCN_18_ordinal_supcon'
     in_channels: 3
     num_class: 4
     edge_importance_weighting: True
-    dropout: 0.0
-    feat_dim: 128
-    head: "stgcn"
+    dropout: 0.1
+    feat_dim: 64
+    head: "mlp"
 
 
     graph_cfg:
@@ -111,7 +111,7 @@ processor_cfg:
 
   # runtime setting
   workflow: [['train', 1], ['val', 1], ['test', 1]]
-  work_dir: ./work_dir/recognition/tri_all/dataset_example/v2/SAS/supcon_SAS_10_120_no_norm_128_feat_stgcn
+  work_dir: ./work_dir/recognition/tri_all/dataset_example/v2/SAS/supcon_SAS_0_120_no_norm_64_feat_mlp_do_0.1
   total_epochs: 200
   training_hooks:
     lr_config:

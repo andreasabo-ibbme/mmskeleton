@@ -281,6 +281,7 @@ def train(
                 shutil.rmtree(work_dir_amb)
             except:
                 print('failed to delete the participant folder')
+                
     final_stats(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow)
     
 
