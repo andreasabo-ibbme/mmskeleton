@@ -20,7 +20,7 @@ from mmskeleton.processor.utils_recognition import *
 from mmskeleton.processor.supcon_loss import *
 
 
-fast_dev = True
+fast_dev = False
 # os.environ['WANDB_MODE'] = 'dryrun'
 
 # Global variables
@@ -76,6 +76,7 @@ def train(
     global balance_classes
     balance_classes = weight_classes
 
+
     # global num_class
     num_class = model_cfg['num_class']
     wandb_group = wandb.util.generate_id() + "_" + outcome_label + "_" + group_notes
@@ -102,6 +103,8 @@ def train(
         for i in range(len(dataset_cfg)):
             dataset_cfg[i]['data_source']['data_dir'] = os.path.join(local_data_base, dataset_cfg[i]['data_source']['data_dir'])
     else:
+        global fast_dev
+        fast_dev = False
         for i in range(len(dataset_cfg)):
             dataset_cfg[i]['data_source']['data_dir'] = os.path.join(cluster_data_base, dataset_cfg[i]['data_source']['data_dir'])
 
