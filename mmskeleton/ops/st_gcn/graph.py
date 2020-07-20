@@ -96,7 +96,7 @@ class Graph():
             self.edge = self_link + neighbor_link
             self.center = 0
 
-        elif layout == 'coco_simplified_head_extra_connections':
+        elif layout == 'coco_simplified_head_ankles_ankle_wrists':
             self.num_node = 13
             self_link = [(i, i) for i in range(self.num_node)]
             neighbor_1base = [[13, 12], # ankle to ankle
