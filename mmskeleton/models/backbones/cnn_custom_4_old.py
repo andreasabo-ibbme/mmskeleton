@@ -6,7 +6,7 @@ from torch.autograd import Variable
 from mmskeleton.ops.st_gcn import ConvTemporalGraphical, Graph
 
 
-class cnn_custom_3(nn.Module):
+class cnn_custom_4(nn.Module):
     r"""Spatial temporal graph convolutional networks.
 
     Args:
@@ -49,22 +49,19 @@ class cnn_custom_3(nn.Module):
         self.temporal_kernel = 9
         self.conv1_filters = 64
         self.conv2_filters = 128
-        self.conv3_filters = 256
-        self.conv4_filters = 256
-        self.fc1_out = 256
+        self.conv3_filters = 128
+        self.fc1_out = 128
 
         # build the CNN
         self.conv1 = nn.Conv3d(1, self.conv1_filters, (1, 13, 3))
         self.conv2 = nn.Conv1d(self.conv1_filters, self.conv2_filters, self.temporal_kernel)
         self.conv3 = nn.Conv1d(self.conv2_filters, self.conv3_filters, self.temporal_kernel)
-        self.conv4 = nn.Conv1d(self.conv3_filters, self.conv4_filters, self.temporal_kernel)
 
-        self.num_features_before_fc = (input_timesteps-3*(self.temporal_kernel-1)) * self.conv4_filters
+        self.num_features_before_fc = (input_timesteps-2*(self.temporal_kernel-1)) * self.conv3_filters
 
-        self.fc1 = nn.Linear(self.num_features_before_fc, self.fc1_out)
-        self.fc2 = nn.Linear(self.fc1_out, 1)
+        self.fc = nn.Linear(self.num_features_before_fc, 1)
+
         self.num_class = num_class
-
 # class Net(nn.Module):
 #     def __init__(self):
 #         super(Net, self).__init__()
@@ -88,7 +85,7 @@ class cnn_custom_3(nn.Module):
     def forward(self, x):
         # Reshape the input to be of size [bs, 1, timestamps, num_joints, num_coords] 
         x = x.permute(0, 4, 2, 3, 1).contiguous()
-        # x = self.data_bn(x)
+        x = self.data_bn(x)
 
         # 3d conv
         x = F.relu(self.conv1(x))
@@ -97,11 +94,10 @@ class cnn_custom_3(nn.Module):
         # 1d conv
         x = F.relu(self.conv2(x))
         x = F.relu(self.conv3(x))
-        x = F.relu(self.conv4(x))
+        #x = F.relu(self.conv4(x))
         x = x.view(-1, self.num_features_before_fc)
 
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
+        x = F.relu(self.fc(x))
         torch.clamp(x, min=-1, max=self.num_class)
 
 
