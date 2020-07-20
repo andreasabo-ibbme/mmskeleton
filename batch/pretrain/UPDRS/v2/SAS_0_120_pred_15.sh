@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --gres=gpu:1              # Number of GPUs (per node)
-#SBATCH --mem=8000               # memory (per node)
+#SBATCH --mem=16000               # memory (per node)
 #SBATCH --cpus-per-task=8
 #SBATCH --time=0-24:00            # time (DD-HH:MM)
 #SBATCH --job-name=UPDRS_2_120_pred_15
