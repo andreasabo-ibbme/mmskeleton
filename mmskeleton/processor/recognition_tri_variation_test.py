@@ -78,6 +78,9 @@ def train(
                   55:53, 57:55, 59:57, 66:63}
 
 
+    # Add the wandb group to work_dir to prevent conflicts if running multiple repetitions of the same configuration
+    work_dir = os.path.join(work_dir, wandb_group)
+
     # prepare data loaders
     if isinstance(dataset_cfg, dict):
         dataset_cfg = [dataset_cfg]

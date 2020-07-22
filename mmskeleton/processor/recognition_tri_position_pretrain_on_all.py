@@ -76,8 +76,6 @@ def train(
     global balance_classes
     balance_classes = weight_classes
 
-    # Add the wandb group to work_dir to prevent conflicts if running multiple repetitions of the same configuration
-    work_dir = os.path.join(work_dir, wandb_group)
 
     # global num_class
     num_class = model_cfg['num_class']
@@ -96,6 +94,10 @@ def train(
     print("==================================")
     print('have cuda: ', torch.cuda.is_available())
     print('using device: ', torch.cuda.get_device_name())
+
+    # Add the wandb group to work_dir to prevent conflicts if running multiple repetitions of the same configuration
+    work_dir = os.path.join(work_dir, wandb_group)
+
 
 
     # Correctly set the full data path

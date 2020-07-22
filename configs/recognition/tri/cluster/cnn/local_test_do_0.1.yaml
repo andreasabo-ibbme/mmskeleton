@@ -19,7 +19,7 @@ processor_cfg:
   cv: 5
   exclude_cv: False
   notes: "two_part_loss"
-  group_notes: "SAS_3_120_bn_do_0.1"
+  group_notes: "SAS_1_120_bn_do_0.1"
   weight_classes: True
   flip_loss: True
   launch_from_local: True
@@ -31,7 +31,7 @@ processor_cfg:
 
   # model setting
   model_cfg:
-    type: 'models.backbones.cnn_custom_3'
+    type: 'models.backbones.cnn_custom_1'
     in_channels: 3
     num_class: 4
     edge_importance_weighting: True
@@ -106,7 +106,7 @@ processor_cfg:
 
   # runtime setting
   workflow: [['train', 1], ['val', 1], ['test', 1]]
-  work_dir: ./work_dir/recognition/tri_all/dataset_example/cnn/SAS/SAS_3_120_bn_do_0.1
+  work_dir: ./work_dir/recognition/tri_all/dataset_example/cnn/SAS/SAS_1_120_bn_do_0.1
   total_epochs: 200
   training_hooks:
     lr_config:

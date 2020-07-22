@@ -71,6 +71,10 @@ def train(
     wandb_group = wandb.util.generate_id() + "_" + outcome_label + "_" + group_notes
     print("ANDREA - TRI-recognition: ", wandb_group)
 
+
+    # Add the wandb group to work_dir to prevent conflicts if running multiple repetitions of the same configuration
+    work_dir = os.path.join(work_dir, wandb_group)
+
     id_mapping = {27:25, 33:31, 34:32, 37:35, 39:37,
                   46:44, 47:45, 48:46, 50:48, 52:50, 
                   55:53, 57:55, 59:57, 66:63}
