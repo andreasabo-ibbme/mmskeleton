@@ -19,7 +19,7 @@ processor_cfg:
   cv: 5
   exclude_cv: False
   notes: "two_part_loss"
-  group_notes: "120_graph2_nonorm_2"
+  group_notes: "120_nonorm_0_ft_all"
   weight_classes: True
   flip_loss: True
   launch_from_local: False
@@ -31,13 +31,13 @@ processor_cfg:
 
   # model setting
   model_cfg:
-    type: 'models.backbones.ST_GCN_18_ordinal_smaller_2'
+    type: 'models.backbones.ST_GCN_18_ordinal'
     in_channels: 3
     num_class: 4
     edge_importance_weighting: True
     dropout: 0.0
     graph_cfg:
-      layout: 'coco_simplified_head_ankles_ankle_wrists'
+      layout: 'coco_simplified_head'
       strategy: 'spatial'
   loss_cfg:
     # type: 'torch.nn.CrossEntropyLoss'
@@ -51,7 +51,7 @@ processor_cfg:
     - type: "datasets.DataPipeline"
       data_source:
         type: "datasets.SkeletonLoaderTRI"
-        data_dir: skel_data/stgcn_normalized_100_center_pd_no_norm
+        data_dir: skel_data/stgcn_normalized_100_center_all_no_norm
         num_track: 1
         num_keypoints: 13
         repeat: 1
@@ -105,7 +105,7 @@ processor_cfg:
 
   # runtime setting
   workflow: [['train', 1], ['val', 1], ['test', 1]]
-  work_dir: ./work_dir/recognition/tri_all/dataset_example/v2/SAS/SAS_2_120_graph2_no_norm
+  work_dir: ./work_dir/recognition/tri_all/dataset_example/v2/SAS/120_nonorm_0
   total_epochs: 200
   training_hooks:
     lr_config:

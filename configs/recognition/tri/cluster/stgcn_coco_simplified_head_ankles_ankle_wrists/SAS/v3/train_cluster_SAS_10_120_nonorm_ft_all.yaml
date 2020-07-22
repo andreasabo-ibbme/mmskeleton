@@ -19,7 +19,7 @@ processor_cfg:
   cv: 5
   exclude_cv: False
   notes: "two_part_loss"
-  group_notes: "120_graph2_nonorm_2"
+  group_notes: "120_graph2_nonorm_10_ft_all"
   weight_classes: True
   flip_loss: True
   launch_from_local: False
@@ -31,7 +31,7 @@ processor_cfg:
 
   # model setting
   model_cfg:
-    type: 'models.backbones.ST_GCN_18_ordinal_smaller_2'
+    type: 'models.backbones.ST_GCN_18_ordinal_smaller_10'
     in_channels: 3
     num_class: 4
     edge_importance_weighting: True
@@ -51,7 +51,7 @@ processor_cfg:
     - type: "datasets.DataPipeline"
       data_source:
         type: "datasets.SkeletonLoaderTRI"
-        data_dir: skel_data/stgcn_normalized_100_center_pd_no_norm
+        data_dir: skel_data/stgcn_normalized_100_center_all_no_norm
         num_track: 1
         num_keypoints: 13
         repeat: 1

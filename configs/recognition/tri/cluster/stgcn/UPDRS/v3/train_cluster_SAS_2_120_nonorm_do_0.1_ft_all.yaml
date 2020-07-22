@@ -19,7 +19,7 @@ processor_cfg:
   cv: 5
   exclude_cv: False
   notes: "two_part_loss"
-  group_notes: "120_graph2_nonorm_2"
+  group_notes: "120_nonorm_2_do_0.1_ft_all"
   weight_classes: True
   flip_loss: True
   launch_from_local: False
@@ -35,9 +35,9 @@ processor_cfg:
     in_channels: 3
     num_class: 3
     edge_importance_weighting: True
-    dropout: 0.0
+    dropout: 0.1
     graph_cfg:
-      layout: 'coco_simplified_head_ankles_ankle_wrists'
+      layout: 'coco_simplified_head'
       strategy: 'spatial'
   loss_cfg:
     # type: 'torch.nn.CrossEntropyLoss'
@@ -105,7 +105,7 @@ processor_cfg:
 
   # runtime setting
   workflow: [['train', 1], ['val', 1], ['test', 1]]
-  work_dir: ./work_dir/recognition/tri_all/dataset_example/v2/UPDRS/UPDRS_2_120_graph2_no_norm
+  work_dir: ./work_dir/recognition/tri_all/dataset_example/v2/UPDRS/120_nonorm_2_do_0.1
   total_epochs: 200
   training_hooks:
     lr_config:

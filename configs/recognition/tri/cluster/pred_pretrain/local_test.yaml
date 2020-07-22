@@ -26,9 +26,9 @@ processor_cfg:
   wandb_project: "jul22_dev"
   early_stopping: True
   force_run_all_epochs: False
-  es_patience_1: 20
+  es_patience_1: 15
   es_start_up_1: 1
-  es_patience_2: 20
+  es_patience_2: 15
   es_start_up_2: 1
   freeze_encoder: False
   head: "stgcn"
