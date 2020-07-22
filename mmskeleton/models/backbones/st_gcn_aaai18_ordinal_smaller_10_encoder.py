@@ -52,11 +52,12 @@ class ST_GCN_18_ordinal_smaller_10_encoder(nn.Module):
         kwargs0 = {k: v for k, v in kwargs.items() if k != 'dropout'}
         self.st_gcn_networks = nn.ModuleList((
                 st_gcn_block(
-                    in_channels, 32, kernel_size, 1, residual=False, **kwargs0),
-                st_gcn_block(32, 64, kernel_size, 2, **kwargs),
-                st_gcn_block(64, 64, kernel_size, 1, **kwargs),
+                    in_channels, 16, kernel_size, 1, residual=False, **kwargs0),
+                st_gcn_block(16, 16, kernel_size, 1, **kwargs),
+                st_gcn_block(16, 32, kernel_size, 2, **kwargs),
+                st_gcn_block(32, 32, kernel_size, 1, **kwargs),
             ))
-        self.output_filters = 64
+        self.output_filters = 32
 
         # initialize parameters for edge importance weighting
         if edge_importance_weighting:

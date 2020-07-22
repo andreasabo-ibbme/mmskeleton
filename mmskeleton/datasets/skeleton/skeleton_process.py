@@ -238,6 +238,29 @@ def random_crop(data, size):
     return data
 
 
+def scale_walk(data, scale_range=[0.8, 1.2]):
+    for data_field in data_fields:
+        if data_field not in data.keys():
+            continue
+        
+        scale_factor_x = random.uniform(scale_range[0], scale_range[1])
+        scale_factor_y = random.uniform(scale_range[0], scale_range[1])
+
+        # print(scale_factor_x, scale_factor_y)
+        np_array = data[data_field]
+        # Want to scale the x,y coordinates, but not the confidence scores
+        np_array[0, :, :, :] = np_array[0, :, :, :] * scale_factor_x
+        np_array[1, :, :, :] = np_array[1, :, :, :] * scale_factor_y
+        data[data_field] = np_array
+
+        # T = np_array.shape[2]
+        # if T > size:
+        #     begin = random.randint(0, T - size)
+        #     data[data_field] = np_array[:, :, begin:begin + size, :]
+    return data
+
+
+
 def random_crop_for_joint_prediction(data, size, pred_ts):
     max_future_ts = max(pred_ts)
     begin = -1

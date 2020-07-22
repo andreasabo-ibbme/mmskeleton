@@ -51,9 +51,10 @@ class ST_GCN_18_ordinal_smaller_10(nn.Module):
         kernel_size = (temporal_kernel_size, spatial_kernel_size)
         self.st_gcn_networks = nn.ModuleList((
                 st_gcn_block(
-                    in_channels, 32, kernel_size, 1, residual=False, **kwargs0),
-                st_gcn_block(32, 64, kernel_size, 2, **kwargs),
-                st_gcn_block(64, 64, kernel_size, 1, **kwargs),
+                    in_channels, 16, kernel_size, 1, residual=False, **kwargs0),
+                st_gcn_block(16, 16, kernel_size, 1, **kwargs),
+                st_gcn_block(16, 32, kernel_size, 2, **kwargs),
+                st_gcn_block(32, 32, kernel_size, 1, **kwargs),
             ))
 
 
