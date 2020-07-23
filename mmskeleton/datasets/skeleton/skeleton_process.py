@@ -277,11 +277,14 @@ def shear_walk(data, shear_range=[-0.2, 0.2]):
 
 
         for t in range(size[2]):
-            for j in range(size[1]):
-                row_data = np_array[:, j, t, :].squeeze().transpose()
-                row_data = row_data[:, np.newaxis]
-                temp = np.dot(shear_mat,row_data)
-                np_array[:, j, t, :] = temp
+            
+            row_data = np_array[:, :, t, :].squeeze() # 3x13
+            # row_data = row_data[:, np.newaxis]
+            temp = np.dot(shear_mat,row_data)
+            # temp = temp.transpose()
+
+            temp = temp[:, :, np.newaxis]
+            np_array[:, :, t, :] = temp
 
   
         data[data_field] = np_array
