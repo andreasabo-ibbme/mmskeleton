@@ -19,28 +19,28 @@ processor_cfg:
   cv: 5
   exclude_cv: False
   notes: "two_part_loss"
-  group_notes: "SAS_10_120_pred_15_do_0.0"
+  group_notes: "SAS_0_120_pred_15_do_0.1"
   weight_classes: True
   flip_loss: 1
   launch_from_local: True
   wandb_project: "dev"
   early_stopping: True
   force_run_all_epochs: False
-  es_patience_1: 15
+  es_patience_1: 10
   es_start_up_1: 1
   es_patience_2: 15
-  es_start_up_2: 1
+  es_start_up_2: 20
   freeze_encoder: False
   head: "stgcn"
 
 
   # model setting
   model_cfg:
-    type: 'models.backbones.ST_GCN_18_ordinal_smaller_10_position_pretrain'
+    type: 'models.backbones.ST_GCN_18_ordinal_orig_position_pretrain'
     in_channels: 3
     num_class: 4 
     edge_importance_weighting: True
-    dropout: 0.0
+    dropout: 0.1
     num_ts_predicting: 1
     num_joints_predicting: 4
 
