@@ -21,6 +21,14 @@ import wandb
 import shutil
 
 
+def setup_eval_pipeline(pipeline):
+    # eval_pipeline = copy.deepcopy(pipeline)
+    eval_pipeline = []
+    for item in pipeline:
+        if item['type'] != "datasets.skeleton.scale_walk" and item['type'] != "datasets.skeleton.shear_walk":
+            eval_pipeline.append(item)
+    return eval_pipeline
+
 # Processing a batch of data for label prediction
 # process a batch of data
 def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
@@ -44,6 +52,7 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
     #print('using device: ', torch.cuda.get_device_name())
     
     mse_loss = torch.nn.MSELoss()
+    mae_loss = torch.nn.L1Loss()
     model_2 = copy.deepcopy(model)
     have_flips = 0
     try:
@@ -118,20 +127,20 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
     losses = loss(output, y_true)
 
 
-    if type(loss) == type(mse_loss):
-        if balance_classes:
-            losses = log_weighted_mse_loss(output, y_true, class_weights_dict)
-        # Convert the output to classes and clip from 0 to number of classes
-        y_pred_rounded = output.detach().cpu().numpy()
-        output = y_pred_rounded
-        output_list = output.squeeze().tolist()
-        y_pred_rounded = y_pred_rounded.reshape(1, -1).squeeze()
-        y_pred_rounded = np.round(y_pred_rounded, 0)
-        y_pred_rounded = np.clip(y_pred_rounded, 0, num_class-1)
-        preds = y_pred_rounded.squeeze().tolist()
-    else:    
-        rank = output.argsort()
-        preds = rank[:,-1].data.tolist()
+    if balance_classes:
+        if type(loss) == type(mse_loss):
+            losses = weighted_mse_loss(output, y_true, class_weights_dict)
+        if type(loss) == type(mae_loss):
+            losses = weighted_mae_loss(output, y_true, class_weights_dict)
+    # Convert the output to classes and clip from 0 to number of classes
+    y_pred_rounded = output.detach().cpu().numpy()
+    output = y_pred_rounded
+    output_list = output.squeeze().tolist()
+    y_pred_rounded = y_pred_rounded.reshape(1, -1).squeeze()
+    y_pred_rounded = np.round(y_pred_rounded, 0)
+    y_pred_rounded = np.clip(y_pred_rounded, 0, num_class-1)
+    preds = y_pred_rounded.squeeze().tolist()
+
 
     labels = y_true_orig_shape.data.tolist()
 
@@ -465,6 +474,20 @@ def my_loss(output, target):
 #https://discuss.pytorch.org/t/how-to-implement-weighted-mean-square-error/2547
 def weighted_mse_loss(input, target, weights):
     error_per_sample = (input - target) ** 2
+    numerator = 0
+    
+    for key in weights:
+        numerator += weights[key]
+
+    weights_list = [numerator / weights[int(i.data.tolist()[0])]  for i in target]
+    weight_tensor = torch.FloatTensor(weights_list)
+    weight_tensor = weight_tensor.unsqueeze(1).cuda()
+
+    loss = torch.mul(weight_tensor, error_per_sample).mean()
+    return loss
+
+def weighted_mae_loss(input, target, weights):
+    error_per_sample = abs(input - target)
     numerator = 0
     
     for key in weights:

@@ -20,7 +20,7 @@ from mmskeleton.processor.utils_recognition import *
 from mmskeleton.processor.supcon_loss import *
 
 
-fast_dev = False
+fast_dev = True
 # os.environ['WANDB_MODE'] = 'dryrun'
 
 # Global variables
@@ -69,6 +69,8 @@ def train(
 ):
     # Set up for logging 
     outcome_label = dataset_cfg[0]['data_source']['outcome_label']
+
+    eval_pipeline = setup_eval_pipeline(dataset_cfg[1]['pipeline'])
 
     global flip_loss_mult
     flip_loss_mult = flip_loss
@@ -298,6 +300,9 @@ def train(
                 datasets[0]['data_source']['data_dir'] = stage_2_train
                 datasets[1]['data_source']['data_dir'] = stage_2_val
                 datasets[2]['data_source']['data_dir'] = test_walks_pd_labelled
+
+                # Don't shear or scale the test data
+                datasets[2]['pipeline'] = eval_pipeline
 
                 optimizer_cfg_stage_2 = optimizer_cfg[1]
                 loss_cfg_stage_2 = copy.deepcopy(loss_cfg[1])

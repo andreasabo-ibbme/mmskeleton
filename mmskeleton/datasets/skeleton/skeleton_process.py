@@ -260,6 +260,34 @@ def scale_walk(data, scale_range=[0.8, 1.2]):
     return data
 
 
+def shear_walk(data, shear_range=[-0.2, 0.2]):
+    for data_field in data_fields:
+        if data_field not in data.keys():
+            continue
+        
+        shear_factor_x = random.uniform(shear_range[0], shear_range[1])
+        shear_factor_y = random.uniform(shear_range[0], shear_range[1])
+
+        shear_mat = np.asarray([[1, shear_factor_x, 0],[shear_factor_y, 1, 0],[0, 0, 1]])
+
+        # print(scale_factor_x, scale_factor_y)
+        np_array = data[data_field]
+
+        size = np_array.shape
+
+
+        for t in range(size[2]):
+            for j in range(size[1]):
+                row_data = np_array[:, j, t, :].squeeze().transpose()
+                row_data = row_data[:, np.newaxis]
+                temp = np.dot(shear_mat,row_data)
+                np_array[:, j, t, :] = temp
+
+  
+        data[data_field] = np_array
+
+    return data
+
 
 def random_crop_for_joint_prediction(data, size, pred_ts):
     max_future_ts = max(pred_ts)
