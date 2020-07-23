@@ -29,7 +29,7 @@ processor_cfg:
   es_patience_1: 15
   es_start_up_1: 1
   es_patience_2: 15
-  es_start_up_2: 50
+  es_start_up_2: 1
   freeze_encoder: False
   head: "stgcn"
 

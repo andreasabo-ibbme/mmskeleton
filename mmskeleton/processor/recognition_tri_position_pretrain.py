@@ -20,7 +20,7 @@ from mmskeleton.processor.utils_recognition import *
 from mmskeleton.processor.supcon_loss import *
 
 
-fast_dev = True
+fast_dev = False
 # os.environ['WANDB_MODE'] = 'dryrun'
 
 # Global variables
@@ -301,7 +301,8 @@ def train(
                 datasets[1]['data_source']['data_dir'] = stage_2_val
                 datasets[2]['data_source']['data_dir'] = test_walks_pd_labelled
 
-                # Don't shear or scale the test data
+                # Don't shear or scale the test or val data
+                datasets[1]['pipeline'] = eval_pipeline
                 datasets[2]['pipeline'] = eval_pipeline
 
                 optimizer_cfg_stage_2 = optimizer_cfg[1]

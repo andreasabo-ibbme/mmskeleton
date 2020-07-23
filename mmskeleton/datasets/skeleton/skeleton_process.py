@@ -269,22 +269,21 @@ def shear_walk(data, shear_range=[-0.2, 0.2]):
         shear_factor_y = random.uniform(shear_range[0], shear_range[1])
 
         shear_mat = np.asarray([[1, shear_factor_x, 0],[shear_factor_y, 1, 0],[0, 0, 1]])
-
         # print(scale_factor_x, scale_factor_y)
         np_array = data[data_field]
 
         size = np_array.shape
+        shear_mat_rep = np.repeat(shear_mat[:, :, np.newaxis], size[2], axis=2)
+        shear_mat_rep = shear_mat_rep.transpose(2,0,1) # t*3x3
 
-
-        for t in range(size[2]):
             
-            row_data = np_array[:, :, t, :].squeeze() # 3x13
-            # row_data = row_data[:, np.newaxis]
-            temp = np.dot(shear_mat,row_data)
-            # temp = temp.transpose()
-
-            temp = temp[:, :, np.newaxis]
-            np_array[:, :, t, :] = temp
+        row_data = np_array[:, :, :, :].squeeze().transpose(2,0,1) # t*3x13
+        # print('row data', row_data.shape)
+        # print('shear_mat_rep', shear_mat_rep.shape)
+        temp = np.matmul(shear_mat,row_data)
+        temp = temp.transpose(1, 2, 0)
+        temp = temp[:, :, :, np.newaxis]
+        np_array[:, :, :, :] = temp
 
   
         data[data_field] = np_array
