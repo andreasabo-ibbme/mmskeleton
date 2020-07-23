@@ -77,11 +77,13 @@ def train(
     balance_classes = weight_classes
 
     # Add the wandb group to work_dir to prevent conflicts if running multiple repetitions of the same configuration
-    work_dir = os.path.join(work_dir, wandb_group)
 
     # global num_class
     num_class = model_cfg['num_class']
     wandb_group = wandb.util.generate_id() + "_" + outcome_label + "_" + group_notes
+    work_dir = os.path.join(work_dir, wandb_group)
+
+    
     print("ANDREA - TRI-recognition: ", wandb_group)
 
     id_mapping = {27:25, 33:31, 34:32, 37:35, 39:37,
