@@ -56,9 +56,9 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
     model_2 = copy.deepcopy(model)
     have_flips = 0
     try:
-        data, label , name = datas
+        data, label , name, num_ts = datas
     except:
-        data, data_flipped, label, name = datas
+        data, data_flipped, label, name, num_ts = datas
         have_flips = 1
 
     data_all = data.cuda()
@@ -143,14 +143,16 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
 
 
     labels = y_true_orig_shape.data.tolist()
-
+    num_ts = num_ts.data.tolist()
     # Case when we have a single output
     if type(labels) is not list:
         labels = [labels]
     if type(preds) is not list:
         preds = [preds]
     if type(output_list) is not list:
-        output_list = [output_list]
+        output_list = [output_list]    
+    if type(num_ts) is not list:
+        num_ts = [num_ts]
 
     try:
         labels = [int(cl) for cl in labels]
@@ -173,7 +175,7 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
         print('output_all', output_all, 'output_all_flipped', output_all_flipped)
         raise ValueError('stop')
     log_vars['mae_rounded'] = mean_absolute_error(labels, preds)
-    output_labels = dict(true=labels, pred=preds, raw_preds=output_list)
+    output_labels = dict(true=labels, pred=preds, raw_preds=output_list, name=name, num_ts=num_ts)
     outputs = dict(loss=overall_loss, log_vars=log_vars, num_samples=len(labels))
     # print(type(labels), type(preds))
     # print('this is what we return: ', output_labels)
@@ -281,6 +283,8 @@ def final_stats(work_dir, wandb_group, wandb_project, total_epochs, num_class, w
         max_label = num_class
         # Compute summary statistics (accuracy and confusion matrices)
         final_results_dir = os.path.join(work_dir, 'all_final_eval', wandb_group)
+        final_results_dir2 = os.path.join(work_dir, 'all_test', wandb_group)
+
         wandb.init(name="ALL", project=wandb_project, group=wandb_group, tags=['summary'], reinit=True)
         print("getting final results from: ", final_results_dir)
         for e in range(0, total_epochs):
@@ -312,7 +316,6 @@ def final_stats(work_dir, wandb_group, wandb_project, total_epochs, num_class, w
                     pass
 
         # final results +++++++++++++++++++++++++++++++++++++++++
-        final_results_dir_v2 = os.path.join(work_dir, 'all_final_eval', wandb_group)
 
         for i, flow in enumerate(workflow):
             mode, _ = flow
@@ -321,7 +324,7 @@ def final_stats(work_dir, wandb_group, wandb_project, total_epochs, num_class, w
             class_names_int = [int(i) for i in range(num_class)]
 
             log_vars = {}
-            results_file = os.path.join(final_results_dir_v2, mode+".csv")
+            results_file = os.path.join(final_results_dir, mode+".csv")
             print("loading from: ", results_file)
             df = pd.read_csv(results_file)
             true_labels = df['true_score']
@@ -374,7 +377,7 @@ def final_stats(work_dir, wandb_group, wandb_project, total_epochs, num_class, w
                     print("failed to log regression plot")
 
             # Log the final dataframe to wandb for future analysis
-            header = ['amb', 'true_score', 'pred_round', 'pred_raw']
+            header = ['amb', 'walk_name', 'num_ts', 'true_score', 'pred_round', 'pred_raw']
             try:
                 wandb.log({"final_results_csv/"+mode: wandb.Table(data=df.values.tolist(), columns=header)})
             except: 
@@ -382,7 +385,7 @@ def final_stats(work_dir, wandb_group, wandb_project, total_epochs, num_class, w
         
         # Remove the files generated so we don't take up this space
         shutil.rmtree(final_results_dir)
-        shutil.rmtree(final_results_dir_v2)
+        shutil.rmtree(final_results_dir2)
 
 
     except:

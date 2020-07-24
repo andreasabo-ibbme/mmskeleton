@@ -15,11 +15,11 @@ argparse_cfg:
 processor_cfg:
   type: 'processor.recognition_tri_position_pretrain.train'
   workers: 1
-  test_ids: [34, 37, 27, 47, 39, 46, 48, 50, 52, 55, 57, 59, 66, 33]
+  test_ids: [34] #, 37, 27, 47, 39, 46, 48, 50, 52, 55, 57, 59, 66, 33]
   cv: 5
   exclude_cv: False
   notes: "two_part_loss"
-  group_notes: "SAS_0_120_pred_15_do_0.1"
+  group_notes: "SAS_10_120_pred_15_do_0.1"
   weight_classes: True
   flip_loss: 1
   launch_from_local: True
@@ -36,7 +36,7 @@ processor_cfg:
 
   # model setting
   model_cfg:
-    type: 'models.backbones.ST_GCN_18_ordinal_orig_position_pretrain'
+    type: 'models.backbones.ST_GCN_18_ordinal_smaller_10_position_pretrain'
     in_channels: 3
     num_class: 4 
     edge_importance_weighting: True
@@ -50,6 +50,7 @@ processor_cfg:
   loss_cfg:
     - {type: 'mmskeleton.processor.utils_recognition.WingLoss'} # This is for pretraining
     - {type: 'torch.nn.MSELoss'} # This is for finetuning
+    # - {type: 'torch.nn.MSELoss'} # This is for finetuning
     
 
   # dataset setting

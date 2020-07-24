@@ -20,7 +20,7 @@ from mmskeleton.processor.utils_recognition import *
 from mmskeleton.processor.supcon_loss import *
 
 
-fast_dev = False
+fast_dev = True
 # os.environ['WANDB_MODE'] = 'dryrun'
 
 # Global variables
@@ -356,6 +356,12 @@ def train(
     # Final stats
     final_stats(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow)
 
+    # Delete the work_dir
+    try:
+        shutil.rmtree(work_dir)
+    except:
+        logging.exception('This: ')
+        print('failed to delete the work_dir folder: ', work_dir)
 
 def finetune_model(
         work_dir,
@@ -514,9 +520,9 @@ def pretrain_model(
 def batch_processor_position_pretraining(model, datas, train_mode, loss, num_class, **kwargs):
 
     try:
-        data, data_flipped, label, name = datas
+        data, data_flipped, label, name, num_ts = datas
     except:
-        data, data_flipped, label, name, true_future_ts = datas
+        data, data_flipped, label, name, num_ts, true_future_ts = datas
 
     # Even if we have flipped data, we only want to use the original in this stage
     data_all = data.cuda()
@@ -549,7 +555,7 @@ def batch_processor_position_pretraining(model, datas, train_mode, loss, num_cla
         label_placeholders = [label_placeholders]
 
     log_vars = dict(loss_pretrain_position=batch_loss.item())
-    output_labels = dict(true=label_placeholders, pred=preds, raw_preds=raw_preds)
+    output_labels = dict(true=label_placeholders, pred=preds, raw_preds=raw_preds, name=name, num_ts=num_ts)
     outputs = dict(predicted_joint_positions=predicted_joint_positions, loss=batch_loss, log_vars=log_vars, num_samples=num_valid_samples)
 
     return outputs, output_labels, batch_loss.item()

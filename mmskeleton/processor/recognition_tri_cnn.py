@@ -218,6 +218,12 @@ def train(
     # Final stats
     final_stats(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow) 
 
+    # Delete the work_dir
+    try:
+        shutil.rmtree(work_dir)
+    except:
+        logging.exception('This: ')
+        print('failed to delete the work_dir folder: ', work_dir)
 def train_model(
         work_dir,
         model_cfg,

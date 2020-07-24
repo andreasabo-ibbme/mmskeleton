@@ -442,9 +442,9 @@ def pretrain_model(
 def batch_processor_pretraining(model, datas, train_mode, loss, num_class, **kwargs):
 
     try:
-        data, label , name = datas
+        data, label, name, num_ts = datas
     except:
-        data, data_flipped, label, name = datas
+        data, data_flipped, label, name, num_ts = datas
         have_flips = 1
 
 
@@ -493,7 +493,7 @@ def batch_processor_pretraining(model, datas, train_mode, loss, num_class, **kwa
         labels = [labels]
 
     log_vars = dict(loss_pretrain=batch_loss.item())
-    output_labels = dict(true=labels, pred=preds, raw_preds=raw_preds)
+    output_labels = dict(true=labels, pred=preds, raw_preds=raw_preds, name=name, num_ts=num_ts)
     outputs = dict(loss=batch_loss, log_vars=log_vars, num_samples=len(labelled_data_true_labels))
 
     return outputs, output_labels, batch_loss.item()

@@ -164,8 +164,8 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
 
             annotations = []
             annotations_flipped = []
-
-            for ts in range(len(data_struct['time'])):
+            num_time_steps = len(data_struct['time'])
+            for ts in range(num_time_steps):
                 ts_keypoints, ts_keypoints_flipped = [], []
                 for kp_num, kp in enumerate(order_of_keypoints):
                     if kp == "Neck":
@@ -256,8 +256,6 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
                         conf = 0
 
  
-
-
                     ts_keypoints.append([x, y, conf])
                     ts_keypoints_flipped.append([x_flipped, y, conf])
 
@@ -329,7 +327,9 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
                 data['data_flipped'][:, :, frame_index, person_id] = np.array(
                     a['keypoints']).transpose()
 
-          
+
+        data['num_ts'] = num_frame
+
         flipped_data = copy.deepcopy(data)
         temp_flipped = flipped_data['data_flipped']
         flipped_data['data_flipped'] = flipped_data['data']
