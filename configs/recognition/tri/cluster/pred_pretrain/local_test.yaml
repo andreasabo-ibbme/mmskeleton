@@ -13,7 +13,7 @@ argparse_cfg:
 
 
 processor_cfg:
-  type: 'processor.recognition_tri_position_pretrain.train'
+  type: 'processor.recognition_tri_position_pretrain_v2.train'
   workers: 1
   test_ids: [34] #, 37, 27, 47, 39, 46, 48, 50, 52, 55, 57, 59, 66, 33]
   cv: 5

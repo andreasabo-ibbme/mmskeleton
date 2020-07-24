@@ -20,7 +20,7 @@ from mmskeleton.processor.utils_recognition import *
 from mmskeleton.processor.supcon_loss import *
 
 
-fast_dev = False
+fast_dev = True
 # os.environ['WANDB_MODE'] = 'dryrun'
 
 # Global variables
