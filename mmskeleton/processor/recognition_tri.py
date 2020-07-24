@@ -76,6 +76,7 @@ def train(
                   55:53, 57:55, 59:57, 66:63}
 
 
+    eval_pipeline = setup_eval_pipeline(dataset_cfg[1]['pipeline'])
 
     # Add the wandb group to work_dir to prevent conflicts if running multiple repetitions of the same configuration
     work_dir = os.path.join(work_dir, wandb_group)
@@ -171,6 +172,11 @@ def train(
                     ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
                 # x = dataset_cfg[0]['data_source']['outcome_label']
         
+                # Don't shear or scale the test or val data
+                datasets[1]['pipeline'] = eval_pipeline
+                datasets[2]['pipeline'] = eval_pipeline
+
+
                 print(workflow)
                 # print(model_cfg['num_class'])
                 things_to_log = {'es_start_up': es_start_up, 'es_patience': es_patience, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }

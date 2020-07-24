@@ -76,6 +76,7 @@ def train(
     global balance_classes
     balance_classes = weight_classes
 
+    eval_pipeline = setup_eval_pipeline(dataset_cfg[1]['pipeline'])
 
     # global num_class
     num_class = model_cfg['num_class']
@@ -304,6 +305,11 @@ def train(
                 if fast_dev:
                     datasets[0]['data_source']['data_dir'] = labelled_train
                     datasets[0]['data_source']['data_dir'] = labelled_val
+
+
+                # Don't shear or scale the test or val data
+                datasets[1]['pipeline'] = eval_pipeline
+                datasets[2]['pipeline'] = eval_pipeline
 
                 optimizer_cfg_stage_2 = optimizer_cfg[1]
                 loss_cfg_stage_2 = copy.deepcopy(loss_cfg[1])

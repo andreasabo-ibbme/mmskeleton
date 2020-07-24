@@ -83,6 +83,7 @@ def train(
     id_mapping = {27:25, 33:31, 34:32, 37:35, 39:37,
                   46:44, 47:45, 48:46, 50:48, 52:50, 
                   55:53, 57:55, 59:57, 66:63}
+    eval_pipeline = setup_eval_pipeline(dataset_cfg[1]['pipeline'])
 
 
     # Add the wandb group to work_dir to prevent conflicts if running multiple repetitions of the same configuration
@@ -257,6 +258,10 @@ def train(
             things_to_log = {'supcon_head': model_cfg['head'], 'freeze_encoder': freeze_encoder, 'es_start_up_2': es_start_up_2, 'es_patience_2': es_patience_2, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg, 'optimizer_cfg': optimizer_cfg, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
 
             # print("final model for fine_tuning is: ", pretrained_model)
+
+            # Don't shear or scale the test or val data
+            datasets[1]['pipeline'] = eval_pipeline
+            datasets[2]['pipeline'] = eval_pipeline
 
             finetune_model(work_dir_amb,
                         pretrained_model,
