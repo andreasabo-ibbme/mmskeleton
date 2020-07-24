@@ -17,11 +17,20 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
     """
     def __init__(self, data_dir, num_track=1, repeat=1, num_keypoints=-1, 
                 outcome_label='UPDRS_gait', missing_joint_val=0, csv_loader=False, 
-                cache=False, layout='coco', flip_skels=False):
+                cache=False, layout='coco', flip_skels=False, belmont_data_mult = 5):
         self.data_dir = data_dir
         self.num_track = num_track
         self.num_keypoints = num_keypoints
+
         self.files = data_dir * repeat
+
+        # Look for belmont data and repeat it if necessary
+        self.belmont_data = [f for f in self.files if os.path.split(f)[1][0].upper() == 'B']
+
+        self.files.extend(self.belmont_data  * (belmont_data_mult-1))
+
+        # print("belmont_data", self.belmont_data)
+
         self.outcome_label = outcome_label
         self.missing_joint_val = missing_joint_val
         self.csv_loader = csv_loader
@@ -160,7 +169,11 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
             #     'LHip', 'LKnee', 'LAnkle', 
             #     'REye', 'LEye', 'REar', 'LEar'}
 
-
+            # If we have belmont data, reverse the order of the resolution parameter since the video is in portrait mode
+            first_char = data_struct['walk_name'][0][0]
+            if first_char.upper() == "B":
+                # print(data_struct['walk_name'][0], len(data_struct['time']))
+                info_struct['resolution'] = [1080, 1920]
 
             annotations = []
             annotations_flipped = []
