@@ -23,7 +23,7 @@ processor_cfg:
   weight_classes: True
   flip_loss: True
   launch_from_local: False
-  wandb_project: "jul_25_position_pretrain_SAS"
+  wandb_project: "jul_25_belmont_position_pretrain_SAS"
   early_stopping: True
   force_run_all_epochs: False
   es_patience: 15
@@ -51,7 +51,7 @@ processor_cfg:
     - type: "datasets.DataPipeline"
       data_source:
         type: "datasets.SkeletonLoaderTRI"
-        data_dir: skel_data/stgcn_normalized_100_center_all_no_norm
+        data_dir: skel_data/stgcn_normalized_100_center_all_no_norm_plus_belmont
         num_track: 1
         num_keypoints: 13
         repeat: 1
@@ -64,8 +64,6 @@ processor_cfg:
       pipeline:
         - {type: "datasets.skeleton.normalize_by_resolution"}
         - {type: "datasets.skeleton.mask_by_visibility"}
-        - {type: "datasets.skeleton.scale_walk"}
-        - {type: "datasets.skeleton.shear_walk"}
         - {type: "datasets.skeleton.pad_zero_beginning", size: 120 }
         - {type: "datasets.skeleton.random_crop", size: 120 }
         - {type: "datasets.skeleton.transpose", order: [0, 2, 1, 3]}
@@ -87,8 +85,6 @@ processor_cfg:
       pipeline:
         - {type: "datasets.skeleton.normalize_by_resolution"}
         - {type: "datasets.skeleton.mask_by_visibility"}
-        - {type: "datasets.skeleton.scale_walk"}
-        - {type: "datasets.skeleton.shear_walk"}
         - {type: "datasets.skeleton.pad_zero_beginning", size: 120 }
         - {type: "datasets.skeleton.random_crop", size: 120 }
         - {type: "datasets.skeleton.transpose", order: [0, 2, 1, 3]}
