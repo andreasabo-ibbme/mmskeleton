@@ -68,7 +68,7 @@ class ST_GCN_18_ordinal_smaller_10(nn.Module):
             self.edge_importance = [1] * len(self.st_gcn_networks)
 
         # fcn for prediction
-        self.fcn = nn.Conv2d(64, 1, kernel_size=1)
+        self.fcn = nn.Conv2d(32, 1, kernel_size=1)
         self.num_class = num_class
 
     def forward(self, x):

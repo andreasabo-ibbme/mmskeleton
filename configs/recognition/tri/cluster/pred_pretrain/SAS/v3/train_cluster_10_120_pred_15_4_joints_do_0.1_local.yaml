@@ -13,16 +13,16 @@ argparse_cfg:
 
 
 processor_cfg:
-  type: 'processor.recognition_tri_position_pretrain_v2.train'
+  type: 'processor.recognition_tri_position_pretrain.train'
   workers: 1
   test_ids: [48, 47, 34, 37, 27, 39, 46, 50, 52, 55, 57, 59, 66, 33]
   cv: 5
   exclude_cv: False
   notes: "two_part_loss"
-  group_notes: "120_v2_pred15_ankles_wrists_wing_ft_all"
+  group_notes: "120_v10_pred15_ankles_wrists_wing_do_0.1"
   weight_classes: True
   flip_loss: 1
-  launch_from_local: False
+  launch_from_local: True
   wandb_project: "jul_25_position_pretrain_SAS"
   early_stopping: True
   force_run_all_epochs: False
@@ -35,11 +35,11 @@ processor_cfg:
 
   # model setting
   model_cfg:
-    type: 'models.backbones.ST_GCN_18_ordinal_smaller_2_position_pretrain'
+    type: 'models.backbones.ST_GCN_18_ordinal_smaller_10_position_pretrain'
     in_channels: 3
     num_class: 4
     edge_importance_weighting: True
-    dropout: 0.0
+    dropout: 0.1
     num_ts_predicting: 1
     num_joints_predicting: 4
 
@@ -125,7 +125,7 @@ processor_cfg:
 
   # runtime setting
   workflow: [['train', 1], ['val', 1], ['test', 1]]
-  work_dir: ./work_dir/recognition/tri_all/dataset_example/v2/SAS/120_v2_pred15_ankles_wrists_wing
+  work_dir: ./work_dir/recognition/tri_all/dataset_example/v2/SAS/120_v0_pred15_ankles_wrists_wing_do_01
   total_epochs: 1000
   training_hooks:
     lr_config:
