@@ -2,7 +2,7 @@
 #SBATCH --gres=gpu:1              # Number of GPUs (per node)
 #SBATCH --mem=8000               # memory (per node)
 #SBATCH --cpus-per-task=8
-#SBATCH --time=0-16:00            # time (DD-HH:MM)
+#SBATCH --time=0-24:00            # time (DD-HH:MM)
 #SBATCH --job-name=SAS_2_120_pred_15
 #SBATCH --output=%x-%j_32hour.out
 #SBATCH --account=def-btaati
@@ -18,4 +18,4 @@ module load cuda/10.1
 source ~/ENV/bin/activate
 
 cd /home/asabo/projects/def-btaati/asabo/mmskeleton
-python mmskl.py configs/recognition/tri/cluster/stgcn_coco_simplified_head_ankles_ankle_wrists/SAS/v3/train_cluster_2_120_pred_15_4_joints_do_0.1_ft_all.yaml
+python mmskl.py configs/recognition/tri/cluster/stgcn_coco_simplified_head_ankles_ankle_wrists/SAS/v3/train_cluster_SAS_0_120_nonorm_do_0.1.yaml
