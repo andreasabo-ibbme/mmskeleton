@@ -238,7 +238,7 @@ def random_crop(data, size):
     return data
 
 
-def scale_walk(data, scale_range=[0.8, 1.2]):
+def scale_walk(data, scale_range=[0.9, 1.1]):
     for data_field in data_fields:
         if data_field not in data.keys():
             continue
@@ -260,7 +260,7 @@ def scale_walk(data, scale_range=[0.8, 1.2]):
     return data
 
 
-def shear_walk(data, shear_range=[-0.2, 0.2]):
+def shear_walk(data, shear_range=[-0.1, 0.1]):
     for data_field in data_fields:
         if data_field not in data.keys():
             continue
