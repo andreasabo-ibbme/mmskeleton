@@ -207,7 +207,7 @@ def train(
                         )
         except Exception as e: 
             print("caught error ==========================", e)
-
+            logging.exception('this went wrong')
         # Done with this participant, we can delete the temp foldeer
 
         try:

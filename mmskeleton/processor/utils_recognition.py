@@ -56,7 +56,7 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
     model_2 = copy.deepcopy(model)
     have_flips = 0
     try:
-        data, label , name, num_ts = datas
+        data, label, name, num_ts = datas
     except:
         data, data_flipped, label, name, num_ts = datas
         have_flips = 1
