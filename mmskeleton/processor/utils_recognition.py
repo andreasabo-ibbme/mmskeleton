@@ -111,12 +111,13 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
         # loss_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
         # loss_tensor = loss_tensor.cuda()
 
-
+        if type(num_ts) is not list:
+            num_ts = [num_ts]
 
         log_vars = dict(loss_label=0, loss_flip = loss_flip_tensor.item(), loss_all=loss_flip_tensor.item())
         log_vars['mae_raw'] = 0
         log_vars['mae_rounded'] = 0
-        output_labels = dict(true=labels, pred=preds, raw_preds=raw_preds)
+        output_labels = dict(true=labels, pred=preds, raw_preds=raw_preds, name=name, num_ts=num_ts)
         outputs = dict(loss=loss_flip_tensor, log_vars=log_vars, num_samples=0)
 
         return outputs, output_labels, loss_flip_tensor.item()
