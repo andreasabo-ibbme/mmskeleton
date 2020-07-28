@@ -23,7 +23,7 @@ processor_cfg:
   weight_classes: True
   flip_loss: 1
   launch_from_local: True
-  wandb_project: "jul_25_belmont_position_pretrain_SAS_skew_scale_0.1"
+  wandb_project: "jul_25_belmont_position_pretrain_SAS_scale_0.1"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 15
@@ -71,7 +71,6 @@ processor_cfg:
         - {type: "datasets.skeleton.normalize_by_resolution"}
         - {type: "datasets.skeleton.mask_by_visibility"}       
         - {type: "datasets.skeleton.scale_walk"}
-        - {type: "datasets.skeleton.shear_walk"}
         - {type: "datasets.skeleton.pad_zero_beginning_for_joint_prediction", size: 120, pred_ts: [15]  }
         - {type: "datasets.skeleton.random_crop_for_joint_prediction", size: 120, pred_ts: [15] }
         - {type: "datasets.skeleton.select_joints_for_label", joints: [5, 6, 11, 12]}
@@ -98,7 +97,6 @@ processor_cfg:
         - {type: "datasets.skeleton.normalize_by_resolution"}
         - {type: "datasets.skeleton.mask_by_visibility"}
         - {type: "datasets.skeleton.scale_walk"}
-        - {type: "datasets.skeleton.shear_walk"}
         - {type: "datasets.skeleton.pad_zero_beginning", size: 120 }
         - {type: "datasets.skeleton.random_crop", size: 120 }
         - {type: "datasets.skeleton.transpose", order: [0, 2, 1, 3]}
