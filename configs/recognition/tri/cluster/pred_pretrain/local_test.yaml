@@ -36,13 +36,14 @@ processor_cfg:
 
   # model setting
   model_cfg:
-    type: 'models.backbones.ST_GCN_18_ordinal_smaller_10_position_pretrain'
-    in_channels: 3
+    type: 'models.backbones.ST_GCN_18_ordinal_smaller_2_position_pretrain'
+    in_channels: 2
     num_class: 4 
     edge_importance_weighting: True
     dropout: 0.1
     num_ts_predicting: 1
     num_joints_predicting: 4
+    temporal_kernel_size: 1
 
     graph_cfg:
       layout: 'coco_simplified_head_ankles_ankle_wrists'
@@ -59,7 +60,7 @@ processor_cfg:
     - type: "datasets.DataPipeline"
       data_source:
         type: "datasets.SkeletonLoaderTRI"
-        data_dir: skel_data/stgcn_normalized_100_center_all_no_norm_plus_belmont_plus_belmont
+        data_dir: skel_data/stgcn_normalized_100_center_all_no_norm_plus_belmont
         num_track: 1
         num_keypoints: 13
         repeat: 1

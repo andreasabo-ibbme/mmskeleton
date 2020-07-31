@@ -35,6 +35,7 @@ class ST_GCN_18_ordinal_orig_position_pretrain(nn.Module):
                  num_ts_predicting=2,
                  num_joints_predicting=13, 
                  head='stgcn',
+                 temporal_kernel_size = 9,
                  **kwargs):
         super().__init__()
         print('In ST_GCN_18 ordinal supcon: ', graph_cfg)
@@ -43,6 +44,7 @@ class ST_GCN_18_ordinal_orig_position_pretrain(nn.Module):
                  in_channels,
                  num_class,
                  graph_cfg,
+                 temporal_kernel_size,
                  head, 
                  edge_importance_weighting,
                  data_bn,
@@ -61,6 +63,7 @@ class ST_GCN_18_ordinal_orig_position_pretrain(nn.Module):
         self.classification_head = nn.Conv2d(dim_in, 1, kernel_size=1)
 
         self.head = self.pretrain_head
+        self.in_channels = in_channels
 
     def set_stage_2(self):
         self.head = self.classification_head
@@ -69,6 +72,10 @@ class ST_GCN_18_ordinal_orig_position_pretrain(nn.Module):
         # print("encoder: ", self.encoder)
         # print('projection head', self.head)
     def forward(self, x):
+        if self.in_channels < 3:
+            x = x[:, 0:self.in_channels, :, :, :]
+        
+
         # Fine-tuning
         if self.stage_2:
             x = self.encoder(x)

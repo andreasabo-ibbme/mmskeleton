@@ -35,6 +35,7 @@ class ST_GCN_18_ordinal_smaller_10_position_pretrain(nn.Module):
                  num_ts_predicting=2,
                  num_joints_predicting=13, 
                  head='stgcn',
+                 temporal_kernel_size = 9,
                  **kwargs):
         super().__init__()
         print('In ST_GCN_18 ordinal supcon: ', graph_cfg)
@@ -43,13 +44,14 @@ class ST_GCN_18_ordinal_smaller_10_position_pretrain(nn.Module):
                  in_channels,
                  num_class,
                  graph_cfg,
+                 temporal_kernel_size,
                  head, 
                  edge_importance_weighting,
                  data_bn,
                  **kwargs)
         self.stage_2 = False
         self.num_joints_predicting = num_joints_predicting
-
+        self.in_channels = in_channels
         # fcn for prediction
         dim_in = self.encoder.output_filters
         feat_dim = self.num_joints_predicting *2*num_ts_predicting
@@ -73,6 +75,11 @@ class ST_GCN_18_ordinal_smaller_10_position_pretrain(nn.Module):
         # print("encoder: ", self.encoder)
         # print('projection head', self.head)
     def forward(self, x):
+        # print('input is of size: ', x.size())
+        if self.in_channels < 3:
+            x = x[:, 0:self.in_channels, :, :, :]
+        # print('input is of size: ', x.size())
+
         # Fine-tuning
         if self.stage_2:
             x = self.encoder(x)

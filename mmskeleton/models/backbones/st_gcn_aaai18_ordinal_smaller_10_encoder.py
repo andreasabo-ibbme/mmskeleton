@@ -30,6 +30,7 @@ class ST_GCN_18_ordinal_smaller_10_encoder(nn.Module):
                  in_channels,
                  num_class,
                  graph_cfg,
+                 temporal_kernel_size,
                  head="stgcn",
                  edge_importance_weighting=True,
                  data_bn=True,
@@ -45,7 +46,6 @@ class ST_GCN_18_ordinal_smaller_10_encoder(nn.Module):
         self.head = head
         # build networks
         spatial_kernel_size = A.size(0)
-        temporal_kernel_size = 9
         kernel_size = (temporal_kernel_size, spatial_kernel_size)
         self.data_bn = nn.BatchNorm1d(
             in_channels * A.size(1)) if data_bn else lambda x: x
