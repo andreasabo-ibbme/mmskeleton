@@ -80,7 +80,21 @@ def train(
 
     # Add the wandb group to work_dir to prevent conflicts if running multiple repetitions of the same configuration
 
-    # global num_class
+    model_type = ''
+
+    if model_cfg['type'] == 'models.backbones.ST_GCN_18_ordinal_smaller_2_position_pretrain':
+        model_type = "v2"
+    elif model_cfg['type'] == 'models.backbones.ST_GCN_18_ordinal_smaller_10_position_pretrain':
+        model_type = "v10"
+    elif model_cfg['type'] == 'models.backbones.ST_GCN_18_ordinal_smaller_11_position_pretrain':
+        model_type = "v11"
+    elif model_cfg['type'] == 'models.backbones.ST_GCN_18_ordinal_orig_position_pretrain':
+        model_type = "v0"
+    else: 
+        model_type = model_cfg['type']
+
+
+    group_notes = model_type + '_pretrain15' + "_dropout" + str(model_cfg['dropout']) + '_tempkernel' + str(model_cfg['temporal_kernel_size']) + "_batch" + str(batch_size)
     num_class = model_cfg['num_class']
     wandb_group = wandb.util.generate_id() + "_" + outcome_label + "_" + group_notes
     work_dir = os.path.join(work_dir, wandb_group)
@@ -235,9 +249,9 @@ def train(
                 datasets[2]['data_source']['data_dir'] = test_walks_pd_labelled
 
                 if fast_dev:
-                    datasets[0]['data_source']['data_dir'] = stage_1_train[:50]
-                    datasets[1]['data_source']['data_dir'] = stage_1_val[:50]
-                    datasets[2]['data_source']['data_dir'] = test_walks_pd_labelled[:50]
+                    datasets[0]['data_source']['data_dir'] = stage_1_train[:100]
+                    datasets[1]['data_source']['data_dir'] = stage_1_val[:100]
+                    datasets[2]['data_source']['data_dir'] = test_walks_pd_labelled[:100]
 
 
                 datasets_stage_1 = copy.deepcopy(datasets)
