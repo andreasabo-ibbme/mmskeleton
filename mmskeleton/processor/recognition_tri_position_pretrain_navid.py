@@ -29,7 +29,7 @@ balance_classes = False
 class_weights_dict = {}
 flip_loss_mult = False
 
-cluster_data_base = '~/projects/def-btaati/shared'
+cluster_data_base = 'home/asabo/projects/def-btaati/shared'
 
 
 # These aren't used
