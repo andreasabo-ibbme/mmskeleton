@@ -1,0 +1,125 @@
+argparse_cfg:
+  gpus:
+    bind_to: processor_cfg.gpus
+    help: number of gpus
+  work_dir:
+    bind_to: processor_cfg.work_dir
+    help: the dir to save logs and models
+  batch_size:
+    bind_to: processor_cfg.batch_size
+  resume_from:
+    bind_to: processor_cfg.resume_from
+    help: the checkpoint file to resume from
+
+
+processor_cfg:
+  type: 'processor.recognition_tri_position_pretrain_navid.train'
+  workers: 1
+  cv: 5                    # This is currently used to set the hold out percentage (cv=5 means 20% will be held out for validation set)
+  exclude_cv: False
+  notes: "two_part_loss"
+  group_notes: "120_v2_pred15_ankles_wrists_wing"
+  weight_classes: True
+  flip_loss: 1
+  launch_from_local: False   # This should be false for cluster
+  wandb_project: "aug20_pretraining"
+  early_stopping: True
+  force_run_all_epochs: False  # This turns off early stopping
+  es_patience_1: 25     # If no decrease in val loss after this many epochs, stop training
+  es_start_up_1: 1      # Do not early stop in this range
+  es_patience_2: 25     # Not needed, this is hold over from finetuning
+  es_start_up_2: 30     # Not needed, this is hold over from finetuning
+  freeze_encoder: False
+  head: "stgcn"
+
+  # model setting
+  model_cfg:
+    type: 'models.backbones.ST_GCN_18_ordinal_smaller_2_position_pretrain'   # This is the model specification
+    in_channels: 2   # x, y positions
+    num_class: 4     # Not used for pretraining, can ignore this
+    edge_importance_weighting: True   # Kept this from original model
+    dropout: 0.0                 # Can tune this
+    num_ts_predicting: 1         # This should match with the number selected in the pipeline below
+    num_joints_predicting: 4     # This should match with the number selected in the pipeline below
+    temporal_kernel_size: 9      # Can tune this to increase or decrease temporal window
+    graph_cfg:
+      layout: 'coco_simplified_head'
+      strategy: 'spatial'
+  loss_cfg:
+    - {type: 'mmskeleton.processor.utils_recognition.WingLoss'} # This is for pretraining
+
+
+  # dataset setting
+  dataset_cfg:
+    # ALL data
+    - type: "datasets.DataPipeline"
+      data_source:
+        type: "datasets.SkeletonLoaderTRI"
+        data_dir: skel_data/stgcn_normalized_100_center_all_no_norm_plus_belmont
+        num_track: 1
+        num_keypoints: 13
+        repeat: 1
+        outcome_label: SAS_gait
+        csv_loader: True
+        missing_joint_val: mean
+        cache: True
+        flip_skels: True
+
+
+      # More augmentations here: mmskeleton/datasets/skeleton/skeleton_process.py
+      pipeline:
+        - {type: "datasets.skeleton.normalize_by_resolution"}
+        - {type: "datasets.skeleton.mask_by_visibility"}     
+        - {type: "datasets.skeleton.scale_walk"}      # Optional
+        - {type: "datasets.skeleton.shear_walk"}      # Optional
+        - {type: "datasets.skeleton.pad_zero_beginning_for_joint_prediction", size: 120, pred_ts: [15]  }  # How many timesteps in the future should we predict?
+        - {type: "datasets.skeleton.random_crop_for_joint_prediction", size: 120, pred_ts: [15] }
+        - {type: "datasets.skeleton.select_joints_for_label", joints: [5, 6, 11, 12]}         # What joints should we predict for? Currently this is ankles and wrists
+        - {type: "datasets.skeleton.transpose", order: [0, 2, 1, 3]}
+        - {type: "datasets.skeleton.to_tuple"}
+
+    # For reference, the joint order is:
+    # order_of_keypoints = ['Nose', 
+    #     'LShoulder', 'RShoulder',
+    #     'LElbow', 'RElbow', 
+    #     'LWrist', 'RWrist', 
+    #     'LHip', 'RHip',
+    #     'LKnee', 'RKnee',
+    #     'LAnkle', 'RAnkle',
+    # ]
+  # dataloader setting
+  batch_size: 100
+  gpus: 1
+
+  # optimizer setting
+  optimizer_cfg:
+    # Pretrain
+    - {type: 'torch.optim.SGD',
+    lr: 0.0001,
+    momentum: 0.9,
+    nesterov: true,
+    weight_decay: 0.000001}
+
+
+  # runtime setting
+  workflow: [['train', 1], ['val', 1], ['test', 1]]
+  work_dir: ./work_dir/recognition/tri_all/dataset_example/v2/SAS/120_v2_pred15_ankles_wrists_wing
+  total_epochs: 1000
+  training_hooks:
+  training_hooks:
+    lr_config:
+      policy: 'cyclic'
+      cyclic_times: 50
+      step_ratio_up: 0.2
+      anneal_ratio: 5
+      target_ratio: !!python/tuple [10, 0.00001]
+    log_config:
+      interval: 1000
+      hooks:
+        - type: WandbLoggerHook
+    checkpoint_config:
+      interval: 200
+    optimizer_config:
+      grad_clip:
+  resume_from:
+  load_from:

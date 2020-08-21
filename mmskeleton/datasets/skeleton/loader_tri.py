@@ -81,9 +81,7 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
     # "category_id": 0,
 # }
         if index in self.cached_data:
-            # print("loading from cache: ", self.files[index])
             return self.cached_data[index]
-        # print("loading the data from file")
 
         if index >= len(self.files):
             flip_index = index
@@ -95,8 +93,6 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
 
 
         if self.csv_loader:
-            # print("getting itemmmmm", self.outcome_label)
-            # print(self.files[index])
             file_index = index
             if index >= len(self.files):
                 file_index = index - len(self.files)
@@ -104,7 +100,6 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
             data_struct_interpolated = pd.read_csv(self.files[file_index])
             data_struct_interpolated.fillna(data_struct_interpolated.mean(), inplace=True)
 
-            # print(data_struct_interpolated.head())
 
             data_struct = {} 
             with open(self.files[file_index]) as f:        
@@ -285,7 +280,6 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
                 annotations.append(cur_ts_struct)
                 annotations_flipped.append(cur_ts_struct_flipped)
 
-            # print(annotations) 
             outcome_cat = data_struct[self.outcome_label][0]
             try:
                 outcome_cat = float(outcome_cat)
@@ -298,20 +292,15 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
             else:
                 self.class_dist[outcome_cat] = 1
 
-            # print("annotations: ",  annotations)
-            # raise ValueError("ok")
             data = {'info': info_struct, 
-                        # 'annotations': annotations,
                         'category_id': outcome_cat}
         
         else: # original loader 
             with open(self.files[index]) as f:
                 data = json.load()
-        # # print("we got: ", data_arr[0])
 
         info = data['info']
-        # annotations = data['annotations']
-        # annotations_flipped = data['annotations_flipped']
+
         num_frame = info['num_frame']
         num_keypoints = info[
             'num_keypoints'] if self.num_keypoints <= 0 else self.num_keypoints
@@ -360,9 +349,6 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
 
         if self.flip_skels and return_flip:
             return flipped_data
-        # print(data['data'])
-        # data.pop('annotations', None)
-        # print(data)
-        # raise ValueError("stop")
+
         return data
 
