@@ -23,7 +23,7 @@ processor_cfg:
   weight_classes: True
   flip_loss: 1
   launch_from_local: False
-  wandb_project: "aug6_cyclicLR_belmont_position_pretrain_SAS"
+  wandb_project: "aug7_cyclicLR_belmont_position_pretrain_SAS"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 25

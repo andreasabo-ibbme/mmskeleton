@@ -19,7 +19,7 @@ import shutil
 from mmskeleton.processor.utils_recognition import *
 from mmskeleton.processor.supcon_loss import *
 
-
+turn_off_wd = True
 fast_dev = True
 # os.environ['WANDB_MODE'] = 'dryrun'
 
@@ -71,6 +71,11 @@ def train(
     outcome_label = dataset_cfg[0]['data_source']['outcome_label']
 
     eval_pipeline = setup_eval_pipeline(dataset_cfg[1]['pipeline'])
+
+    if turn_off_wd:
+        for stage in range(len(optimizer_cfg)):
+            optimizer_cfg[stage]['weight_decay'] = 0
+
 
     global flip_loss_mult
     flip_loss_mult = flip_loss

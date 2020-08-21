@@ -158,7 +158,7 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
     try:
         labels = [int(cl) for cl in labels]
         preds = [int(cl) for cl in preds]
-    except TypeError as e:
+    except Exception as e:
         print(labels)
         print(preds)
         print("got an error: ", e)
