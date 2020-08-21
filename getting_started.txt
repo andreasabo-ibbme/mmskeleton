@@ -9,4 +9,10 @@ source ~/ENV/bin/activate
 1. Clone and install mmcv and mmskeleton (and all of their dependencies)
     - I created a virtual environment for all of these
     - The file andrea_req.txt lists the package versions I have installed
+    - Be sure to log into wandb so you can look at the training curves
 
+2. If everything is installed, you can trained the position prediction model with this command:
+    - python mmskl.py configs/recognition/tri/cluster/configs_for_navid/train_cluster_2_120_pred_15_4_joints.yaml
+
+3. I documented the ambiguous hyperparameters in the above yaml file, and there are a number of things that can be changed. If you want to try a number of configurations, you may need to set up some batch files. An example of how I do this is:
+    - mmskeleton/batch/jul22_scale_ablation/pretrain/SAS/v5/temp5/SAS_0_120_pred_15.sh

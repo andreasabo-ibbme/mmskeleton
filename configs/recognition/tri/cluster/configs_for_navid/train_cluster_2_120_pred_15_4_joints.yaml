@@ -19,7 +19,7 @@ processor_cfg:
   exclude_cv: False
   notes: "two_part_loss"
   group_notes: "120_v2_pred15_ankles_wrists_wing"
-  weight_classes: True
+  weight_classes: True       # Not needed, this is hold over from finetuning
   flip_loss: 1
   launch_from_local: False   # This should be false for cluster
   wandb_project: "aug20_pretraining"
@@ -30,11 +30,11 @@ processor_cfg:
   es_patience_2: 25     # Not needed, this is hold over from finetuning
   es_start_up_2: 30     # Not needed, this is hold over from finetuning
   freeze_encoder: False
-  head: "stgcn"
+  head: "stgcn"  # Not needed, this is hold over from finetuning
 
   # model setting
   model_cfg:
-    type: 'models.backbones.ST_GCN_18_ordinal_smaller_2_position_pretrain'   # This is the model specification
+    type: 'models.backbones.ST_GCN_18_ordinal_smaller_2_position_pretrain'   # This is the model specification. More models (and you can add your own) here: /mmskeleton/mmskeleton/models/backbones/
     in_channels: 2   # x, y positions
     num_class: 4     # Not used for pretraining, can ignore this
     edge_importance_weighting: True   # Kept this from original model
@@ -46,8 +46,7 @@ processor_cfg:
       layout: 'coco_simplified_head'
       strategy: 'spatial'
   loss_cfg:
-    - {type: 'mmskeleton.processor.utils_recognition.WingLoss'} # This is for pretraining
-
+    - {type: 'mmskeleton.processor.utils_recognition.WingLoss'} # This is for pretraining, can also replace this with MSELoss like this: - {type: 'torch.nn.MSELoss'}
 
   # dataset setting
   dataset_cfg:
