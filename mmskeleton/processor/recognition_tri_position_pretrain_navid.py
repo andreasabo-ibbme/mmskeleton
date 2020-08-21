@@ -20,7 +20,7 @@ from mmskeleton.processor.utils_recognition import *
 from mmskeleton.processor.supcon_loss import *
 
 
-fast_dev = True
+fast_dev = False
 # os.environ['WANDB_MODE'] = 'dryrun'
 
 # Global variables
@@ -29,9 +29,12 @@ balance_classes = False
 class_weights_dict = {}
 flip_loss_mult = False
 
+cluster_data_base = '~/projects/def-btaati/shared'
+
+
+# These aren't used
 local_data_base = '/home/saboa/data'
-cluster_data_base = '/home/asabo/projects/def-btaati/asabo'
-local_output_base = '/home/saboa/data/mmskel_out'
+local_output_base = '/home/saboa/data/mmskel_out'   
 local_long_term_base = '/home/saboa/data/mmskel_long_term'
 
 def train(
