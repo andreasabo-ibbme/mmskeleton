@@ -110,13 +110,16 @@ def transpose(data, order, key=None):
 
 
 def to_tuple(data):
-    keys=['data', 'category_id', 'name', 'num_ts'] # category_id is the score label or the future joint positions we want to predict
+    keys=['data', 'category_id', 'name', 'num_ts', 'index'] # category_id is the score label or the future joint positions we want to predict
     if 'data_flipped' in data.keys():
-        keys=['data', 'data_flipped',  'category_id', 'name', 'num_ts']
+        keys=['data', 'data_flipped',  'category_id', 'name', 'num_ts', 'index']
 
         if 'full_future_pred' in data.keys():
-            keys=['data', 'data_flipped',  'category_id', 'name', 'num_ts', 'full_future_pred']
+            keys=['data', 'data_flipped',  'category_id', 'name', 'num_ts', 'full_future_pred', 'index']
 
+
+
+    # print("keys: ", keys)
     return tuple([data[k] for k in keys])
 
 

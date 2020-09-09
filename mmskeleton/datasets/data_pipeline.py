@@ -23,3 +23,7 @@ class DataPipeline(torch.utils.data.Dataset):
         for stage_args in self.pipeline:
             data = call_obj(data=data, **stage_args)
         return data
+
+    def reassignLabel(self, index, new_label):
+        self.data_source.relabelItem(index, new_label)
+        pass

@@ -23,7 +23,7 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
         self.num_keypoints = num_keypoints
 
         self.files = data_dir * repeat
-
+        
         # Look for belmont data and repeat it if necessary
         self.belmont_data = [f for f in self.files if os.path.split(f)[1][0].upper() == 'B']
 
@@ -46,6 +46,10 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
 
         self.cache = cache
         self.cached_data = {}
+
+        self.sample_extremes = False
+        self.cached_extremes = []
+
         if self.cache:
             print("loading data to cache...")
             for index in range(self.__len__()):
@@ -56,6 +60,37 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
         if self.flip_skels:
             return len(self.files)*2
         return len(self.files)
+
+    def extremaLength(self):
+        return len(self.cached_extremes)
+
+    def relabelItem(self, index, newLabel):
+        # Make sure that the label is within the admissible range of [0, 4]
+        if newLabel < 0:
+            newLabel = 0
+        if newLabel > 4:
+            newLabel = 4
+
+        if index not in self.cached_data:
+            print("Don't have this data, skipping relabel...", index)
+            return
+
+        if not self.cached_data[index]['have_true_label']:
+            # print("assigning to index: ", index, " old label: ",  self.cached_data[index]['category_id'], " new label: ", newLabel, " data length: ", self.__len__())
+            
+            # Update the class distributions
+            self.class_dist[int(round(self.cached_data[index]['category_id']))] -= 1 
+
+            roundedLabel = int(round(newLabel))
+            if roundedLabel in self.class_dist:
+                self.class_dist[roundedLabel] += 1 
+            else:
+                if roundedLabel < 0:
+                    roundedLabel = 0
+                if roundedLabel > 4:
+                    roundedLabel = 4                
+            self.class_dist[roundedLabel] = 1
+            self.cached_data[index]['category_id'] = newLabel
 
     def __getitem__(self, index):
 # {
@@ -80,8 +115,13 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
         # ],
     # "category_id": 0,
 # }
+
         if index in self.cached_data:
-            return self.cached_data[index]
+            if self.sample_extremes:
+                extremaInd = index % self.extremaLength()
+                return self.cached_extremes[extremaInd]
+            else:
+                return self.cached_data[index]
 
         if index >= len(self.files):
             flip_index = index
@@ -90,6 +130,7 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
         else:
             flip_index = index + len(self.files)
             return_flip = False
+
 
 
         if self.csv_loader:
@@ -301,6 +342,10 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
 
         info = data['info']
 
+
+
+
+
         num_frame = info['num_frame']
         num_keypoints = info[
             'num_keypoints'] if self.num_keypoints <= 0 else self.num_keypoints
@@ -332,6 +377,11 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
 
         data['num_ts'] = num_frame
 
+        if data['category_id'] >= 0:
+            data['have_true_label'] = 1
+        else:
+            data['have_true_label'] = 0
+
         flipped_data = copy.deepcopy(data)
         temp_flipped = flipped_data['data_flipped']
         flipped_data['data_flipped'] = flipped_data['data']
@@ -339,12 +389,26 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
         flipped_data['name'] = self.files[file_index] + "_flipped"
 
         data['name'] = self.files[file_index]
+        
+        data['index'] = index
+        flipped_data['index'] = flip_index
+
+        # Add to extrema list if this score is on the extremes
+        if data['category_id'] == 0 or \
+            (self.outcome_label == "UPDRS_gait" and data['category_id'] == 2) or \
+            (self.outcome_label == "SAS_gait" and data['category_id'] == 3):
+
+            self.cached_extremes.append(data)
+            if self.flip_skels:
+                self.cached_extremes.append(flipped_data)
+
 
         if self.cache:
             self.cached_data[index] = data
 
             if self.flip_skels:    
                 self.cached_data[flip_index] = flipped_data
+                
 
 
         if self.flip_skels and return_flip:

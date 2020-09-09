@@ -20,6 +20,21 @@ from torch import nn
 import wandb
 import shutil
 
+def get_model_type(model_cfg):
+    model_type = ''
+
+    if model_cfg['type'] == 'models.backbones.ST_GCN_18_ordinal_smaller_2_position_pretrain':
+        model_type = "v2"
+    elif model_cfg['type'] == 'models.backbones.ST_GCN_18_ordinal_smaller_10_position_pretrain':
+        model_type = "v10"
+    elif model_cfg['type'] == 'models.backbones.ST_GCN_18_ordinal_smaller_11_position_pretrain':
+        model_type = "v11"
+    elif model_cfg['type'] == 'models.backbones.ST_GCN_18_ordinal_orig_position_pretrain':
+        model_type = "v0"
+    else: 
+        model_type = model_cfg['type']   
+
+    return model_type
 
 def setup_eval_pipeline(pipeline):
     # eval_pipeline = copy.deepcopy(pipeline)
@@ -56,10 +71,14 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
     model_2 = copy.deepcopy(model)
     have_flips = 0
     try:
-        data, label, name, num_ts = datas
+        try:
+            data, label, name, num_ts, index = datas
+        except:
+            data, data_flipped, label, name, num_ts, index = datas
+            have_flips = 1
     except:
-        data, data_flipped, label, name, num_ts = datas
-        have_flips = 1
+        print("datas: ", len(datas))
+        raise RuntimeError("SOMETHING IS UP WITH THE DATA")
 
     data_all = data.cuda()
     label = label.cuda()
@@ -162,6 +181,7 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
         print(labels)
         print(preds)
         print("got an error: ", e)
+        raise RuntimeError('')
 
 
     overall_loss = losses + loss_flip_tensor
@@ -477,13 +497,18 @@ def my_loss(output, target):
 
 #https://discuss.pytorch.org/t/how-to-implement-weighted-mean-square-error/2547
 def weighted_mse_loss(input, target, weights):
+    # If the targets are not integers, then round them so that they match the 
+    # dictionary keys
+
+    # target_local = 
+
     error_per_sample = (input - target) ** 2
     numerator = 0
     
     for key in weights:
         numerator += weights[key]
 
-    weights_list = [numerator / weights[int(i.data.tolist()[0])]  for i in target]
+    weights_list = [numerator / weights[int(round((i.data.tolist()[0])))]  for i in target]
     weight_tensor = torch.FloatTensor(weights_list)
     weight_tensor = weight_tensor.unsqueeze(1).cuda()
 
