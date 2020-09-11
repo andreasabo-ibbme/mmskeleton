@@ -21,6 +21,23 @@ from mmskeleton.processor.supcon_loss import *
 import time
 from pathlib import Path
 
+turn_off_wd = False
+fast_dev = False
+# os.environ['WANDB_MODE'] = 'dryrun'
+
+# Global variables
+num_class = 4
+balance_classes = False
+class_weights_dict = {}
+flip_loss_mult = False
+
+local_data_base = '/home/saboa/data'
+cluster_data_base = '/home/asabo/projects/def-btaati/asabo'
+local_output_base = '/home/saboa/data/mmskel_out'
+local_long_term_base = '/home/saboa/data/mmskel_long_term'
+
+
+
 def rmdir(directory):
     directory = Path(directory)
     for item in directory.iterdir():
@@ -69,20 +86,7 @@ def robust_rmtree(path, logger=None, max_retries=3):
     # Final attempt, pass any Exceptions up to caller.
     shutil.rmtree(path)
 
-turn_off_wd = False
-fast_dev = True
-# os.environ['WANDB_MODE'] = 'dryrun'
 
-# Global variables
-num_class = 4
-balance_classes = False
-class_weights_dict = {}
-flip_loss_mult = False
-
-local_data_base = '/home/saboa/data'
-cluster_data_base = '/home/asabo/projects/def-btaati/asabo'
-local_output_base = '/home/saboa/data/mmskel_out'
-local_long_term_base = '/home/saboa/data/mmskel_long_term'
 
 
 def train(
@@ -542,6 +546,7 @@ def train(
                             do_position_pretrain,
                             all_data_loaders
                             )
+                        pretrained_model_copy = copy.deepcopy(pretrained_model)
 
                     # Finetune
                     for ds in range(len(all_data_loaders)):

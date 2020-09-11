@@ -31,7 +31,7 @@ processor_cfg:
   es_patience_2: 2
   es_start_up_2: 2
   train_extrema_for_epochs: 25
-  do_position_pretrain: False
+  do_position_pretrain: True
   freeze_encoder: False
   head: "stgcn"
   model_increase_iters: [1, 2, 4, 6, 8]

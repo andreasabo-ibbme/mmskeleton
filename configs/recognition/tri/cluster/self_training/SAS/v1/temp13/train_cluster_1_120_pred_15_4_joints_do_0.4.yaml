@@ -23,7 +23,7 @@ processor_cfg:
   weight_classes: True
   flip_loss: 0
   launch_from_local: False
-  wandb_project: "ST_v1_sept11"
+  wandb_project: "SAS_selftrain_v1_sept11"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 25
