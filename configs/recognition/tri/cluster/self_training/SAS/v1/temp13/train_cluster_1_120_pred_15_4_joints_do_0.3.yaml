@@ -15,28 +15,28 @@ argparse_cfg:
 processor_cfg:
   type: 'processor.recognition_tri_self_training_v2.train'
   workers: 1
-  test_ids: [34, 37] #, 27, 47, 39, 46, 48, 50, 52, 55, 57, 59, 66, 33]
+  test_ids: [34, 37, 27, 47, 39, 46, 48, 50, 52, 55, 57, 59, 66, 33]
   cv: 5
   exclude_cv: False
   notes: "two_part_loss"
   group_notes: "TESTv2"
   weight_classes: True
   flip_loss: 0
-  launch_from_local: True
-  wandb_project: "dev_sept11"
+  launch_from_local: False
+  wandb_project: "ST_v1_sept11"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 25
   es_start_up_1: 10
-  es_patience_2: 2
-  es_start_up_2: 2
+  es_patience_2: 25
+  es_start_up_2: 25
   train_extrema_for_epochs: 25
-  do_position_pretrain: False
+  do_position_pretrain: True
   freeze_encoder: False
   head: "stgcn"
   model_increase_iters: [1, 2, 4, 6, 8]
   model_increase_mults: [1, 1, 2, 1, 1]
-  num_self_train_iter: 2
+  num_self_train_iter: 5
 
   # model setting
   model_cfg:
@@ -44,10 +44,10 @@ processor_cfg:
     in_channels: 2
     num_class: 4 
     edge_importance_weighting: True
-    dropout: 0.0
+    dropout: 0.3
     num_ts_predicting: 1
     num_joints_predicting: 4
-    temporal_kernel_size: 5
+    temporal_kernel_size: 13
 
     graph_cfg:
       layout: 'coco_simplified_head_ankles_ankle_wrists'

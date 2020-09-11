@@ -18,8 +18,58 @@ import pickle
 import shutil
 from mmskeleton.processor.utils_recognition import *
 from mmskeleton.processor.supcon_loss import *
+import time
+from pathlib import Path
 
-turn_off_wd = True
+def rmdir(directory):
+    directory = Path(directory)
+    for item in directory.iterdir():
+        if item.is_dir():
+            rmdir(item)
+        else:
+            item.unlink()
+    # print("deleting: ", directory)
+    # print("with: ", os.listdir(directory))
+    # for f in os.listdir(directory):
+    #     to_rm = os.path.join(directory,f)
+    #     print("removing this: ", to_rm)
+    #     os.remove(to_rm)
+    # print("with2: ", os.listdir(directory))
+
+    try:
+        directory.rmdir()
+    except:
+        pass
+        # print("couldn't delete: ", directory)
+
+
+def robust_rmtree(path, logger=None, max_retries=3):
+    """Robustly tries to delete paths.
+    Retries several times (with increasing delays) if an OSError
+    occurs.  If the final attempt fails, the Exception is propagated
+    to the caller.
+    """
+    print("removing robustly")
+    dt = 1
+    for i in range(max_retries):
+        print("removing robustly: ", i)
+
+        try:
+            shutil.rmtree(path)
+            return
+        except Exception as e:
+            # print(e)
+            # print('Unable to remove path: %s' % path)
+            # print('Retrying after %d seconds' % dt)
+            # print('files it has: ', os.listdir(path))
+            rmdir(path)
+            time.sleep(dt)
+            dt *= 1.5
+
+    # Final attempt, pass any Exceptions up to caller.
+    shutil.rmtree(path)
+
+turn_off_wd = False
 fast_dev = True
 # os.environ['WANDB_MODE'] = 'dryrun'
 
@@ -33,6 +83,7 @@ local_data_base = '/home/saboa/data'
 cluster_data_base = '/home/asabo/projects/def-btaati/asabo'
 local_output_base = '/home/saboa/data/mmskel_out'
 local_long_term_base = '/home/saboa/data/mmskel_long_term'
+
 
 def train(
         work_dir,
@@ -547,7 +598,8 @@ def train(
 
 
             try:
-                shutil.rmtree(work_dir_amb)
+                robust_rmtree(work_dir_amb)
+
             except:
                 print('failed to delete the participant folder')
 
@@ -562,13 +614,17 @@ def train(
     # Final stats
     final_stats(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, num_self_train_iter)
     # final_stats_by_iter(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, num_self_train_iter)
+    # wandb.init(name='END', project=wandb_project, group=wandb_group, reinit=True)
 
     # Delete the work_dir
     try:
-        shutil.rmtree(work_dir)
+        robust_rmtree(work_dir)
+        # shutil.rmtree(work_dir)
     except:
         logging.exception('This: ')
         print('failed to delete the work_dir folder: ', work_dir)
+
+    return work_dir
 
 def relabelData(model, data_loader):
     model.eval()
@@ -666,6 +722,7 @@ def finetune_model(
     
     # [('train', 5), ('val', 1)]
     final_model, _ = runner.run(data_loaders, workflow, total_epochs, loss=loss, flip_loss_mult=flip_loss_mult, balance_classes=balance_classes, class_weights_dict=class_weights_dict, train_extrema_for_epochs=train_extrema_for_epochs)
+
     try:
         shutil.rmtree(wandb.run.dir)
     except:

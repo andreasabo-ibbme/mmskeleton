@@ -430,7 +430,9 @@ def final_stats_worker(work_dir, wandb_group, wandb_project, total_epochs, num_c
             logging.exception("Could not save final table =================================================\n")
     
     # Remove the files generated so we don't take up this space
+    print('removing ', final_results_dir)
     shutil.rmtree(final_results_dir)
+    print('removing ', final_results_dir2)
     shutil.rmtree(final_results_dir2)
 
 def final_stats(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, num_self_train_iter=0):
@@ -442,13 +444,14 @@ def final_stats(work_dir, wandb_group, wandb_project, total_epochs, num_class, w
         else:
             for iter_count in range(num_self_train_iter):
                 work_dir = work_dir_back + "/" + str(iter_count)
-                final_stats_worker(work_dir, wandb_group, wandb_project, total_epochs, num_class, log_name="ALL_" + str(iter_count))
+                final_stats_worker(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, log_name="ALL_" + str(iter_count))
                 
 
 
     except:
         print('something when wrong in the summary stats')
         logging.exception("Error message =================================================")    
+
 
 
 
