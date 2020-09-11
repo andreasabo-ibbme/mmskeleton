@@ -30,5 +30,7 @@ from .cnn_custom_2 import cnn_custom_2
 from .cnn_custom_3 import cnn_custom_3
 from .cnn_custom_4 import cnn_custom_4
 
+# Dynamic models
+from .st_gcn_aaai18_ordinal_orig_position_pretrain_dynamic_v1 import ST_GCN_18_ordinal_orig_position_pretrain_dynamic_v1
 
 from .hrnet import HRNet

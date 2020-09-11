@@ -61,7 +61,7 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
             print("loading data to cache...")
             for index in range(self.__len__()):
                 self.get_item_loc(index)
-            print(self.cached_extreme_inds)
+            # print(self.cached_extreme_inds)
 
     def get_class_dist(self):
         if self.sample_extremes:

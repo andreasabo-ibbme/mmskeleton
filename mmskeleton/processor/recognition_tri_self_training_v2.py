@@ -20,7 +20,7 @@ from mmskeleton.processor.utils_recognition import *
 from mmskeleton.processor.supcon_loss import *
 
 turn_off_wd = True
-fast_dev = False
+fast_dev = True
 # os.environ['WANDB_MODE'] = 'dryrun'
 
 # Global variables
@@ -28,7 +28,6 @@ num_class = 4
 balance_classes = False
 class_weights_dict = {}
 flip_loss_mult = False
-num_self_train_iter = 10
 
 local_data_base = '/home/saboa/data'
 cluster_data_base = '/home/asabo/projects/def-btaati/asabo'
@@ -69,6 +68,9 @@ def train(
         head='stgcn',
         freeze_encoder=True,
         do_position_pretrain=True,
+        model_increase_iters=None,
+        model_increase_mults=None,
+        num_self_train_iter=0,
 ):
     # Set up for logging 
     outcome_label = dataset_cfg[0]['data_source']['outcome_label']
@@ -98,8 +100,12 @@ def train(
         model_type = "v11"
     elif model_cfg['type'] == 'models.backbones.ST_GCN_18_ordinal_orig_position_pretrain':
         model_type = "v0"
+    elif model_cfg['type'] == 'models.backbones.ST_GCN_18_ordinal_orig_position_pretrain_dynamic_v1':
+        model_type = "dynamic_v1"
+        
     else: 
         model_type = model_cfg['type']
+
 
 
     group_notes = model_type + '_pretrain15' + "_dropout" + str(model_cfg['dropout']) + '_tempkernel' + str(model_cfg['temporal_kernel_size']) + "_batch" + str(batch_size)
@@ -157,9 +163,11 @@ def train(
     for test_id in test_ids:
         try:
 
+            if num_self_train_iter >= 0:
+                self_train_iteration_count = 0
             plt.close('all')
             ambid = id_mapping[test_id]
-            work_dir_amb = work_dir + "/" + str(ambid)
+            work_dir_amb = work_dir + "/" + str(self_train_iteration_count) + "/" + str(ambid)
 
             # These are all of the walks (both labelled and not) of the test participant and cannot be included in training data at any point (for LOSOCV)
             test_subj_walks_name_only_all = [i for i in all_file_names_only if re.search('ID_'+str(test_id), i) ]
@@ -276,12 +284,13 @@ def train(
 
                 print('optimizer_cfg_stage_1 ', optimizer_cfg_stage_1)
 
-                work_dir_amb = work_dir + "/" + str(ambid)
+                work_dir_amb = work_dir + "/" + str(self_train_iteration_count) + "/" + str(ambid)
+                # work_dir_amb = work_dir + "/" + str(ambid)
                 simple_work_dir_amb = simple_work_dir + "/" + str(ambid)
                 for ds in datasets:
                     ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
 
-                things_to_log = {'num_ts_predicting': model_cfg['num_ts_predicting'], 'es_start_up_1': es_start_up_1, 'es_patience_1': es_patience_1, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg_stage_1, 'optimizer_cfg': optimizer_cfg_stage_1, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
+                things_to_log = {'model_increase_mults': model_increase_mults, 'model_increase_iters': model_increase_iters, 'train_extrema_for_epochs': train_extrema_for_epochs, 'self_train_iteration_count': self_train_iteration_count, 'num_ts_predicting': model_cfg['num_ts_predicting'], 'es_start_up_1': es_start_up_1, 'es_patience_1': es_patience_1, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg_stage_1, 'optimizer_cfg': optimizer_cfg_stage_1, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
 
                 # print("train walks: ", stage_1_train)
 
@@ -341,7 +350,7 @@ def train(
                 pretrained_model.module.set_stage_2()
                 pretrained_model.module.head.apply(weights_init)
 
-                things_to_log = {'supcon_head': head, 'freeze_encoder': freeze_encoder, 'es_start_up_2': es_start_up_2, 'es_patience_2': es_patience_2, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg_stage_2, 'optimizer_cfg': optimizer_cfg_stage_2, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
+                things_to_log = {'model_increase_mults': model_increase_mults, 'model_increase_iters': model_increase_iters, 'self_train_iteration_count': self_train_iteration_count, 'supcon_head': head, 'freeze_encoder': freeze_encoder, 'es_start_up_2': es_start_up_2, 'es_patience_2': es_patience_2, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg_stage_2, 'optimizer_cfg': optimizer_cfg_stage_2, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
 
                 # print("final model for fine_tuning is: ", pretrained_model)
 
@@ -372,8 +381,8 @@ def train(
 
                 # Now load in all of the data for pseudolabelling 
                 # Only use the true labels for val and test sets for evaluation
-                all_trainset = stage_2_train + stage_1_train
-                all_valset = stage_2_val
+                all_trainset = stage_2_train + stage_1_train + stage_1_val # Stage 1 are all unlabelled
+                all_valset = stage_2_val # These all have labels
                 all_testset = test_walks_pd_labelled
 
 
@@ -406,14 +415,24 @@ def train(
                 # SELF_TRAINING======================================================================================
                 # SELF_TRAINING======================================================================================
                 
-                for iter_num in range(num_self_train_iter):
+                for iter_num in range(1, num_self_train_iter):
+                    self_train_iteration_count = iter_num
                     print("itertest"*20)
+                    changed_model = False
 
                     for ds in range(len(all_data_loaders)):
                         all_data_loaders[ds].dataset.pipeline = eval_pipeline
 
                     # Label the originally unlabelled training data (do not alter the data with labels or the val/test sets)             
                     relabelData(finetuned_model, all_data_loaders[0])
+
+                    # Increase model capacity if needed
+                    pretrained_model = pretrained_model_copy
+                    if iter_num in model_increase_iters:
+                        local_ind = model_increase_iters.index(iter_num)
+                        pretrained_model.module.addLayer(model_increase_mults[local_ind])
+                        changed_model = True
+                        print('increased model size')
 
 
                     # Reset the model and train
@@ -431,12 +450,14 @@ def train(
 
                     print('optimizer_cfg_stage_1 ', optimizer_cfg_stage_1)
 
-                    work_dir_amb = work_dir + "/" + str(ambid) + "/" + str(iter_num)
-                    simple_work_dir_amb = simple_work_dir + "/" + str(ambid) + "/" + str(iter_num)
+                    # work_dir_amb = work_dir + "/" + str(ambid) + "/" + str(iter_num)
+                    simple_work_dir_amb = simple_work_dir + "/" + str(self_train_iteration_count) + "/" + str(ambid)
+                    work_dir_amb = work_dir + "/" + str(self_train_iteration_count) + "/" + str(ambid)
+
                     for ds in datasets:
                         ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
 
-                    things_to_log = {'iter_num': iter_num, 'num_ts_predicting': model_cfg['num_ts_predicting'], 'es_start_up_1': es_start_up_1, 'es_patience_1': es_patience_1, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg_stage_1, 'optimizer_cfg': optimizer_cfg_stage_1, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
+                    things_to_log = {'model_increase_mults': model_increase_mults, 'model_increase_iters': model_increase_iters, 'train_extrema_for_epochs': train_extrema_for_epochs,'self_train_iteration_count': self_train_iteration_count, 'num_ts_predicting': model_cfg['num_ts_predicting'], 'es_start_up_1': es_start_up_1, 'es_patience_1': es_patience_1, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg_stage_1, 'optimizer_cfg': optimizer_cfg_stage_1, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
 
                     # print("train walks: ", stage_1_train)
 
@@ -444,31 +465,32 @@ def train(
                     print('stage_1_val: ', len(stage_1_val))
                     print('test_walks_pd_labelled: ', len(test_walks_pd_labelled))
 
-                    pretrained_model = pretrained_model_copy
-                    # pretrained_model = pretrain_model(
-                    #     work_dir_amb,
-                    #     simple_work_dir_amb,
-                    #     model_cfg,
-                    #     loss_cfg_stage_1,
-                    #     datasets,
-                    #     optimizer_cfg_stage_1,
-                    #     batch_size,
-                    #     total_epochs,
-                    #     training_hooks,
-                    #     workflow,
-                    #     gpus,
-                    #     log_level,
-                    #     workers,
-                    #     resume_from,
-                    #     load_from, 
-                    #     things_to_log,
-                    #     early_stopping,
-                    #     force_run_all_epochs,
-                    #     es_patience_1,
-                    #     es_start_up_1, 
-                    #     do_position_pretrain,
-                    #     all_data_loaders
-                    #     )
+                    # Only redo pretraining if we changed the model, other wise just reuse what we had
+                    if changed_model:
+                        pretrained_model = pretrain_model(
+                            work_dir_amb,
+                            simple_work_dir_amb,
+                            model_cfg,
+                            loss_cfg_stage_1,
+                            datasets,
+                            optimizer_cfg_stage_1,
+                            batch_size,
+                            total_epochs,
+                            training_hooks,
+                            workflow,
+                            gpus,
+                            log_level,
+                            workers,
+                            resume_from,
+                            load_from, 
+                            things_to_log,
+                            early_stopping,
+                            force_run_all_epochs,
+                            es_patience_1,
+                            es_start_up_1, 
+                            do_position_pretrain,
+                            all_data_loaders
+                            )
 
                     # Finetune
                     for ds in range(len(all_data_loaders)):
@@ -494,7 +516,7 @@ def train(
                     pretrained_model.module.set_stage_2()
                     pretrained_model.module.head.apply(weights_init)
 
-                    things_to_log = {'iter_num': iter_num, 'supcon_head': head, 'freeze_encoder': freeze_encoder, 'es_start_up_2': es_start_up_2, 'es_patience_2': es_patience_2, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg_stage_2, 'optimizer_cfg': optimizer_cfg_stage_2, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
+                    things_to_log = {'model_increase_mults': model_increase_mults, 'model_increase_iters': model_increase_iters, 'train_extrema_for_epochs': train_extrema_for_epochs, 'self_train_iteration_count': self_train_iteration_count, 'supcon_head': head, 'freeze_encoder': freeze_encoder, 'es_start_up_2': es_start_up_2, 'es_patience_2': es_patience_2, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg_stage_2, 'optimizer_cfg': optimizer_cfg_stage_2, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
 
                     # print("final model for fine_tuning is: ", pretrained_model)
 
@@ -538,7 +560,8 @@ def train(
                 print('failed to delete the participant folder')
 
     # Final stats
-    final_stats(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow)
+    final_stats(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, num_self_train_iter)
+    # final_stats_by_iter(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, num_self_train_iter)
 
     # Delete the work_dir
     try:
@@ -696,6 +719,12 @@ def pretrain_model(
     torch.cuda.set_device(0)
     loss = call_obj(**loss_cfg_local)
     loss = WingLoss()
+
+    # print(model)
+    # input("Original model...")
+    # model.module.addLayer(2)
+    # print(model)
+    # input("Added model...")
 
     if not do_position_pretrain:
         return model
