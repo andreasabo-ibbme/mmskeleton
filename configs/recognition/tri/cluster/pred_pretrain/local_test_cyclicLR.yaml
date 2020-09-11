@@ -23,13 +23,14 @@ processor_cfg:
   weight_classes: True
   flip_loss: 0
   launch_from_local: True
-  wandb_project: "dev_cyclic_sept4"
+  wandb_project: "dev_sept10"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 25
   es_start_up_1: 10
   es_patience_2: 25
-  es_start_up_2: 30
+  es_start_up_2: 20
+  train_extrema_for_epochs: 25
   do_position_pretrain: False
   freeze_encoder: False
   head: "stgcn"
@@ -74,6 +75,8 @@ processor_cfg:
       pipeline:
         - {type: "datasets.skeleton.normalize_by_resolution"}
         - {type: "datasets.skeleton.mask_by_visibility"}       
+        - {type: "datasets.skeleton.scale_walk"}      # Optional
+        - {type: "datasets.skeleton.shear_walk"}   
         - {type: "datasets.skeleton.pad_zero_beginning_for_joint_prediction", size: 120, pred_ts: [15]  }
         - {type: "datasets.skeleton.random_crop_for_joint_prediction", size: 120, pred_ts: [15] }
         - {type: "datasets.skeleton.select_joints_for_label", joints: [5, 6, 11, 12]}
@@ -98,6 +101,8 @@ processor_cfg:
       pipeline:
         - {type: "datasets.skeleton.normalize_by_resolution"}
         - {type: "datasets.skeleton.mask_by_visibility"}
+        - {type: "datasets.skeleton.scale_walk"}      # Optional
+        - {type: "datasets.skeleton.shear_walk"}   
         - {type: "datasets.skeleton.pad_zero_beginning", size: 120 }
         - {type: "datasets.skeleton.random_crop", size: 120 }
         - {type: "datasets.skeleton.transpose", order: [0, 2, 1, 3]}
@@ -135,6 +140,7 @@ processor_cfg:
       cyclic_times: 10
       step_ratio_up: 0.2
       target_ratio: !!python/tuple [10, 0.00001]
+      anneal_ratio: 2
     log_config:
       interval: 100
       hooks:

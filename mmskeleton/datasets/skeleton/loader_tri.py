@@ -36,25 +36,44 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
         self.csv_loader = csv_loader
         self.interpolate_with_mean = False
         self.layout = layout
-        self.class_dist = {}
+        
         self.flip_skels = flip_skels
 
         if self.missing_joint_val == 'mean':
             self.interpolate_with_mean = True
             self.missing_joint_val = 0
 
+        self.class_dist = {}
+        for i in range(3):
+            self.class_dist[i] = 0 
+
+        if self.outcome_label == "SAS_gait":
+            self.class_dist[3] = 0
+
 
         self.cache = cache
         self.cached_data = {}
 
         self.sample_extremes = False
-        self.cached_extremes = []
+        self.cached_extreme_inds = []
 
         if self.cache:
             print("loading data to cache...")
             for index in range(self.__len__()):
-                self.__getitem__(index)
+                self.get_item_loc(index)
+            print(self.cached_extreme_inds)
 
+    def get_class_dist(self):
+        if self.sample_extremes:
+            extrema_dist = copy.deepcopy(self.class_dist)
+            extrema_dist[1] = 0
+
+            if self.outcome_label == "SAS_gait":
+                extrema_dist[2] = 0
+
+            return extrema_dist
+            
+        return self.class_dist
 
     def __len__(self):
         if self.flip_skels:
@@ -62,37 +81,64 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
         return len(self.files)
 
     def extremaLength(self):
-        return len(self.cached_extremes)
+        return len(self.cached_extreme_inds)
 
     def relabelItem(self, index, newLabel):
-        # Make sure that the label is within the admissible range of [0, 4]
-        if newLabel < 0:
-            newLabel = 0
-        if newLabel > 4:
-            newLabel = 4
-
         if index not in self.cached_data:
             print("Don't have this data, skipping relabel...", index)
             return
+        if self.cached_data[index]['have_true_label']:
+            return
 
-        if not self.cached_data[index]['have_true_label']:
-            # print("assigning to index: ", index, " old label: ",  self.cached_data[index]['category_id'], " new label: ", newLabel, " data length: ", self.__len__())
-            
-            # Update the class distributions
-            self.class_dist[int(round(self.cached_data[index]['category_id']))] -= 1 
+        # Make sure that the label is within the admissible range of [0, 4]
+        if newLabel < 0:
+            newLabel = 0
+        if newLabel > 3 and self.outcome_label == "SAS_gait":
+            newLabel = 3
+        elif newLabel > 2 and self.outcome_label == "UPDRS_gait":
+            newLabel = 2
 
-            roundedLabel = int(round(newLabel))
-            if roundedLabel in self.class_dist:
-                self.class_dist[roundedLabel] += 1 
-            else:
-                if roundedLabel < 0:
-                    roundedLabel = 0
-                if roundedLabel > 4:
-                    roundedLabel = 4                
+        # print("assigning to index: ", index, " old label: ",  self.cached_data[index]['category_id'], " new label: ", newLabel, "rounded old_label:", int(round(self.cached_data[index]['category_id'])), " data length: ", self.class_dist)
+        
+        # Update the class distributions
+        old_label = int(round(self.cached_data[index]['category_id']))
+        self.cached_data[index]['category_id'] = newLabel
+
+        if old_label >= 0:
+            self.class_dist[old_label] -= 1
+
+        roundedLabel = int(round(newLabel))
+        if roundedLabel in self.class_dist:
+            self.class_dist[roundedLabel] += 1 
+        else:   
             self.class_dist[roundedLabel] = 1
-            self.cached_data[index]['category_id'] = newLabel
 
-    def __getitem__(self, index):
+        # print(self.cached_data[index])
+
+
+        # Add to extrema map if needed
+        # old and new are both extrema, so don't need to do anything
+        # old was extrema, remove it from the extrema list
+        if self.isExtrema(old_label) and not self.isExtrema(roundedLabel):
+            inds = [i for i,x in enumerate(self.cached_extreme_inds) if x==index]
+            inds.sort(reverse = True)
+            for ind in inds:
+                del self.cached_extreme_inds[ind]
+
+        # new is extrema, append to extrema list
+        if not self.isExtrema(old_label) and self.isExtrema(roundedLabel):
+            self.cached_extreme_inds.append(index)
+
+    def isExtrema(self, label):
+        # label = self.cached_data[index]['category_id'] 
+        if label == 0 or \
+                    (self.outcome_label == "UPDRS_gait" and label == 2) or \
+                    (self.outcome_label == "SAS_gait" and label == 3):
+            return True
+        return False
+
+
+    def get_item_loc(self, index):
 # {
     # "info":
         # {
@@ -116,12 +162,12 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
     # "category_id": 0,
 # }
 
-        if index in self.cached_data:
-            if self.sample_extremes:
-                extremaInd = index % self.extremaLength()
-                return self.cached_extremes[extremaInd]
-            else:
-                return self.cached_data[index]
+        # if index in self.cached_data:
+        #     if self.sample_extremes:
+        #         extremaInd = index % self.extremaLength()
+        #         return self.cached_extremes[extremaInd]
+        #     else:
+        #         return self.cached_data[index]
 
         if index >= len(self.files):
             flip_index = index
@@ -398,9 +444,9 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
             (self.outcome_label == "UPDRS_gait" and data['category_id'] == 2) or \
             (self.outcome_label == "SAS_gait" and data['category_id'] == 3):
 
-            self.cached_extremes.append(data)
-            if self.flip_skels:
-                self.cached_extremes.append(flipped_data)
+            self.cached_extreme_inds.append(index)
+            # if self.flip_skels:
+            #     self.cached_extreme_inds.append(flip_index)
 
 
         if self.cache:
@@ -416,3 +462,16 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
 
         return data
 
+
+    def __getitem__(self, index):
+        if index in self.cached_data:
+            if self.sample_extremes:
+                extremaInd = index % self.extremaLength()
+                # print(self.extremaLength(), self.__len__(), "want index: ", extremaInd)
+                
+                # return self.get_item_loc(self.cached_extreme_inds[extremaInd])
+                return copy.deepcopy(self.cached_data[self.cached_extreme_inds[extremaInd]])
+            else:
+                return self.cached_data[index]
+
+        return self.get_item_loc(index)

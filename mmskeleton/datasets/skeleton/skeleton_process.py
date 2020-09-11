@@ -110,9 +110,9 @@ def transpose(data, order, key=None):
 
 
 def to_tuple(data):
-    keys=['data', 'category_id', 'name', 'num_ts', 'index'] # category_id is the score label or the future joint positions we want to predict
+    keys=['data', 'category_id', 'name', 'num_ts', 'index', 'have_true_label'] # category_id is the score label or the future joint positions we want to predict
     if 'data_flipped' in data.keys():
-        keys=['data', 'data_flipped',  'category_id', 'name', 'num_ts', 'index']
+        keys=['data', 'data_flipped',  'category_id', 'name', 'num_ts', 'index', 'have_true_label']
 
         if 'full_future_pred' in data.keys():
             keys=['data', 'data_flipped',  'category_id', 'name', 'num_ts', 'full_future_pred', 'index']
@@ -237,6 +237,20 @@ def random_crop(data, size):
         T = np_array.shape[2]
         if T > size:
             begin = random.randint(0, T - size)
+            data[data_field] = np_array[:, :, begin:begin + size, :]
+    return data
+
+
+def crop_middle(data, size):
+    for data_field in data_fields:
+        if data_field not in data.keys():
+            continue
+
+        np_array = data[data_field]
+        T = np_array.shape[2]
+        if T > size:
+            # Extract out only the middle section of the walk 
+            begin = int((T - size) / 2)
             data[data_field] = np_array[:, :, begin:begin + size, :]
     return data
 

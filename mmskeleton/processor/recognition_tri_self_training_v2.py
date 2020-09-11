@@ -65,6 +65,7 @@ def train(
         es_start_up_1=5,
         es_patience_2=10,
         es_start_up_2=50,
+        train_extrema_for_epochs=0,
         head='stgcn',
         freeze_encoder=True,
         do_position_pretrain=True,
@@ -288,6 +289,7 @@ def train(
                 print('stage_1_val: ', len(stage_1_val))
                 print('test_walks_pd_labelled: ', len(test_walks_pd_labelled))
 
+
                 pretrained_model = pretrain_model(
                     work_dir_amb,
                     simple_work_dir_amb,
@@ -311,6 +313,7 @@ def train(
                     es_start_up_1, do_position_pretrain,
                     )
 
+                pretrained_model_copy = copy.deepcopy(pretrained_model)
 
                 # ================================ STAGE 2 ====================================
                 # Make sure we're using the correct dataset
@@ -362,12 +365,14 @@ def train(
                             es_patience_2,
                             es_start_up_2, 
                             freeze_encoder, 
-                            num_class)
+                            num_class, 
+                            None, # dataloaders
+                            train_extrema_for_epochs)
 
 
                 # Now load in all of the data for pseudolabelling 
                 # Only use the true labels for val and test sets for evaluation
-                all_trainset = stage_1_train + stage_2_train
+                all_trainset = stage_2_train + stage_1_train
                 all_valset = stage_2_val
                 all_testset = test_walks_pd_labelled
 
@@ -376,7 +381,8 @@ def train(
                 datasets[0]['data_source']['data_dir'] = all_trainset
                 datasets[1]['data_source']['data_dir'] = all_valset
                 datasets[2]['data_source']['data_dir'] = all_testset
-
+                if fast_dev:
+                    datasets[0]['data_source']['data_dir'] = all_trainset[0:100]
                 # for i in range(len(datasets)):
                 #     datasets[i]['sampler'] = torch.utils.data.RandomSampler(data_source=datasets[i]['data_source']['data_dir']*2)
 
@@ -438,30 +444,31 @@ def train(
                     print('stage_1_val: ', len(stage_1_val))
                     print('test_walks_pd_labelled: ', len(test_walks_pd_labelled))
 
-                    pretrained_model = pretrain_model(
-                        work_dir_amb,
-                        simple_work_dir_amb,
-                        model_cfg,
-                        loss_cfg_stage_1,
-                        datasets,
-                        optimizer_cfg_stage_1,
-                        batch_size,
-                        total_epochs,
-                        training_hooks,
-                        workflow,
-                        gpus,
-                        log_level,
-                        workers,
-                        resume_from,
-                        load_from, 
-                        things_to_log,
-                        early_stopping,
-                        force_run_all_epochs,
-                        es_patience_1,
-                        es_start_up_1, 
-                        do_position_pretrain,
-                        all_data_loaders
-                        )
+                    pretrained_model = pretrained_model_copy
+                    # pretrained_model = pretrain_model(
+                    #     work_dir_amb,
+                    #     simple_work_dir_amb,
+                    #     model_cfg,
+                    #     loss_cfg_stage_1,
+                    #     datasets,
+                    #     optimizer_cfg_stage_1,
+                    #     batch_size,
+                    #     total_epochs,
+                    #     training_hooks,
+                    #     workflow,
+                    #     gpus,
+                    #     log_level,
+                    #     workers,
+                    #     resume_from,
+                    #     load_from, 
+                    #     things_to_log,
+                    #     early_stopping,
+                    #     force_run_all_epochs,
+                    #     es_patience_1,
+                    #     es_start_up_1, 
+                    #     do_position_pretrain,
+                    #     all_data_loaders
+                    #     )
 
                     # Finetune
                     for ds in range(len(all_data_loaders)):
@@ -512,7 +519,8 @@ def train(
                                 es_start_up_2, 
                                 freeze_encoder, 
                                 num_class, 
-                                all_data_loaders)
+                                all_data_loaders, 
+                                train_extrema_for_epochs)
 
 
 
@@ -547,9 +555,9 @@ def relabelData(model, data_loader):
         print("+"* 50, i, "  ", len(datas[0]))
         try:
             try:
-                data, label, name, num_ts, index = datas
+                data, label, name, num_ts, index, non_pseudo_label = datas
             except:
-                data, data_flipped, label, name, num_ts, index = datas
+                data, data_flipped, label, name, num_ts, index, non_pseudo_label = datas
                 have_flips = 1
         except:
             print("datas: ", len(datas))
@@ -590,6 +598,7 @@ def finetune_model(
         freeze_encoder=False, 
         num_class=4, 
         all_data_loaders=None,
+        train_extrema_for_epochs=0,
 ):
     print("Starting STAGE 2: Fine-tuning...")
 
@@ -605,11 +614,12 @@ def finetune_model(
         print("REUSING labelled data... finetuning")
         data_loaders = all_data_loaders
 
-    data_loaders[0].dataset.data_source.sample_extremes = False
-
+    data_loaders[0].dataset.data_source.sample_extremes = True
+    workflow = [tuple(w) for w in workflow]
     global balance_classes
     global class_weights_dict
-    class_weights_dict = data_loaders[0].dataset.data_source.class_dist
+    for i in range(len(data_loaders)):
+        class_weights_dict[workflow[i][0]] = data_loaders[i].dataset.data_source.get_class_dist()
 
     # if balance_classes:
     #     class_weights_dict = data_loaders[0].dataset.data_source.class_dist
@@ -630,9 +640,9 @@ def finetune_model(
     runner.register_training_hooks(**training_hooks_local)
 
     # run
-    workflow = [tuple(w) for w in workflow]
+    
     # [('train', 5), ('val', 1)]
-    final_model, _ = runner.run(data_loaders, workflow, total_epochs, loss=loss, flip_loss_mult=flip_loss_mult, balance_classes=balance_classes, class_weights_dict=class_weights_dict)
+    final_model, _ = runner.run(data_loaders, workflow, total_epochs, loss=loss, flip_loss_mult=flip_loss_mult, balance_classes=balance_classes, class_weights_dict=class_weights_dict, train_extrema_for_epochs=train_extrema_for_epochs)
     try:
         shutil.rmtree(wandb.run.dir)
     except:
@@ -666,6 +676,30 @@ def pretrain_model(
         all_data_loaders=None):
     print("============= Starting STAGE 1: Pretraining...")
 
+    model_cfg_local = copy.deepcopy(model_cfg)
+    loss_cfg_local = copy.deepcopy(loss_cfg)
+    training_hooks_local = copy.deepcopy(training_hooks)
+    optimizer_cfg_local = copy.deepcopy(optimizer_cfg)
+
+
+    # put model on gpus
+    if isinstance(model_cfg, list):
+        model = [call_obj(**c) for c in model_cfg_local]
+        model = torch.nn.Sequential(*model)
+
+    else:
+        model = call_obj(**model_cfg_local)
+
+    # Step 1: Initialize the model with random weights, 
+    model.apply(weights_init)
+    model = MMDataParallel(model, device_ids=range(gpus)).cuda()
+    torch.cuda.set_device(0)
+    loss = call_obj(**loss_cfg_local)
+    loss = WingLoss()
+
+    if not do_position_pretrain:
+        return model
+
     if all_data_loaders is None:
         data_loaders = [
             torch.utils.data.DataLoader(dataset=call_obj(**d),
@@ -686,31 +720,14 @@ def pretrain_model(
     #     dataset_train = call_obj(**datasets[0])
     #     class_weights_dict = dataset_train.data_source.class_dist
 
-    model_cfg_local = copy.deepcopy(model_cfg)
-    loss_cfg_local = copy.deepcopy(loss_cfg)
-    training_hooks_local = copy.deepcopy(training_hooks)
-    optimizer_cfg_local = copy.deepcopy(optimizer_cfg)
 
-
-    # put model on gpus
-    if isinstance(model_cfg, list):
-        model = [call_obj(**c) for c in model_cfg_local]
-        model = torch.nn.Sequential(*model)
-
-    else:
-        model = call_obj(**model_cfg_local)
     # print("the model is: ", model)
 
     # print("These are the model parameters:")
     # for param in model.parameters():
     #     print(param.data)
 
-    # Step 1: Initialize the model with random weights, 
-    model.apply(weights_init)
-    model = MMDataParallel(model, device_ids=range(gpus)).cuda()
-    torch.cuda.set_device(0)
-    loss = call_obj(**loss_cfg_local)
-    loss = WingLoss()
+
 
     visualize_preds = {'visualize': False, 'epochs_to_visualize': ['first', 'last'], 'output_dir': os.path.join(local_long_term_base, simple_work_dir_amb)}
 
@@ -740,9 +757,9 @@ def pretrain_model(
 def batch_processor_position_pretraining(model, datas, train_mode, loss, num_class, **kwargs):
 
     try:
-        data, data_flipped, label, name, num_ts, index = datas
+        data, data_flipped, label, name, num_ts, index, non_pseudo_label = datas
     except:
-        data, data_flipped, label, name, num_ts, true_future_ts, index = datas
+        data, data_flipped, label, name, num_ts, true_future_ts, index, non_pseudo_label = datas
 
     # Even if we have flipped data, we only want to use the original in this stage
     data_all = data.cuda()

@@ -41,12 +41,19 @@ def setup_eval_pipeline(pipeline):
     eval_pipeline = []
     for item in pipeline:
         if item['type'] != "datasets.skeleton.scale_walk" and item['type'] != "datasets.skeleton.shear_walk":
-            eval_pipeline.append(item)
+            if item['type'] == "datasets.skeleton.random_crop":
+                item_local = copy.deepcopy(item)
+                item_local['type'] = "datasets.skeleton.crop_middle"
+                eval_pipeline.append(item_local)
+            else:
+                eval_pipeline.append(item)
+
     return eval_pipeline
 
 # Processing a batch of data for label prediction
 # process a batch of data
 def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
+    # print("in batch processor")
     try:
         flip_loss_mult = kwargs['flip_loss_mult']
     except:
@@ -59,9 +66,13 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
 
     try:
         class_weights_dict = kwargs['class_weights_dict']
+        class_weights_dict = class_weights_dict[kwargs['workflow_stage']]
+        # print("using weights for: ", kwargs['workflow_stage'], class_weights_dict)
     except:
-        class_weights_dict = {}
+        # print("failed to load weights for: ", kwargs['workflow_stage'])
 
+        class_weights_dict = {}
+    # print(class_weights_dict)
     #torch.cuda.empty_cache()
     #print('have cuda: ', torch.cuda.is_available())
     #print('using device: ', torch.cuda.get_device_name())
@@ -72,10 +83,11 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
     have_flips = 0
     try:
         try:
-            data, label, name, num_ts, index = datas
+            data, label, name, num_ts, index, non_pseudo_label = datas
         except:
-            data, data_flipped, label, name, num_ts, index = datas
+            data, data_flipped, label, name, num_ts, index, non_pseudo_label = datas
             have_flips = 1
+            # print("have flips")
     except:
         print("datas: ", len(datas))
         raise RuntimeError("SOMETHING IS UP WITH THE DATA")
@@ -85,12 +97,15 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
 
     # Remove the -1 labels
     y_true = label.data.reshape(-1, 1).float()
+    non_pseudo_label = non_pseudo_label.data.reshape(-1, 1)
+    # print("true labels: ", y_true)
     condition = y_true >= 0.
     row_cond = condition.all(1)
     y_true = y_true[row_cond, :]
+    non_pseudo_label = non_pseudo_label[row_cond, :]
     data = data_all.data[row_cond, :]
     num_valid_samples = data.shape[0]
-
+    # print("data shape is: ", data.shape)
     if have_flips:
         data_all = data_all.data
         data_all_flipped = data_flipped.cuda()
@@ -98,6 +113,7 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
         output_all_flipped = model_2(data_all_flipped)
         torch.clamp(output_all_flipped, min=-1, max=num_class)
 
+    # print("in batch processorv2"*10)
 
     # Get predictions from the model
     output_all = model(data_all)
@@ -123,6 +139,8 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
         loss_flip_tensor = loss_flip_tensor * flip_loss_mult
 
     # if we don't have any valid labels for this batch...
+    # print("num_valid samples is: ", num_valid_samples)
+
     if num_valid_samples < 1:
         labels = []
         preds = []
@@ -142,10 +160,11 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
         return outputs, output_labels, loss_flip_tensor.item()
     
 
-
+    non_pseudo_label = non_pseudo_label.reshape(1,-1).squeeze()
     y_true_orig_shape = y_true.reshape(1,-1).squeeze()
     losses = loss(output, y_true)
 
+    # print("in batch processorv3"*10)
 
     if balance_classes:
         if type(loss) == type(mse_loss):
@@ -161,8 +180,9 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
     y_pred_rounded = np.clip(y_pred_rounded, 0, num_class-1)
     preds = y_pred_rounded.squeeze().tolist()
 
-
+    non_pseudo_label  = non_pseudo_label.data.tolist()
     labels = y_true_orig_shape.data.tolist()
+    # print(labels)
     num_ts = num_ts.data.tolist()
     # Case when we have a single output
     if type(labels) is not list:
@@ -174,9 +194,14 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
     if type(num_ts) is not list:
         num_ts = [num_ts]
 
+    if type(non_pseudo_label) is not list:
+        non_pseudo_label = [non_pseudo_label]
+
+    raw_labels = copy.deepcopy(labels)
+    # print(raw_labels)
     try:
-        labels = [int(cl) for cl in labels]
-        preds = [int(cl) for cl in preds]
+        labels = [int(round(cl)) for cl in labels]
+        preds = [int(round(cl)) for cl in preds]
     except Exception as e:
         print(labels)
         print(preds)
@@ -196,10 +221,11 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
         print('output_all', output_all, 'output_all_flipped', output_all_flipped)
         raise ValueError('stop')
     log_vars['mae_rounded'] = mean_absolute_error(labels, preds)
-    output_labels = dict(true=labels, pred=preds, raw_preds=output_list, name=name, num_ts=num_ts)
+    output_labels = dict(true=labels, raw_labels=raw_labels, non_pseudo_label=non_pseudo_label, pred=preds, raw_preds=output_list, name=name, num_ts=num_ts)
     outputs = dict(loss=overall_loss, log_vars=log_vars, num_samples=len(labels))
     # print(type(labels), type(preds))
     # print('this is what we return: ', output_labels)
+    # print("returning true: ", output_labels['true'])
     return outputs, output_labels, overall_loss
 
 
@@ -504,11 +530,24 @@ def weighted_mse_loss(input, target, weights):
 
     error_per_sample = (input - target) ** 2
     numerator = 0
-    
+    weights.pop(-1, None)
     for key in weights:
         numerator += weights[key]
+    try:
+        # print("weights: ", weights)
 
-    weights_list = [numerator / weights[int(round((i.data.tolist()[0])))]  for i in target]
+        weights_list = [numerator / weights[int(round((i.data.tolist()[0])))]  for i in target]
+    except Exception as e:
+        print("target: ", target)
+        print("weights: ", weights)
+        print("target length: ", len(target))
+        print("error here is: ", e)
+
+    # print("target: ", target)
+    # print("weights list: ", weights_list)
+    # print("weights ", weights)
+
+    # print("numerator: ", numerator)
     weight_tensor = torch.FloatTensor(weights_list)
     weight_tensor = weight_tensor.unsqueeze(1).cuda()
 
