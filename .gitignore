@@ -13,6 +13,8 @@ checkpoints/*
 save/*
 configs_private/
 wandb/*
+wandb_dryrun/*
+wandb-summary.json
 *.out
 
 # Byte-compiled / optimized / DLL files
