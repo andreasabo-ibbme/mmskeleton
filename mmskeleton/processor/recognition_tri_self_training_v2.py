@@ -3,7 +3,7 @@ import torch
 import logging
 import numpy as np
 from mmskeleton.utils import call_obj, import_obj, load_checkpoint
-from mmcv.runner import Runner
+from mmcv.runner import Runner, TooManyRetriesException
 from mmcv import Config, ProgressBar
 from mmcv.parallel import MMDataParallel
 import os, re, copy
@@ -21,9 +21,9 @@ from mmskeleton.processor.supcon_loss import *
 import time
 from pathlib import Path
 
-turn_off_wd = False
-fast_dev = False
-# os.environ['WANDB_MODE'] = 'dryrun'
+turn_off_wd = True
+fast_dev = True
+os.environ['WANDB_MODE'] = 'dryrun'
 
 # Global variables
 num_class = 4
@@ -35,7 +35,8 @@ local_data_base = '/home/saboa/data'
 cluster_data_base = '/home/asabo/projects/def-btaati/asabo'
 local_output_base = '/home/saboa/data/mmskel_out'
 local_long_term_base = '/home/saboa/data/mmskel_long_term'
-
+cluster_output_wandb = '/home/asabo/projects/def-btaati/asabo/mmskeleton/wandb_dryrun'
+local_output_wandb = '/home/saboa/code/mmskeleton/wandb_dryrun'
 
 
 def rmdir(directory):
@@ -86,6 +87,23 @@ def robust_rmtree(path, logger=None, max_retries=3):
     # Final attempt, pass any Exceptions up to caller.
     shutil.rmtree(path)
 
+
+def sync_wandb(wandb_local_id):
+    # Sync everything to wandb at the end
+    try:
+        os.system('wandb sync ' + wandb_local_id)
+
+
+        # Delete the work_dir if successful sync
+        try:
+            robust_rmtree(wandb_local_id)
+            # shutil.rmtree(work_dir)
+        except:
+            logging.exception('This: ')
+            print('failed to delete the wandb_log_local_group folder: ', wandb_local_id)
+
+    except:
+        print('failed to sync wandb')
 
 
 
@@ -168,7 +186,7 @@ def train(
     wandb_group = wandb.util.generate_id() + "_" + outcome_label + "_" + group_notes
     work_dir = os.path.join(work_dir, wandb_group)
 
-    
+
     print("ANDREA - TRI-recognition: ", wandb_group)
 
     id_mapping = {27:25, 33:31, 34:32, 37:35, 39:37,
@@ -184,11 +202,13 @@ def train(
     print('have cuda: ', torch.cuda.is_available())
     print('using device: ', torch.cuda.get_device_name())
 
+    wandb_local_id = wandb.util.generate_id()
 
     # Correctly set the full data path
     if launch_from_local:
         work_dir = os.path.join(local_data_base, work_dir)
-        
+        wandb_log_local_group = os.path.join(local_output_wandb, wandb_local_id)
+
         for i in range(len(dataset_cfg)):
             dataset_cfg[i]['data_source']['data_dir'] = os.path.join(local_data_base, dataset_cfg[i]['data_source']['data_dir'])
     else:
@@ -197,7 +217,12 @@ def train(
         for i in range(len(dataset_cfg)):
             dataset_cfg[i]['data_source']['data_dir'] = os.path.join(cluster_data_base, dataset_cfg[i]['data_source']['data_dir'])
 
+        wandb_log_local_group = os.path.join(cluster_output_wandb, wandb_local_id)
+
     simple_work_dir = work_dir
+    os.makedirs(wandb_log_local_group)
+
+    os.environ["WANDB_RUN_GROUP"] = wandb_group
 
     # All data dir (use this for finetuning with the flip loss)
     data_dir_all_data = dataset_cfg[0]['data_source']['data_dir']
@@ -345,7 +370,7 @@ def train(
                 for ds in datasets:
                     ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
 
-                things_to_log = {'model_increase_mults': model_increase_mults, 'model_increase_iters': model_increase_iters, 'train_extrema_for_epochs': train_extrema_for_epochs, 'self_train_iteration_count': self_train_iteration_count, 'num_ts_predicting': model_cfg['num_ts_predicting'], 'es_start_up_1': es_start_up_1, 'es_patience_1': es_patience_1, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg_stage_1, 'optimizer_cfg': optimizer_cfg_stage_1, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
+                things_to_log = {'dir': wandb_log_local_group, 'model_increase_mults': model_increase_mults, 'model_increase_iters': model_increase_iters, 'train_extrema_for_epochs': train_extrema_for_epochs, 'self_train_iteration_count': self_train_iteration_count, 'num_ts_predicting': model_cfg['num_ts_predicting'], 'es_start_up_1': es_start_up_1, 'es_patience_1': es_patience_1, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg_stage_1, 'optimizer_cfg': optimizer_cfg_stage_1, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
 
                 # print("train walks: ", stage_1_train)
 
@@ -405,7 +430,7 @@ def train(
                 pretrained_model.module.set_stage_2()
                 pretrained_model.module.head.apply(weights_init)
 
-                things_to_log = {'model_increase_mults': model_increase_mults, 'model_increase_iters': model_increase_iters, 'self_train_iteration_count': self_train_iteration_count, 'supcon_head': head, 'freeze_encoder': freeze_encoder, 'es_start_up_2': es_start_up_2, 'es_patience_2': es_patience_2, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg_stage_2, 'optimizer_cfg': optimizer_cfg_stage_2, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
+                things_to_log = {'dir': wandb_log_local_group, 'model_increase_mults': model_increase_mults, 'model_increase_iters': model_increase_iters, 'self_train_iteration_count': self_train_iteration_count, 'supcon_head': head, 'freeze_encoder': freeze_encoder, 'es_start_up_2': es_start_up_2, 'es_patience_2': es_patience_2, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg_stage_2, 'optimizer_cfg': optimizer_cfg_stage_2, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
 
                 # print("final model for fine_tuning is: ", pretrained_model)
 
@@ -512,7 +537,7 @@ def train(
                     for ds in datasets:
                         ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
 
-                    things_to_log = {'model_increase_mults': model_increase_mults, 'model_increase_iters': model_increase_iters, 'train_extrema_for_epochs': train_extrema_for_epochs,'self_train_iteration_count': self_train_iteration_count, 'num_ts_predicting': model_cfg['num_ts_predicting'], 'es_start_up_1': es_start_up_1, 'es_patience_1': es_patience_1, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg_stage_1, 'optimizer_cfg': optimizer_cfg_stage_1, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
+                    things_to_log = {'dir': wandb_log_local_group, 'model_increase_mults': model_increase_mults, 'model_increase_iters': model_increase_iters, 'train_extrema_for_epochs': train_extrema_for_epochs,'self_train_iteration_count': self_train_iteration_count, 'num_ts_predicting': model_cfg['num_ts_predicting'], 'es_start_up_1': es_start_up_1, 'es_patience_1': es_patience_1, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg_stage_1, 'optimizer_cfg': optimizer_cfg_stage_1, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
 
                     # print("train walks: ", stage_1_train)
 
@@ -572,7 +597,7 @@ def train(
                     pretrained_model.module.set_stage_2()
                     pretrained_model.module.head.apply(weights_init)
 
-                    things_to_log = {'model_increase_mults': model_increase_mults, 'model_increase_iters': model_increase_iters, 'train_extrema_for_epochs': train_extrema_for_epochs, 'self_train_iteration_count': self_train_iteration_count, 'supcon_head': head, 'freeze_encoder': freeze_encoder, 'es_start_up_2': es_start_up_2, 'es_patience_2': es_patience_2, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg_stage_2, 'optimizer_cfg': optimizer_cfg_stage_2, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
+                    things_to_log = {'dir': wandb_log_local_group, 'model_increase_mults': model_increase_mults, 'model_increase_iters': model_increase_iters, 'train_extrema_for_epochs': train_extrema_for_epochs, 'self_train_iteration_count': self_train_iteration_count, 'supcon_head': head, 'freeze_encoder': freeze_encoder, 'es_start_up_2': es_start_up_2, 'es_patience_2': es_patience_2, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg_stage_2, 'optimizer_cfg': optimizer_cfg_stage_2, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
 
                     # print("final model for fine_tuning is: ", pretrained_model)
 
@@ -608,6 +633,12 @@ def train(
             except:
                 print('failed to delete the participant folder')
 
+        except TooManyRetriesException:
+            # print("CAUGHT TooManyRetriesException - something is very wrong. Stopping")
+            # sync_wandb(wandb_log_local_group)
+
+            break
+
         except:
             logging.exception("this went wrong")
             # Done with this participant, we can delete the temp foldeer
@@ -621,6 +652,8 @@ def train(
     # final_stats_by_iter(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, num_self_train_iter)
     # wandb.init(name='END', project=wandb_project, group=wandb_group, reinit=True)
 
+    sync_wandb(wandb_log_local_group)
+
     # Delete the work_dir
     try:
         robust_rmtree(work_dir)
@@ -630,6 +663,9 @@ def train(
         print('failed to delete the work_dir folder: ', work_dir)
 
     return work_dir
+
+
+
 
 def relabelData(model, data_loader):
     model.eval()
@@ -846,7 +882,6 @@ def pretrain_model(
 
 # process a batch of data
 def batch_processor_position_pretraining(model, datas, train_mode, loss, num_class, **kwargs):
-
     try:
         data, data_flipped, label, name, num_ts, index, non_pseudo_label = datas
     except:

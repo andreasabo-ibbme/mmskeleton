@@ -1,0 +1,28 @@
+{
+    "root": "/home/saboa/code/mmskeleton",
+    "program": "mmskl.py",
+    "git": {
+        "remote": "https://github.com/andreasabo-ibbme/mmskeleton.git",
+        "commit": "d94288934a1bf6a35e2cac8c7dfd2a9613d3fd95"
+    },
+    "email": "andrea.sabo@mail.utoronto.ca",
+    "startedAt": "2020-09-15T18:35:43.150121",
+    "host": "idapt003892-X",
+    "username": "saboa",
+    "executable": "/home/saboa/.pyenv/versions/mmskeleton/bin/python",
+    "os": "Linux-5.4.0-47-generic-x86_64-with-debian-bullseye-sid",
+    "python": "3.6.7",
+    "gpu": "GeForce RTX 2080 Ti",
+    "gpu_count": 1,
+    "cpu_count": 16,
+    "cuda": "10.1.105",
+    "args": [
+        "configs/recognition/tri/cluster/pred_pretrain/local_test_cyclicLR.yaml"
+    ],
+    "state": "running",
+    "jobType": null,
+    "mode": "dryrun",
+    "name": "AMB32_1",
+    "project": "testing_stop2",
+    "heartbeatAt": "2020-09-15T18:35:43.490477"
+}

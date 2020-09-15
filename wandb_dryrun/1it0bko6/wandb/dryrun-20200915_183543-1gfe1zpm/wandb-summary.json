@@ -1,0 +1,1 @@
+{"val/pretrain_loss": 1.5422931010605858, "momentum": 0.9, "val/loss_pretrain_position": 1.5422931010605858, "train/pretrain_loss": 1.162193775177002, "_timestamp": 1600194948.3584917, "test/loss_pretrain_position": 1.3615241050720215, "_runtime": 190.09996843338013, "test/pretrain_loss": 1.3615241050720215, "learning_rate": 0.0009409606912135454, "_step": 7}
