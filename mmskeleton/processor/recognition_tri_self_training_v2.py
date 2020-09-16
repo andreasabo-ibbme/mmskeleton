@@ -67,7 +67,7 @@ def robust_rmtree(path, logger=None, max_retries=3):
     occurs.  If the final attempt fails, the Exception is propagated
     to the caller.
     """
-    print("removing robustly")
+    print("removing robustly", path)
     dt = 1
     for i in range(max_retries):
         print("removing robustly: ", i)
