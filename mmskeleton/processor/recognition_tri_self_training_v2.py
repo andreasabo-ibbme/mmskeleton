@@ -643,12 +643,12 @@ def train(
             logging.exception("this went wrong")
             # Done with this participant, we can delete the temp foldeer
             try:
-                shutil.rmtree(work_dir_amb)
+                robust_rmtree(work_dir_amb)
             except:
                 print('failed to delete the participant folder')
 
     # Final stats
-    final_stats(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, num_self_train_iter)
+    final_stats(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, num_self_train_iter, wandb_log_local_group)
     # final_stats_by_iter(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, num_self_train_iter)
     # wandb.init(name='END', project=wandb_project, group=wandb_group, reinit=True)
 
@@ -764,10 +764,10 @@ def finetune_model(
     # [('train', 5), ('val', 1)]
     final_model, _ = runner.run(data_loaders, workflow, total_epochs, loss=loss, flip_loss_mult=flip_loss_mult, balance_classes=balance_classes, class_weights_dict=class_weights_dict, train_extrema_for_epochs=train_extrema_for_epochs)
 
-    try:
-        shutil.rmtree(wandb.run.dir)
-    except:
-        print('failed to delete the wandb folder')    
+    # try:
+    #     # robust_rmtree(wandb.run.dir)
+    # except:
+    #     print('failed to delete the wandb folder')    
     
     return final_model
 

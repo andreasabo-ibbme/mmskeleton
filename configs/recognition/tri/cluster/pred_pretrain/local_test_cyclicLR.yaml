@@ -23,15 +23,15 @@ processor_cfg:
   weight_classes: True
   flip_loss: 0
   launch_from_local: True
-  wandb_project: "testing_stop2"
+  wandb_project: "testing_stop7"
   early_stopping: True
   force_run_all_epochs: False
-  es_patience_1: 25
-  es_start_up_1: 10
+  es_patience_1: 2
+  es_start_up_1: 1
   es_patience_2: 2
   es_start_up_2: 2
   train_extrema_for_epochs: 25
-  do_position_pretrain: True
+  do_position_pretrain: False
   freeze_encoder: False
   head: "stgcn"
   model_increase_iters: [1, 2, 4, 6, 8]

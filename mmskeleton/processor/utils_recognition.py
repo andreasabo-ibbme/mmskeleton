@@ -325,41 +325,53 @@ def final_stats_variance(results_df, wandb_group, wandb_project, total_epochs, n
     wandb.log(all_stats)
 
 
-def final_stats_worker(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, log_name):
+def final_stats_worker(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, log_name, wandb_log_local_group):
     max_label = num_class
     # Compute summary statistics (accuracy and confusion matrices)
     final_results_dir = os.path.join(work_dir, 'all_final_eval', wandb_group)
     final_results_dir2 = os.path.join(work_dir, 'all_test', wandb_group)
 
-    wandb.init(name=log_name, project=wandb_project, group=wandb_group, tags=['summary'], reinit=True)
+    if wandb_log_local_group is not None:
+        # wandb.init(dir=wandb_log_local_group, project=wandb_project, group=wandb_group,  name=log_name, wandb_group=wandb_log_local_group, reinit=True)
+        wandb.init(dir=wandb_log_local_group, name=log_name, project=wandb_project, group=wandb_group, config = {'wandb_group':wandb_group}, tags=['summary'], reinit=True)
+    else:
+        wandb.init(name=log_name, project=wandb_project, group=wandb_group, config = {'wandb_group':wandb_group}, tags=['summary'], reinit=True)
+        # wandb.init(project=wandb_project, group=wandb_group,  wandb_group=wandb_log_local_group, name=log_name, reinit=True)
+
     print("getting final results from: ", final_results_dir)
-    for e in range(0, total_epochs):
-        log_vars = {}
-        results_file = os.path.join(final_results_dir, "test_" + str(e + 1) + ".csv")
-        try:
-            df = pd.read_csv(results_file)
-        except:
-            break
-        true_labels = df['true_score']
-        preds = df['pred_round']
-        preds_raw = df['pred_raw']
+    print("total_epochs: ", total_epochs)
+    # input('')
+    # for e in range(0, total_epochs):
+    #     print("e", e)
+    #     log_vars = {}
+    #     results_file = os.path.join(final_results_dir, "test_" + str(e + 1) + ".csv")
+    #     print('results file is: ', results_file)
+    #     try:
+    #         df = pd.read_csv(results_file)
+    #     except:
+    #         print("failed to load from results file")
+    #         input("failed to load")
+    #         break
+    #     true_labels = df['true_score']
+    #     preds = df['pred_round']
+    #     preds_raw = df['pred_raw']
 
-        log_vars['eval/mae_rounded'] = mean_absolute_error(true_labels, preds)
-        log_vars['eval/mae_raw'] = mean_absolute_error(true_labels, preds_raw)
-        log_vars['eval/accuracy'] = accuracy_score(true_labels, preds)
-        wandb.log(log_vars, step=e+1)
+    #     log_vars['eval/mae_rounded'] = mean_absolute_error(true_labels, preds)
+    #     log_vars['eval/mae_raw'] = mean_absolute_error(true_labels, preds_raw)
+    #     log_vars['eval/accuracy'] = accuracy_score(true_labels, preds)
+    #     wandb.log(log_vars, step=e+1)
 
-        if e % 5 == 0:
-            class_names = [str(i) for i in range(num_class)]
+    #     if e % 5 == 0:
+    #         class_names = [str(i) for i in range(num_class)]
 
-            fig = plot_confusion_matrix( true_labels,preds, class_names, max_label)
-            wandb.log({"confusion_matrix/eval_"+ str(e)+".png": fig}, step=e+1)
-            fig_title = "Regression for ALL unseen participants"
-            reg_fig = regressionPlot(true_labels,preds_raw, class_names, fig_title)
-            try:
-                wandb.log({"regression/eval_"+ str(e)+".png": [wandb.Image(reg_fig)]}, step=e+1)
-            except:
-                pass
+    #         fig = plot_confusion_matrix( true_labels,preds, class_names, max_label)
+    #         wandb.log({"confusion_matrix/eval_"+ str(e)+".png": fig}, step=e+1)
+    #         fig_title = "Regression for ALL unseen participants"
+    #         reg_fig = regressionPlot(true_labels,preds_raw, class_names, fig_title)
+    #         try:
+    #             wandb.log({"regression/eval_"+ str(e)+".png": [wandb.Image(reg_fig)]}, step=e+1)
+    #         except:
+    #             pass
 
     # final results +++++++++++++++++++++++++++++++++++++++++
 
@@ -408,17 +420,17 @@ def final_stats_worker(work_dir, wandb_group, wandb_project, total_epochs, num_c
         log_vars['early_stop_eval/'+mode+ '/accuracy'] = accuracy_score(true_labels, preds)
         wandb.log(log_vars)
 
-        
         fig = plot_confusion_matrix( true_labels,preds, class_names, max_label)
-        
-        wandb.log({"early_stop_eval/" + mode + "_final_confusion_matrix.png": fig})
+
+        wandb.log({"confusion_mat_earlystop/" + mode + "_final_confusion_matrix.png": fig})
+
         fig_title = "Regression for ALL unseen participants"
         reg_fig = regressionPlot(true_labels, preds_raw, class_names, fig_title)
         try:
-            wandb.log({"early_stop_eval/" + mode + "_final_regression_plot.png": [wandb.Image(reg_fig)]})
+            wandb.log({"regression_plot_earlystop/" + mode + "_final_regression_plot.png": [wandb.Image(reg_fig)]})
         except:
             try:
-                wandb.log({"early_stop_eval/" + mode + "_final_regression_plot.png": reg_fig})
+                wandb.log({"regression_plot_earlystop/" + mode + "_final_regression_plot.png": reg_fig})
             except:
                 print("failed to log regression plot")
 
@@ -435,18 +447,18 @@ def final_stats_worker(work_dir, wandb_group, wandb_project, total_epochs, num_c
     print('removing ', final_results_dir2)
     shutil.rmtree(final_results_dir2)
 
-def final_stats(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, num_self_train_iter=0):
+def final_stats(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, num_self_train_iter=0, wandb_log_local_group=None):
+    # input("the group is: " + wandb_group)
     work_dir_back = work_dir
     try:
         if num_self_train_iter == 0:
             work_dir = work_dir_back 
-            final_stats_worker(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, log_name="ALL")
+            final_stats_worker(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, log_name="ALL", wandb_log_local_group=wandb_log_local_group)
         else:
             for iter_count in range(num_self_train_iter):
                 work_dir = work_dir_back + "/" + str(iter_count)
-                final_stats_worker(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, log_name="ALL_" + str(iter_count))
+                final_stats_worker(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, log_name="ALL_" + str(iter_count), wandb_log_local_group=wandb_log_local_group)
                 
-
 
     except:
         print('something when wrong in the summary stats')
