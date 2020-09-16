@@ -23,13 +23,13 @@ processor_cfg:
   weight_classes: True
   flip_loss: 0
   launch_from_local: False
-  wandb_project: "testing_stop2"
+  wandb_project: "cluster_test"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 25
   es_start_up_1: 10
-  es_patience_2: 2
-  es_start_up_2: 2
+  es_patience_2: 20
+  es_start_up_2: 20
   train_extrema_for_epochs: 25
   do_position_pretrain: True
   freeze_encoder: False
