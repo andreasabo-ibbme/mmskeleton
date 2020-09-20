@@ -23,7 +23,7 @@ from pathlib import Path
 
 turn_off_wd = True
 fast_dev = True
-os.environ['WANDB_MODE'] = 'dryrun'
+log_incrementally = True
 
 # Global variables
 num_class = 4
@@ -145,6 +145,19 @@ def train(
         model_increase_mults=None,
         num_self_train_iter=0,
 ):
+    # Reproductibility
+    torch.manual_seed(0)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False    
+    np.random.seed(0)
+
+    global log_incrementally
+    if log_incrementally:
+        os.environ['WANDB_MODE'] = 'run'
+    else:
+        os.environ['WANDB_MODE'] = 'dryrun'
+
+
     # Set up for logging 
     outcome_label = dataset_cfg[0]['data_source']['outcome_label']
 
@@ -652,7 +665,9 @@ def train(
     # final_stats_by_iter(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, num_self_train_iter)
     # wandb.init(name='END', project=wandb_project, group=wandb_group, reinit=True)
 
-    sync_wandb(wandb_log_local_group)
+    if not log_incrementally:
+        sync_wandb(wandb_log_local_group)
+        
 
     # Delete the work_dir
     try:
