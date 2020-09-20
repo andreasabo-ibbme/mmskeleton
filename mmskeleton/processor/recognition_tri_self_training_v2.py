@@ -667,7 +667,9 @@ def train(
 
     if not log_incrementally:
         sync_wandb(wandb_log_local_group)
-        
+    else:
+        robust_rmtree(wandb_log_local_group)
+
 
     # Delete the work_dir
     try:
