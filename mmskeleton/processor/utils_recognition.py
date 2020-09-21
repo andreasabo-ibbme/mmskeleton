@@ -53,6 +53,7 @@ def setup_eval_pipeline(pipeline):
 # Processing a batch of data for label prediction
 # process a batch of data
 def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
+    # raise ValueError()
     # print("in batch processor")
     try:
         flip_loss_mult = kwargs['flip_loss_mult']
@@ -421,9 +422,11 @@ def final_stats_worker(work_dir, wandb_group, wandb_project, total_epochs, num_c
         wandb.log(log_vars)
 
         fig = plot_confusion_matrix( true_labels,preds, class_names, max_label)
-
         wandb.log({"confusion_mat_earlystop/" + mode + "_final_confusion_matrix.png": fig})
 
+        fig_normed = plot_confusion_matrix( true_labels,preds, class_names, max_label, True)
+        wandb.log({"confusion_mat_earlystop/" + mode + "_final_normed_confusion_matrix.png": fig_normed})
+        
         fig_title = "Regression for ALL unseen participants"
         reg_fig = regressionPlot(true_labels, preds_raw, class_names, fig_title)
         try:
