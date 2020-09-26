@@ -424,8 +424,11 @@ def final_stats_worker(work_dir, wandb_group, wandb_project, total_epochs, num_c
         fig = plot_confusion_matrix( true_labels,preds, class_names, max_label)
         wandb.log({"confusion_mat_earlystop/" + mode + "_final_confusion_matrix.png": fig})
 
-        fig_normed = plot_confusion_matrix( true_labels,preds, class_names, max_label, True)
-        wandb.log({"confusion_mat_earlystop/" + mode + "_final_normed_confusion_matrix.png": fig_normed})
+        try:
+            fig_normed = plot_confusion_matrix( true_labels,preds, class_names, max_label, True)
+            wandb.log({"confusion_mat_earlystop/" + mode + "_final_normed_confusion_matrix.png": fig_normed})
+        except:
+            pass
         
         fig_title = "Regression for ALL unseen participants"
         reg_fig = regressionPlot(true_labels, preds_raw, class_names, fig_title)
