@@ -54,14 +54,13 @@ class ST_GCN_18_ordinal_orig_position_pretrain(nn.Module):
         self.num_class = num_class
         # fcn for prediction
         dim_in = self.encoder.output_filters
-        feat_dim = self.num_joints_predicting *2*num_ts_predicting
+        feat_dim = self.num_joints_predicting *in_channels*num_ts_predicting
 
         # the pretrain head predicts each joint location at a future time step
         self.pretrain_head = nn.Conv2d(dim_in, feat_dim, kernel_size=1)
 
         # The classifcation head is used in stage 2 to predict the clinical score for each walk
         self.classification_head = nn.Conv2d(dim_in, 1, kernel_size=1)
-
         self.head = self.pretrain_head
         self.in_channels = in_channels
 
@@ -82,7 +81,7 @@ class ST_GCN_18_ordinal_orig_position_pretrain(nn.Module):
             # prediction
             x = self.head(x)
             x = x.view(x.size(0), -1)
-            torch.clamp(x, min=-1, max=self.num_class)
+            torch.clamp(x, min=-1, max=self.num_class + 1)
 
         # Pretraining
         else:
@@ -94,7 +93,7 @@ class ST_GCN_18_ordinal_orig_position_pretrain(nn.Module):
             x = self.head(x)
             # print('shape of x before reshaping is: ', x.size())
             # reshape the output to be of size (13x2xnum_ts)
-            x = x.view(x.size(0), 2, self.num_joints_predicting , -1)
+            x = x.view(x.size(0), self.in_channels, self.num_joints_predicting , -1)
 
             # print('shape of x after reshaping is: ', x.size())
 

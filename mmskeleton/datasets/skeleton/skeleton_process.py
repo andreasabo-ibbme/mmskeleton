@@ -33,6 +33,7 @@ def normalize_by_resolution(data):
         np_array = data[data_field]
 
         for i, c in enumerate(channel):
+            print(c)
             if c == 'x':
                 np_array[i] = np_array[i] / resolution[0] - 0.5
             if c == 'y':
@@ -318,6 +319,8 @@ def random_crop_for_joint_prediction(data, size, pred_ts):
 
         all_data = data[data_field]
         np_array = data[data_field]
+        num_coords = data[data_field].shape
+        num_coords = num_coords[0]
 
         input_shape = list(np_array.shape)
         num_joints = input_shape[1]
@@ -327,11 +330,11 @@ def random_crop_for_joint_prediction(data, size, pred_ts):
                 begin = random.randint(0, T - size)
             data[data_field] = np_array[:, :, begin:begin + size, :]
 
-            output_target = np.zeros([2, num_joints, len(pred_ts)], dtype=np_array.dtype)
+            output_target = np.zeros([num_coords, num_joints, len(pred_ts)], dtype=np_array.dtype)
             # add the targets for future prediction
             for i in range(len(pred_ts)):
                 t_ind = begin + size + pred_ts[i] - 1 
-                joint_data = all_data[0:2, :, t_ind]
+                joint_data = all_data[0:num_coords, :, t_ind]
                 joint_data = joint_data.squeeze()
                 output_target[:, :, i] = joint_data
                 data['category_id'] = output_target
@@ -355,10 +358,12 @@ def pad_zero_beginning_for_joint_prediction(data, size, pred_ts):
         pad_shape[2] = size
         # print('all_data: ', all_data.shape)
         # print('np_array: ', np_array.shape)
+        #print(pad_shape)
+        
         if T <= 1:
             np_array_paded = np.zeros(pad_shape, dtype=np_array.dtype)
             data[data_field] = np_array_paded
-            output_target = np.zeros([2, pad_shape[1], len(pred_ts)], dtype=np_array.dtype)
+            output_target = np.zeros([pad_shape[0], pad_shape[1], len(pred_ts)], dtype=np_array.dtype)
             data['category_id'] = output_target
 
 
@@ -377,11 +382,11 @@ def pad_zero_beginning_for_joint_prediction(data, size, pred_ts):
 
             # Add the future timesteps for prediction to the categrory_id
             # print('data shape: ', np_array_paded.shape)
-            output_target = np.zeros([2, pad_shape[1], len(pred_ts)], dtype=np_array.dtype)
+            output_target = np.zeros([pad_shape[0], pad_shape[1], len(pred_ts)], dtype=np_array.dtype)
 
             for i in range(len(pred_ts)):
                 t_ind = max_future_ts - pred_ts[i] + 1
-                joint_data = all_data[0:2, :, -t_ind]
+                joint_data = all_data[0:pad_shape[0], :, -t_ind]
                 joint_data = joint_data.squeeze()
                 output_target[:, :, i] = joint_data
                 data['category_id'] = output_target

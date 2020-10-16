@@ -86,7 +86,7 @@ class Graph():
             self.edge = self_link + neighbor_link
             self.center = 0
 
-        elif layout == 'coco_simplified_head':
+        elif layout == 'coco_simplified_head' or layout == 'kinect_coco_simplified_head':
             self.num_node = 13
             self_link = [(i, i) for i in range(self.num_node)]
             neighbor_1base = [[13, 11], [12, 10], [11, 9], [10, 8], [9, 8],

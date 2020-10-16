@@ -19,6 +19,17 @@ import math
 from torch import nn
 import wandb
 import shutil
+import random
+
+def set_seed(seed):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    np.random.seed(seed)
+    random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
+
 
 def get_model_type(model_cfg):
     model_type = ''
@@ -31,8 +42,11 @@ def get_model_type(model_cfg):
         model_type = "v11"
     elif model_cfg['type'] == 'models.backbones.ST_GCN_18_ordinal_orig_position_pretrain':
         model_type = "v0"
+    elif model_cfg['type'] == 'models.backbones.ST_GCN_18_ordinal_orig_position_pretrain_dynamic_v1':
+        model_type = "dynamic_v1"
     else: 
-        model_type = model_cfg['type']   
+        model_type = model_cfg['type']
+
 
     return model_type
 
@@ -55,6 +69,11 @@ def setup_eval_pipeline(pipeline):
 def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
     # raise ValueError()
     # print("in batch processor")
+
+    # if kwargs['cur_epoch'] > 25:
+    #     # print(' using wingloss')
+    #     loss = WingLoss()
+
     try:
         flip_loss_mult = kwargs['flip_loss_mult']
     except:
@@ -112,7 +131,7 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
         data_all_flipped = data_flipped.cuda()
         data_all_flipped = data_all_flipped.data 
         output_all_flipped = model_2(data_all_flipped)
-        torch.clamp(output_all_flipped, min=-1, max=num_class)
+        torch.clamp(output_all_flipped, min=-1, max=num_class+1)
 
     # print("in batch processorv2"*10)
 
@@ -125,7 +144,8 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
     loss_flip_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
 
     # Clip the predictions to avoid large loss that would otherwise be dealt with using the raw predictions
-    torch.clamp(output_all, min=-1, max=num_class)
+    torch.clamp(output_all, min=-1, max=num_class + 1)
+    # print("num_class", num_class)
 
     if have_flips:
         loss_flip_tensor = mse_loss(output_all_flipped, output_all)
@@ -168,6 +188,7 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
     # print("in batch processorv3"*10)
 
     if balance_classes:
+        # print(type(loss))
         if type(loss) == type(mse_loss):
             losses = weighted_mse_loss(output, y_true, class_weights_dict)
         if type(loss) == type(mae_loss):
@@ -484,6 +505,8 @@ class WingLoss(nn.Module):
     def forward(self, pred, target):
         y = target
         y_hat = pred
+        # print(y.shape, y_hat.shape)
+        # input('stop')
         delta_y = (y - y_hat).abs()
         delta_y1 = delta_y[delta_y < self.omega]
         delta_y2 = delta_y[delta_y >= self.omega]
@@ -795,3 +818,72 @@ def regressionPlot(labels, raw_preds, classes, fig_title):
     plt.xlabel("True Label")
     plt.ylabel("Regression Value")
     return fig
+
+
+def rmdir(directory):
+    directory = Path(directory)
+    for item in directory.iterdir():
+        if item.is_dir():
+            rmdir(item)
+        else:
+            item.unlink()
+    # print("deleting: ", directory)
+    # print("with: ", os.listdir(directory))
+    # for f in os.listdir(directory):
+    #     to_rm = os.path.join(directory,f)
+    #     print("removing this: ", to_rm)
+    #     os.remove(to_rm)
+    # print("with2: ", os.listdir(directory))
+
+    try:
+        directory.rmdir()
+    except:
+        pass
+        # print("couldn't delete: ", directory)
+
+
+def robust_rmtree(path, logger=None, max_retries=3):
+    """Robustly tries to delete paths.
+    Retries several times (with increasing delays) if an OSError
+    occurs.  If the final attempt fails, the Exception is propagated
+    to the caller.
+    """
+    print("removing robustly", path)
+    dt = 1
+    for i in range(max_retries):
+        print("removing robustly: ", i)
+
+        try:
+            shutil.rmtree(path)
+            return
+        except Exception as e:
+            # print(e)
+            # print('Unable to remove path: %s' % path)
+            # print('Retrying after %d seconds' % dt)
+            # print('files it has: ', os.listdir(path))
+            rmdir(path)
+            time.sleep(dt)
+            dt *= 1.5
+
+    # Final attempt, pass any Exceptions up to caller.
+    shutil.rmtree(path)
+
+
+def sync_wandb(wandb_local_id):
+    # Sync everything to wandb at the end
+    try:
+        os.system('wandb sync ' + wandb_local_id)
+
+
+        # Delete the work_dir if successful sync
+        try:
+            robust_rmtree(wandb_local_id)
+            # shutil.rmtree(work_dir)
+        except:
+            logging.exception('This: ')
+            print('failed to delete the wandb_log_local_group folder: ', wandb_local_id)
+
+    except:
+        print('failed to sync wandb')
+
+
