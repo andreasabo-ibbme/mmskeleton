@@ -4,7 +4,7 @@ import sys
 import logging
 
 import torch
-import spacecutter
+# import spacecutter
 import mmskeleton
 
 # from SubContrast.losses import SupConLoss
