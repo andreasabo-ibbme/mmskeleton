@@ -13,17 +13,18 @@ argparse_cfg:
 
 
 processor_cfg:
-  type: 'processor.recognition_tri_position_pretrain_v3.train'
+  type: 'processor.recognition_tri_position_pretrain_reuse_pretrain.train'
   workers: 1
   test_ids: [48, 47, 34, 37, 27, 39, 46, 50, 52, 55, 57, 59, 66, 33]
   cv: 5
   exclude_cv: False
   notes: "two_part_loss"
+  model_save_root: "kinect"
   group_notes: "120_v0_pred15_ankles_wrists_wing_do_0.0_ft_all"
   weight_classes: True
   flip_loss: 0
-  launch_from_local: True
-  wandb_project: "oct16_kinect_test_no_flip"
+  launch_from_local: False
+  wandb_project: "SAS_oct19_kinect_no_flip"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 25
@@ -37,14 +38,14 @@ processor_cfg:
 
   # model setting
   model_cfg:
-    type: 'models.backbones.ST_GCN_18_ordinal_orig_position_pretrain'
+    type: 'models.backbones.ST_GCN_18_ordinal_smaller_10_position_pretrain'
     in_channels: 3
     num_class: 4
     edge_importance_weighting: True
-    dropout: 0.0
+    dropout: 0.1
     num_ts_predicting: 1
     num_joints_predicting: 4
-    temporal_kernel_size: 9
+    temporal_kernel_size: 5
     graph_cfg:
       layout: 'kinect_coco_simplified_head'
       strategy: 'spatial'
@@ -59,7 +60,8 @@ processor_cfg:
     - type: "datasets.DataPipeline"
       data_source:
         type: "datasets.SkeletonLoaderKinect"
-        data_dir: Kinect_oct16/kinectcentred/BOTH/interpolated
+        # data_dir: Kinect_oct16/kinectcentred/BOTH/interpolated
+        data_dir: kinect_skel_data/kinect_all
         num_track: 1
         num_keypoints: 13
         repeat: 1
@@ -84,7 +86,8 @@ processor_cfg:
     - type: "datasets.DataPipeline"
       data_source:
         type: "datasets.SkeletonLoaderKinect"
-        data_dir: Kinect_oct16_pd/kinectcentred/BOTH/interpolated
+        # data_dir: Kinect_oct16_pd/kinectcentred/BOTH/interpolated
+        data_dir: kinect_skel_data/kinect_pd
         num_track: 1
         num_keypoints: 13
         repeat: 1

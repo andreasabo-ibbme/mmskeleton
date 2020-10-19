@@ -21,7 +21,7 @@ from mmskeleton.processor.supcon_loss import *
 
 
 turn_off_wd = True
-fast_dev = False
+fast_dev = True
 log_incrementally = True
 
 # Global variables
@@ -36,6 +36,9 @@ local_output_base = '/home/saboa/data/mmskel_out'
 local_long_term_base = '/home/saboa/data/mmskel_long_term'
 cluster_output_wandb = '/home/asabo/projects/def-btaati/asabo/mmskeleton/wandb_dryrun'
 local_output_wandb = '/home/saboa/code/mmskeleton/wandb_dryrun'
+
+local_model_zoo_base = '/home/saboa/data/model_zoo'
+cluster_model_zoo_base = '/home/asabo/projects/def-btaati/asabo/model_zoo'
 
 
 def train(
@@ -57,6 +60,7 @@ def train(
         cv=5,
         exclude_cv=False,
         notes=None,
+        model_save_root='None',
         flip_loss=0,
         weight_classes=False,
         group_notes='',
@@ -127,11 +131,14 @@ def train(
         work_dir = os.path.join(local_data_base, work_dir)
         wandb_log_local_group = os.path.join(local_output_wandb, wandb_local_id)
 
+        model_zoo_root = local_model_zoo_base
         for i in range(len(dataset_cfg)):
             dataset_cfg[i]['data_source']['data_dir'] = os.path.join(local_data_base, dataset_cfg[i]['data_source']['data_dir'])
     else:
         global fast_dev
         fast_dev = False
+        model_zoo_root = cluster_model_zoo_base
+
         for i in range(len(dataset_cfg)):
             dataset_cfg[i]['data_source']['data_dir'] = os.path.join(cluster_data_base, dataset_cfg[i]['data_source']['data_dir'])
 
@@ -296,6 +303,14 @@ def train(
                 print('stage_1_val: ', len(val_walks))
                 print('test_walks_pd_labelled: ', len(test_walks_pd_labelled))
 
+                path_to_pretrained_model = os.path.join(model_zoo_root, model_save_root, dataset_cfg[0]['data_source']['outcome_label'], model_type, \
+                                                        str(model_cfg['temporal_kernel_size']), str(model_cfg['dropout']), str(test_id))
+                print('path_to_pretrained_model', path_to_pretrained_model)
+                if not os.path.exists(path_to_pretrained_model):
+                    os.makedirs(path_to_pretrained_model)
+
+                # input("stop")
+
                 pretrained_model = pretrain_model(
                     work_dir_amb,
                     simple_work_dir_amb,
@@ -317,7 +332,8 @@ def train(
                     force_run_all_epochs,
                     es_patience_1,
                     es_start_up_1, 
-                    do_position_pretrain
+                    do_position_pretrain, 
+                    path_to_pretrained_model
                     )
 
 
@@ -503,9 +519,10 @@ def pretrain_model(
         force_run_all_epochs=True,
         es_patience=10,
         es_start_up=50,
-        do_position_pretrain=True):
+        do_position_pretrain=True, 
+        path_to_pretrained_model=None):
     print("============= Starting STAGE 1: Pretraining...")
-
+    print(path_to_pretrained_model)
     model_cfg_local = copy.deepcopy(model_cfg)
     loss_cfg_local = copy.deepcopy(loss_cfg)
     training_hooks_local = copy.deepcopy(training_hooks)
@@ -525,13 +542,24 @@ def pretrain_model(
     # for param in model.parameters():
     #     print(param.data)
 
-    # Step 1: Initialize the model with random weights, 
-    model.apply(weights_init)
-    model = MMDataParallel(model, device_ids=range(gpus)).cuda()
+
 
     if not do_position_pretrain:
         return model
 
+    if path_to_pretrained_model is not None:
+        checkpoint_file = os.path.join(path_to_pretrained_model, 'checkpoint.pt')
+        if os.path.isfile(checkpoint_file):
+            print(checkpoint_file)
+            model.load_state_dict(torch.load(checkpoint_file))
+            model = MMDataParallel(model, device_ids=range(gpus)).cuda()
+
+            input('loaded')
+            return model
+
+    # Step 1: Initialize the model with random weights, 
+    model.apply(weights_init)
+    model = MMDataParallel(model, device_ids=range(gpus)).cuda()
 
     data_loaders = [
         torch.utils.data.DataLoader(dataset=call_obj(**d),
@@ -572,6 +600,13 @@ def pretrain_model(
     except:
         print('failed to delete the wandb folder')
 
+    print(pretrained_model)
+    input('model')
+    if path_to_pretrained_model is not None:
+        torch.save(pretrained_model.module.state_dict(), checkpoint_file)
+        print(checkpoint_file)
+
+        input('saved')
     return pretrained_model
 
 
