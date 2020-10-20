@@ -24,7 +24,7 @@ processor_cfg:
   weight_classes: True
   flip_loss: 0
   launch_from_local: False
-  wandb_project: "SAS_oct19_kinect_no_flip"
+  wandb_project: "SAS_oct20_kinect_no_flip"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 25
