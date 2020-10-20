@@ -349,6 +349,14 @@ def train(
                 datasets[1]['data_source']['data_dir'] = val_walks
                 datasets[2]['data_source']['data_dir'] = test_walks_pd_labelled
 
+
+                # Check if we're using flip loss. If not, we don't need to even load in the unlabelled data for this stage. 
+                if flip_loss == 0:
+                    datasets[0]['data_source']['data_dir'] = labelled_train
+                    datasets[1]['data_source']['data_dir'] = labelled_val
+                    datasets[2]['data_source']['data_dir'] = test_walks_pd_labelled
+                    
+
                 if fast_dev:
                     datasets[0]['data_source']['data_dir'] = labelled_train
                     datasets[0]['data_source']['data_dir'] = labelled_val
