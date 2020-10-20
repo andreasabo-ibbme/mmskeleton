@@ -54,7 +54,7 @@ class ST_GCN_18_ordinal_smaller_10_position_pretrain(nn.Module):
         self.in_channels = in_channels
         # fcn for prediction
         dim_in = self.encoder.output_filters
-        feat_dim = self.num_joints_predicting *2*num_ts_predicting
+        feat_dim = self.num_joints_predicting *self.in_channels*num_ts_predicting
 
         # the pretrain head predicts each joint location at a future time step
         self.pretrain_head = nn.Conv2d(dim_in, feat_dim, kernel_size=1)
@@ -98,7 +98,7 @@ class ST_GCN_18_ordinal_smaller_10_position_pretrain(nn.Module):
             x = self.head(x)
             # print('shape of x before reshaping is: ', x.size())
             # reshape the output to be of size (13x2xnum_ts)
-            x = x.view(x.size(0), 2, self.num_joints_predicting , -1)
+            x = x.view(x.size(0), self.in_channels, self.num_joints_predicting , -1)
 
             # print('shape of x after reshaping is: ', x.size())
 

@@ -562,7 +562,7 @@ def pretrain_model(
             model.load_state_dict(torch.load(checkpoint_file))
             model = MMDataParallel(model, device_ids=range(gpus)).cuda()
 
-            input('loaded')
+            # input('loaded')
             return model
 
     # Step 1: Initialize the model with random weights, 
@@ -608,13 +608,13 @@ def pretrain_model(
     except:
         print('failed to delete the wandb folder')
 
-    print(pretrained_model)
-    input('model')
+    # print(pretrained_model)
+    # input('model')
     if path_to_pretrained_model is not None:
         torch.save(pretrained_model.module.state_dict(), checkpoint_file)
         print(checkpoint_file)
 
-        input('saved')
+        # input('saved')
     return pretrained_model
 
 
