@@ -32,8 +32,8 @@ processor_cfg:
   es_start_up_2: 30
   freeze_encoder: False
   head: "stgcn"
-  model_save_root: 'openpose'
   do_position_pretrain: False
+  train_extrema_for_epochs: 25
 
 
   # model setting
