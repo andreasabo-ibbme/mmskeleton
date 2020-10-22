@@ -71,8 +71,7 @@ class ST_GCN_18_ordinal_orig_position_pretrain(nn.Module):
         # print("encoder: ", self.encoder)
         # print('projection head', self.head)
     def forward(self, x):
-        if self.in_channels < 3:
-            x = x[:, 0:self.in_channels, :, :, :]
+        x = x[:, 0:self.in_channels, :, :, :]
         
 
         # Fine-tuning

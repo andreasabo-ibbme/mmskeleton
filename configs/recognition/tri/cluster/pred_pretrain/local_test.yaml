@@ -13,7 +13,7 @@ argparse_cfg:
 
 
 processor_cfg:
-  type: 'processor.recognition_tri_position_pretrain.train'
+  type: 'processor.recognition_tri_position_pretrain_reuse_pretrain.train'
   workers: 1
   test_ids: [34] #, 37, 27, 47, 39, 46, 48, 50, 52, 55, 57, 59, 66, 33]
   cv: 5
@@ -21,7 +21,7 @@ processor_cfg:
   notes: "two_part_loss"
   group_notes: "SAS_10_120_pred_15_do_0.1"
   weight_classes: True
-  flip_loss: 1
+  flip_loss: 0
   launch_from_local: True
   wandb_project: "dev"
   early_stopping: True
@@ -32,6 +32,8 @@ processor_cfg:
   es_start_up_2: 30
   freeze_encoder: False
   head: "stgcn"
+  model_save_root: 'openpose'
+  do_position_pretrain: False
 
 
   # model setting

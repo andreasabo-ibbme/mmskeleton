@@ -553,6 +553,7 @@ def pretrain_model(
 
 
     if not do_position_pretrain:
+        model = MMDataParallel(model, device_ids=range(gpus)).cuda()
         return model
 
     if path_to_pretrained_model is not None:

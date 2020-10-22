@@ -21,9 +21,9 @@ processor_cfg:
   notes: "two_part_loss"
   group_notes: "120_v0_pred15_ankles_wrists_wing_do_0.1"
   weight_classes: True
-  flip_loss: 1
+  flip_loss: 0
   launch_from_local: False
-  wandb_project: "oct11_SAS_freeze_valtest"
+  wandb_project: "oct20_SAS_openpose_no_flip"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 25
@@ -36,7 +36,7 @@ processor_cfg:
   do_position_pretrain: True
   # model setting
   model_cfg:
-    type: 'models.backbones.ST_GCN_18_ordinal_orig_position_pretrain'
+    type: 'models.backbones.ST_GCN_18_ordinal_orig_position_pretrain_reuse_pretrain'
     in_channels: 2
     num_class: 4
     edge_importance_weighting: True

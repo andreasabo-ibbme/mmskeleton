@@ -137,7 +137,7 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
 
     # Get predictions from the model
     output_all = model(data_all)
-    # print(output_all)
+
     if torch.sum(output_all) == 0:        
         raise ValueError("=============================== got all zero output...")
     output = output_all[row_cond]
@@ -506,7 +506,14 @@ class WingLoss(nn.Module):
         y = target
         y_hat = pred
         # print(y.shape, y_hat.shape)
+        dim = y_hat.shape
+        # Make sure we only use the coordinates that the model is predicting
+        y = y[:, 0:dim[1], :, :]
+        # print(y.shape, y_hat.shape)
+
         # input('stop')
+
+
         delta_y = (y - y_hat).abs()
         delta_y1 = delta_y[delta_y < self.omega]
         delta_y2 = delta_y[delta_y >= self.omega]

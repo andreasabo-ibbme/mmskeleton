@@ -76,8 +76,8 @@ class ST_GCN_18_ordinal_smaller_10_position_pretrain(nn.Module):
         # print('projection head', self.head)
     def forward(self, x):
         # print('input is of size: ', x.size())
-        if self.in_channels < 3:
-            x = x[:, 0:self.in_channels, :, :, :]
+        x = x[:, 0:self.in_channels, :, :, :]
+        
         # print('input is of size: ', x.size())
 
         # Fine-tuning
