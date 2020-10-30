@@ -411,6 +411,9 @@ def final_stats_worker(work_dir, wandb_group, wandb_project, total_epochs, num_c
         preds = df['pred_round']
         preds_raw = df['pred_raw']
 
+        # Last check to make sure that the preds are in the correct range
+        preds[preds > (num_class - 1)] = num_class - 1
+
         # Calculate the mean metrics across classes
         average_types = ['macro', 'micro', 'weighted']
         average_metrics_to_log = ['precision', 'recall', 'f1score', 'support']
