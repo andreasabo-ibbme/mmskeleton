@@ -303,8 +303,13 @@ def train(
                 print('stage_1_val: ', len(val_walks))
                 print('test_walks_pd_labelled: ', len(test_walks_pd_labelled))
 
-                path_to_pretrained_model = os.path.join(model_zoo_root, model_save_root, dataset_cfg[0]['data_source']['outcome_label'], model_type, \
+                # path_to_pretrained_model = os.path.join(model_zoo_root, model_save_root, dataset_cfg[0]['data_source']['outcome_label'], model_type, \
+                #                                         str(model_cfg['temporal_kernel_size']), str(model_cfg['dropout']), str(test_id))
+
+                # Pretrain doesnt depend on the outcome label
+                path_to_pretrained_model = os.path.join(model_zoo_root, model_save_root, model_type, \
                                                         str(model_cfg['temporal_kernel_size']), str(model_cfg['dropout']), str(test_id))
+
                 print('path_to_pretrained_model', path_to_pretrained_model)
                 if not os.path.exists(path_to_pretrained_model):
                     os.makedirs(path_to_pretrained_model)
