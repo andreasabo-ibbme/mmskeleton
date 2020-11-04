@@ -21,9 +21,9 @@ processor_cfg:
   notes: "two_part_loss"
   group_notes: "120_v2_pred15_ankles_wrists_wing"
   weight_classes: True
-  flip_loss: 0
+  flip_loss: 0.5
   launch_from_local: False
-  wandb_project: "oct20_SAS_detectron_no_flip"
+  wandb_project: "oct20_SAS_detectron_flip_0.5"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 25
@@ -84,7 +84,7 @@ processor_cfg:
     - type: "datasets.DataPipeline"
       data_source:
         type: "datasets.SkeletonLoaderTRI"
-        data_dir: skel_data_detectron/stgcn_normalized_100_center_pd_no_norm
+        data_dir: skel_data_detectron/stgcn_normalized_100_center_all_no_norm_plus_belmont
         num_track: 1
         num_keypoints: 13
         repeat: 1
