@@ -38,7 +38,8 @@ cluster_output_wandb = '/home/asabo/projects/def-btaati/asabo/mmskeleton/wandb_d
 local_output_wandb = '/home/saboa/code/mmskeleton/wandb_dryrun'
 
 local_model_zoo_base = '/home/saboa/data/model_zoo'
-cluster_model_zoo_base = '/home/asabo/projects/def-btaati/asabo/model_zoo'
+# cluster_model_zoo_base = '/home/asabo/projects/def-btaati/asabo/model_zoo'
+cluster_model_zoo_base = '/home/asabo/scratch/model_zoo'
 
 
 def train(
