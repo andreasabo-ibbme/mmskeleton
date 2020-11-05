@@ -23,7 +23,7 @@ processor_cfg:
   weight_classes: True
   flip_loss: 0
   launch_from_local: False
-  wandb_project: "oct20_UPDRS_detectron_no_flip"
+  wandb_project: "oct20_UPDRS_detectron_no_flip_skel2"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 25
@@ -46,7 +46,7 @@ processor_cfg:
     num_joints_predicting: 4
     temporal_kernel_size: 5
     graph_cfg:
-      layout: 'coco_simplified_head'
+      layout: 'coco_simplified_head_ankles_ankle_wrists'
       strategy: 'spatial'
   loss_cfg:
     - {type: 'mmskeleton.processor.utils_recognition.WingLoss'} # This is for pretraining
