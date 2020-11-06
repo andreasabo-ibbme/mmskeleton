@@ -21,7 +21,7 @@ from mmskeleton.processor.supcon_loss import *
 
 
 turn_off_wd = True
-fast_dev = True
+fast_dev = False
 log_incrementally = True
 
 # Global variables
@@ -77,6 +77,7 @@ def train(
         head='stgcn',
         freeze_encoder=True,
         do_position_pretrain=True,
+        funetune_on_all=False,
 ):
     # Reproductibility
     set_seed(0)
@@ -180,6 +181,7 @@ def train(
             print(f"test_subj_walks_name_only_all: {len(test_subj_walks_name_only_all)}")
             print(f"test_subj_walks_name_only_pd_only: {len(test_subj_walks_name_only_pd_only)}")
 
+            # input("stop")
             # These are the walks that can potentially be included in the train/val sets at some stage
             non_test_subj_walks_name_only_all = list(set(all_file_names_only).difference(set(test_subj_walks_name_only_all)))
             non_test_subj_walks_name_only_pd_only = list(set(pd_all_file_names_only).difference(set(test_subj_walks_name_only_pd_only)))
@@ -228,9 +230,17 @@ def train(
             kf_pd = KFold(n_splits=cv, shuffle=True, random_state=1)
             kf_pd.get_n_splits(non_test_walks_pd_labelled)
 
+            if funetune_on_all:
+                data_to_split = non_test_walks_all
+            else:
+                data_to_split = non_test_walks_all_no_pd_label
+
+            print(f"data_to_split: {len(data_to_split)}")
+            # input("stop2")
+
 
             num_reps = 1
-            for train_ids, val_ids in kf.split(non_test_walks_all_no_pd_label):
+            for train_ids, val_ids in kf.split(data_to_split):
                 if num_reps > 1:
                     break
                 
@@ -241,12 +251,12 @@ def train(
                 # Divide all of the data into:
                 # Stage 1 train/val
                 # Stage 2 train/val
-                print(f"we have {len(non_test_walks_all_no_pd_label)} non_test_walks_all")
+                print(f"we have {len(data_to_split)} non_test_walks_all")
                 print(f"we have {len(train_ids)} train_ids and {len(val_ids)} val_ids. ")
 
                 # These are from the walks without pd labels (for pretraining)
-                unlabelled_train = [non_test_walks_all_no_pd_label[i] for i in train_ids]
-                unlabelled_val = [non_test_walks_all_no_pd_label[i] for i in val_ids]
+                unlabelled_train = [data_to_split[i] for i in train_ids]
+                unlabelled_val = [data_to_split[i] for i in val_ids]
 
 
 
@@ -376,7 +386,11 @@ def train(
                 loss_cfg_stage_2 = copy.deepcopy(loss_cfg[1])
 
                 print('optimizer_cfg_stage_2 ', optimizer_cfg_stage_2)
+                print("Finetuning on: ", len(datasets[0]['data_source']['data_dir']))
+                print("Finetuning on: ", len(datasets[1]['data_source']['data_dir']))
+                print("Finetuning on: ", len(datasets[2]['data_source']['data_dir']))
 
+                # input('go')
 
                 # Reset the head
                 pretrained_model.module.set_stage_2()
