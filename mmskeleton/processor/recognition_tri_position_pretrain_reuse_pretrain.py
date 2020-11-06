@@ -147,6 +147,7 @@ def train(
         wandb_log_local_group = os.path.join(cluster_output_wandb, wandb_local_id)
 
     simple_work_dir = work_dir
+    print("making local group: ", wandb_log_local_group)
     os.makedirs(wandb_log_local_group)
 
     os.environ["WANDB_RUN_GROUP"] = wandb_group
@@ -423,6 +424,7 @@ def train(
                             num_class,
                             train_extrema_for_epochs)
             try:
+                print("now removing: ", work_dir_amb)
                 robust_rmtree(work_dir_amb)
             except:
                 print('failed to delete the participant folder')
