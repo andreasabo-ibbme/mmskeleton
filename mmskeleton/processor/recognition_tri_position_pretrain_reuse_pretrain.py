@@ -39,6 +39,9 @@ local_output_wandb = '/home/saboa/code/mmskeleton/wandb_dryrun'
 
 local_model_zoo_base = '/home/saboa/data/model_zoo'
 cluster_model_zoo_base = '/home/asabo/projects/def-btaati/asabo/model_zoo'
+cluster_model_zoo_base = '/home/asabo/scratch/model_zoo'
+
+cluster_workdir_base = '/home/asabo/scratch/mmskel'
 
 
 def train(
@@ -134,7 +137,7 @@ def train(
         model_zoo_root = local_model_zoo_base
         for i in range(len(dataset_cfg)):
             dataset_cfg[i]['data_source']['data_dir'] = os.path.join(local_data_base, dataset_cfg[i]['data_source']['data_dir'])
-    else:
+    else: # launching from the cluster
         global fast_dev
         fast_dev = False
         model_zoo_root = cluster_model_zoo_base
@@ -143,6 +146,7 @@ def train(
             dataset_cfg[i]['data_source']['data_dir'] = os.path.join(cluster_data_base, dataset_cfg[i]['data_source']['data_dir'])
 
         wandb_log_local_group = os.path.join(cluster_output_wandb, wandb_local_id)
+        work_dir = cluster_workdir_base
 
     simple_work_dir = work_dir
     os.makedirs(wandb_log_local_group)
