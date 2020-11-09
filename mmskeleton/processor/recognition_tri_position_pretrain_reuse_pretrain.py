@@ -21,7 +21,7 @@ from mmskeleton.processor.supcon_loss import *
 
 
 turn_off_wd = True
-fast_dev = True
+fast_dev = False
 log_incrementally = True
 
 # Global variables
@@ -155,15 +155,16 @@ def train(
 
     # All data dir (use this for finetuning with the flip loss)
     data_dir_all_data = dataset_cfg[0]['data_source']['data_dir']
-    all_files = [os.path.join(data_dir_all_data, f) for f in os.listdir(data_dir_all_data)]
+    all_files = [os.path.join(data_dir_all_data, f) for f in os.listdir(data_dir_all_data) if os.path.isfile(os.path.join(data_dir_all_data, f))]
     print("all files: ", len(all_files))
 
-    all_file_names_only = os.listdir(data_dir_all_data)
+    all_file_names_only = [f for f in os.listdir(data_dir_all_data) if os.path.isfile(os.path.join(data_dir_all_data, f))]
 
     # PD lablled dir (only use this data for supervised contrastive)
     data_dir_pd_data = dataset_cfg[1]['data_source']['data_dir']
-    pd_all_files = [os.path.join(data_dir_pd_data, f) for f in os.listdir(data_dir_pd_data)]
+    pd_all_files = [os.path.join(data_dir_pd_data, f) for f in os.listdir(data_dir_pd_data) if os.path.isfile(os.path.join(data_dir_pd_data, f))]
     pd_all_file_names_only = os.listdir(data_dir_pd_data)
+    pd_all_file_names_only = [f for f in os.listdir(data_dir_pd_data) if os.path.isfile(os.path.join(data_dir_pd_data, f))]
     print("pd_all_files: ", len(pd_all_files))
 
 
@@ -635,13 +636,21 @@ def batch_processor_position_pretraining(model, datas, train_mode, loss, num_cla
     except:
         data, data_flipped, label, name, num_ts, true_future_ts, index, non_pseudo_label = datas
 
+    dtype = torch.cuda.DoubleTensor if torch.cuda.is_available() else torch.DoubleTensor  
     # Even if we have flipped data, we only want to use the original in this stage
+    gait_features = np.empty([1, 9])# default value if we dont have any gait features to load in
+    if isinstance(data, dict):
+        gait_features = data['gait_feats'].type(dtype)
+        data = data['data'].type(dtype)
+
     data_all = data.cuda()
+    gait_features_all = gait_features.cuda()
+
     label = label.cuda()
     num_valid_samples = data.shape[0]
 
     # Predict the future joint positions using all data
-    predicted_joint_positions = model(data_all)
+    predicted_joint_positions = model(data_all, gait_features_all)
 
     if torch.sum(predicted_joint_positions) == 0:        
         raise ValueError("=============================== got all zero output...")

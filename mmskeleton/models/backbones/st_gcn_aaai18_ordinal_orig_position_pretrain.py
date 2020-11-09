@@ -36,6 +36,7 @@ class ST_GCN_18_ordinal_orig_position_pretrain(nn.Module):
                  num_joints_predicting=13, 
                  head='stgcn',
                  temporal_kernel_size = 9,
+                 gait_feat_num = 9,
                  **kwargs):
         super().__init__()
         print('In ST_GCN_18 ordinal supcon: ', graph_cfg)
@@ -53,7 +54,7 @@ class ST_GCN_18_ordinal_orig_position_pretrain(nn.Module):
         self.num_joints_predicting = num_joints_predicting
         self.num_class = num_class
         # fcn for prediction
-        dim_in = self.encoder.output_filters
+        dim_in = self.encoder.output_filters + gait_feat_num
         feat_dim = self.num_joints_predicting *in_channels*num_ts_predicting
 
         # the pretrain head predicts each joint location at a future time step
@@ -70,25 +71,40 @@ class ST_GCN_18_ordinal_orig_position_pretrain(nn.Module):
 
         # print("encoder: ", self.encoder)
         # print('projection head', self.head)
-    def forward(self, x):
+    def forward(self, x, gait_feats):
+        # print('input is of size: ', x.size())
         x = x[:, 0:self.in_channels, :, :, :]
         
+        # print('input is of size: ', x.size())
 
         # Fine-tuning
         if self.stage_2:
-            x = self.encoder(x)
+            x = self.encoder(x) # STGCN output
+            
+            gait_feats = gait_feats.view(gait_feats.size(0), gait_feats.size(1), 1 , 1)
+            # print('shape of x before encoder is: ', x.size())
+            # print('shape of gait feature before encoder is: ', gait_feats.size())
+            x = torch.cat([x, gait_feats], dim=1)
+
             # prediction
             x = self.head(x)
             x = x.view(x.size(0), -1)
-            torch.clamp(x, min=-1, max=self.num_class + 1)
+
+            x[x == float("Inf")] = torch.finfo(x.dtype).max
+            x[x == float("-Inf")] = torch.finfo(x.dtype).min
+            x[x == float("NaN")] = 0
+
+            torch.clamp(x, min=-1, max=self.num_class)
+
+
 
         # Pretraining
         else:
             # print("============================================")
             # print('input is of size: ', x.size())
             x = self.encoder(x)
-            # print('shape of x before encoder is: ', x.size())
 
+            
             x = self.head(x)
             # print('shape of x before reshaping is: ', x.size())
             # reshape the output to be of size (13x2xnum_ts)

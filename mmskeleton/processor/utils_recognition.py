@@ -99,7 +99,6 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
     
     mse_loss = torch.nn.MSELoss()
     mae_loss = torch.nn.L1Loss()
-    model_2 = copy.deepcopy(model)
     have_flips = 0
     try:
         try:
@@ -112,7 +111,17 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
         print("datas: ", len(datas))
         raise RuntimeError("SOMETHING IS UP WITH THE DATA")
 
+    # If we have both data and gait features, we need to remove them from the datastuct and 
+    # move them to he GPU separately
+    dtype = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor  
+
+    gait_features = np.empty([1, 9])# default value if we dont have any gait features to load in
+    if isinstance(data, dict):
+        gait_features = data['gait_feats'].type(dtype)
+        data = data['data'].type(dtype)
+
     data_all = data.cuda()
+    gait_features_all = gait_features.cuda()
     label = label.cuda()
 
     # Remove the -1 labels
@@ -124,19 +133,22 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
     y_true = y_true[row_cond, :]
     non_pseudo_label = non_pseudo_label[row_cond, :]
     data = data_all.data[row_cond, :]
+    gait_features = gait_features_all.data[row_cond, :]
+
     num_valid_samples = data.shape[0]
     # print("data shape is: ", data.shape)
     if have_flips:
+        model_2 = copy.deepcopy(model)
         data_all = data_all.data
         data_all_flipped = data_flipped.cuda()
         data_all_flipped = data_all_flipped.data 
-        output_all_flipped = model_2(data_all_flipped)
+        output_all_flipped = model_2(data_all_flipped, gait_features_all)
         torch.clamp(output_all_flipped, min=-1, max=num_class+1)
 
     # print("in batch processorv2"*10)
 
     # Get predictions from the model
-    output_all = model(data_all)
+    output_all = model(data_all, gait_features_all)
 
     if torch.sum(output_all) == 0:        
         raise ValueError("=============================== got all zero output...")

@@ -1,6 +1,8 @@
 import random
 import numpy as np
 from mmskeleton.deprecated.datasets.utils import skeleton as skeleton_aaai18
+import time
+
 
 # def stgcn_aaai18_dataprocess(data,
 #                              window_size,
@@ -120,7 +122,21 @@ def to_tuple(data):
 
 
     # print("keys: ", keys)
-    return tuple([data[k] for k in keys])
+    tupled_data_list = [data[k] for k in keys]
+    data_dict = {}
+    data_dict['data'] = data['data']
+    
+    # print(tupled_data_list)
+    # time.sleep(10)
+    # tupled_data_list[0]['data'] = tupled_data_list[0]
+
+
+    if 'gait_feats' in data.keys():
+        data_dict['gait_feats'] = np.asarray(data['gait_feats'])
+    
+    tupled_data_list[0] = data_dict
+
+    return tuple(tupled_data_list)
 
 
 def temporal_repeat(data, size, random_crop=False):
@@ -214,7 +230,7 @@ def pad_mean(data, size):
             continue
 
         np_array = data[data_field]
-        mean_val = np.mean(np_array)
+        # mean_val = np.mean(np_array)
         # print("np array is: ", np_array)
         # print("mean val is:", mean_val)
         T = np_array.shape[2]

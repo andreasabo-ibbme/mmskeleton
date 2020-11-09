@@ -6,6 +6,7 @@ import csv
 import math
 import pandas as pd
 import copy
+from sklearn import preprocessing
 
 class SkeletonLoaderTRI(torch.utils.data.Dataset):
     """ Feeder for skeleton-based action recognition
@@ -17,7 +18,8 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
     """
     def __init__(self, data_dir, num_track=1, repeat=1, num_keypoints=-1, 
                 outcome_label='UPDRS_gait', missing_joint_val=0, csv_loader=False, 
-                cache=False, layout='coco', flip_skels=False, belmont_data_mult = 5):
+                cache=False, layout='coco', flip_skels=False, belmont_data_mult = 5, use_gait_feats=False):
+
         self.data_dir = data_dir
         self.num_track = num_track
         self.num_keypoints = num_keypoints
@@ -57,6 +59,31 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
         self.sample_extremes = False
         self.cached_extreme_inds = []
 
+        # Load in the gait features if available
+        self.gait_feats = None
+        self.use_gait_feats = use_gait_feats
+
+        if self.use_gait_feats:
+            try:
+                base, _ = os.path.split(self.data_dir[0])
+                gait_file = os.path.join(base, "gait_feats", "gait_features.csv")
+                df = pd.read_csv(gait_file, engine='python')
+                gait_feature_names = ['cadence','avgMOS','avgminMOS','timeoutMOS',  'avgstepwidth',  'CVstepwidth',  'CVsteptime', 'SIStepTime', 'stepsofwalk']
+
+                column_names_to_normalize = gait_feature_names
+                x = df[column_names_to_normalize].values
+                min_max_scaler = preprocessing.MinMaxScaler()
+                x_scaled = min_max_scaler.fit_transform(x)
+                df_temp = pd.DataFrame(x_scaled, columns=column_names_to_normalize, index = df.index)
+                df[column_names_to_normalize] = df_temp
+                df.fillna(0, inplace=True)
+                self.gait_feats = df
+
+
+
+            except:
+                self.gait_feats = None
+
         if self.cache:
             print("loading data to cache...")
             for index in range(self.__len__()):
@@ -83,6 +110,8 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
     def extremaLength(self):
         return len(self.cached_extreme_inds)
 
+    # This function is used in self-training so make sure we don't generate labels that are out of the acceptable range for 
+    # each label
     def relabelItem(self, index, newLabel):
         if index not in self.cached_data:
             print("Don't have this data, skipping relabel...", index)
@@ -184,9 +213,8 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
             if index >= len(self.files):
                 file_index = index - len(self.files)
 
-            data_struct_interpolated = pd.read_csv(self.files[file_index])
+            data_struct_interpolated = pd.read_csv(self.files[file_index], engine='python')
             data_struct_interpolated.fillna(data_struct_interpolated.mean(), inplace=True)
-
 
             data_struct = {} 
             with open(self.files[file_index]) as f:        
@@ -205,6 +233,20 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
                                 data_struct[colname].append(float(row[colname]))
                             except ValueError as e:
                                 data_struct[colname].append(row[colname])
+
+
+            clean_walk_name = data_struct['walk_name'][0][0:34]
+
+            gait_feature_names = ['cadence','avgMOS','avgminMOS','timeoutMOS',  'avgstepwidth',  'CVstepwidth',  'CVsteptime', 'SIStepTime', 'stepsofwalk']
+            gait_feature_vec = [0] * len(gait_feature_names)
+
+            # Use the gait features if requested and available
+            if self.use_gait_feats and self.gait_feats is not None:
+                row = self.gait_feats.loc[self.gait_feats['walk_name'] == clean_walk_name, gait_feature_names]
+                if not row.empty:
+                    # row = row / 100
+                    gait_feature_vec = row.values.tolist()[0]
+
 
             if self.layout == 'coco':
                 num_kp = 17
@@ -391,7 +433,6 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
 
 
 
-
         num_frame = info['num_frame']
         num_keypoints = info[
             'num_keypoints'] if self.num_keypoints <= 0 else self.num_keypoints
@@ -428,6 +469,8 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
         else:
             data['have_true_label'] = 0
 
+        data['gait_feats'] = gait_feature_vec
+
         flipped_data = copy.deepcopy(data)
         temp_flipped = flipped_data['data_flipped']
         flipped_data['data_flipped'] = flipped_data['data']
@@ -443,10 +486,8 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
         if data['category_id'] == 0 or \
             (self.outcome_label == "UPDRS_gait" and data['category_id'] == 2) or \
             (self.outcome_label == "SAS_gait" and data['category_id'] == 3):
-
             self.cached_extreme_inds.append(index)
-            # if self.flip_skels:
-            #     self.cached_extreme_inds.append(flip_index)
+
 
 
         if self.cache:
@@ -467,9 +508,6 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
         if index in self.cached_data:
             if self.sample_extremes:
                 extremaInd = index % self.extremaLength()
-                # print(self.extremaLength(), self.__len__(), "want index: ", extremaInd)
-                
-                # return self.get_item_loc(self.cached_extreme_inds[extremaInd])
                 return copy.deepcopy(self.cached_data[self.cached_extreme_inds[extremaInd]])
             else:
                 return self.cached_data[index]
