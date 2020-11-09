@@ -15,7 +15,7 @@ argparse_cfg:
 processor_cfg:
   type: 'processor.recognition_tri_position_pretrain_reuse_pretrain.train'
   workers: 1
-  test_ids: [48] #, 47, 34, 37, 27, 39, 46, 50, 52, 55, 57, 59, 66, 33]
+  test_ids: [48, 47, 34, 37, 27, 39, 46, 50, 52, 55, 57, 59, 66, 33]
   cv: 5
   exclude_cv: False
   notes: "two_part_loss"
@@ -23,7 +23,7 @@ processor_cfg:
   weight_classes: True
   flip_loss: 0
   launch_from_local: True
-  wandb_project: "nov9_dev"
+  wandb_project: "nov9_op_best_check_v2"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 25
@@ -33,18 +33,18 @@ processor_cfg:
   freeze_encoder: False
   head: "stgcn"
   train_extrema_for_epochs: 25
-  do_position_pretrain: False
-  model_save_root: "openpose_v2" 
+  do_position_pretrain: True
+  model_save_root: "openpose_nov9" 
   # model setting
   model_cfg:
-    type: 'models.backbones.ST_GCN_18_ordinal_smaller_2_position_pretrain'
+    type: 'models.backbones.ST_GCN_18_ordinal_orig_position_pretrain'
     in_channels: 2
     num_class: 4
     edge_importance_weighting: True
-    dropout: 0.0
+    dropout: 0.4
     num_ts_predicting: 1
     num_joints_predicting: 4
-    temporal_kernel_size: 5
+    temporal_kernel_size: 13
     graph_cfg:
       layout: 'coco_simplified_head'
       strategy: 'spatial'

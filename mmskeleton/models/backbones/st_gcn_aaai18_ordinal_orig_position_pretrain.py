@@ -54,14 +54,15 @@ class ST_GCN_18_ordinal_orig_position_pretrain(nn.Module):
         self.num_joints_predicting = num_joints_predicting
         self.num_class = num_class
         # fcn for prediction
-        dim_in = self.encoder.output_filters + gait_feat_num
+        dim_in = self.encoder.output_filters
+        dim_in2 = self.encoder.output_filters + gait_feat_num
         feat_dim = self.num_joints_predicting *in_channels*num_ts_predicting
 
         # the pretrain head predicts each joint location at a future time step
         self.pretrain_head = nn.Conv2d(dim_in, feat_dim, kernel_size=1)
 
         # The classifcation head is used in stage 2 to predict the clinical score for each walk
-        self.classification_head = nn.Conv2d(dim_in, 1, kernel_size=1)
+        self.classification_head = nn.Conv2d(dim_in2, 1, kernel_size=1)
         self.head = self.pretrain_head
         self.in_channels = in_channels
 

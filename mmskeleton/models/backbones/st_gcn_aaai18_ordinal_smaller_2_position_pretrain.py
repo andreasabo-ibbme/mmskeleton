@@ -54,7 +54,8 @@ class ST_GCN_18_ordinal_smaller_2_position_pretrain(nn.Module):
         self.num_class = num_class
         self.in_channels = in_channels
         # fcn for prediction
-        dim_in = self.encoder.output_filters + gait_feat_num
+        dim_in = self.encoder.output_filters
+        dim_in2 = self.encoder.output_filters + gait_feat_num
         self.num_joints_predicting = num_joints_predicting
 
         feat_dim = self.num_joints_predicting *self.in_channels*num_ts_predicting
@@ -63,7 +64,7 @@ class ST_GCN_18_ordinal_smaller_2_position_pretrain(nn.Module):
         self.pretrain_head = nn.Conv2d(dim_in, feat_dim, kernel_size=1)
 
         # The classifcation head is used in stage 2 to predict the clinical score for each walk
-        self.classification_head = nn.Conv2d(dim_in, 1, kernel_size=1)
+        self.classification_head = nn.Conv2d(dim_in2, 1, kernel_size=1)
 
         self.head = self.pretrain_head
 
@@ -73,7 +74,7 @@ class ST_GCN_18_ordinal_smaller_2_position_pretrain(nn.Module):
 
         # print("encoder: ", self.encoder)
         # print('projection head', self.head)
-        
+
     def forward(self, x, gait_feats):
         # print('input is of size: ', x.size())
         x = x[:, 0:self.in_channels, :, :, :]

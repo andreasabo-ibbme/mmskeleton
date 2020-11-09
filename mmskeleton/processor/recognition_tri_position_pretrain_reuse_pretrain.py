@@ -636,7 +636,7 @@ def batch_processor_position_pretraining(model, datas, train_mode, loss, num_cla
     except:
         data, data_flipped, label, name, num_ts, true_future_ts, index, non_pseudo_label = datas
 
-    dtype = torch.cuda.DoubleTensor if torch.cuda.is_available() else torch.DoubleTensor  
+    dtype = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor  
     # Even if we have flipped data, we only want to use the original in this stage
     gait_features = np.empty([1, 9])# default value if we dont have any gait features to load in
     if isinstance(data, dict):
