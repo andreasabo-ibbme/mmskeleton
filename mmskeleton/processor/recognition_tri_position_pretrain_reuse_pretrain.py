@@ -146,7 +146,7 @@ def train(
             dataset_cfg[i]['data_source']['data_dir'] = os.path.join(cluster_data_base, dataset_cfg[i]['data_source']['data_dir'])
 
         wandb_log_local_group = os.path.join(cluster_output_wandb, wandb_local_id)
-        work_dir = cluster_workdir_base
+        work_dir = os.path.join(cluster_workdir_base, work_dir)
 
     simple_work_dir = work_dir
     os.makedirs(wandb_log_local_group)
