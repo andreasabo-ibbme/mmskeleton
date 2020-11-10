@@ -23,6 +23,7 @@ from mmskeleton.processor.supcon_loss import *
 turn_off_wd = True
 fast_dev = True
 log_incrementally = True
+log_code = False
 
 # Global variables
 num_class = 4
@@ -88,6 +89,13 @@ def train(
         os.environ['WANDB_MODE'] = 'run'
     else:
         os.environ['WANDB_MODE'] = 'dryrun'
+
+    if log_code:
+        os.environ['WANDB_DISABLE_CODE'] = False
+    else:
+        os.environ['WANDB_DISABLE_CODE'] = True
+
+
 
     # Set up for logging 
     outcome_label = dataset_cfg[0]['data_source']['outcome_label']
