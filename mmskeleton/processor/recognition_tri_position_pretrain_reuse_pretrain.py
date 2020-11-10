@@ -91,9 +91,9 @@ def train(
         os.environ['WANDB_MODE'] = 'dryrun'
 
     if log_code:
-        os.environ['WANDB_DISABLE_CODE'] = False
+        os.environ['WANDB_DISABLE_CODE'] = 'false'
     else:
-        os.environ['WANDB_DISABLE_CODE'] = True
+        os.environ['WANDB_DISABLE_CODE'] = 'true'
 
     # Set up for logging 
     outcome_label = dataset_cfg[0]['data_source']['outcome_label']
