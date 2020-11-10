@@ -23,7 +23,7 @@ processor_cfg:
   weight_classes: True
   flip_loss: 0
   launch_from_local: False
-  wandb_project: "oct20_UPDRS_detectron_no_flip_revert_check"
+  wandb_project: "nov10_UPDRS_openpose_gait_feats"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 25
@@ -34,7 +34,7 @@ processor_cfg:
   head: "stgcn"
   train_extrema_for_epochs: 25
   do_position_pretrain: True
-  model_save_root: "detectron" 
+  model_save_root: "openpose_nov9" 
   # model setting
   model_cfg:
     type: 'models.backbones.ST_GCN_18_ordinal_smaller_10_position_pretrain'
@@ -59,7 +59,7 @@ processor_cfg:
     - type: "datasets.DataPipeline"
       data_source:
         type: "datasets.SkeletonLoaderTRI"
-        data_dir: skel_data_detectron/stgcn_normalized_100_center_all_no_norm_plus_belmont
+        data_dir: skel_data/stgcn_normalized_100_center_all_no_norm_plus_belmont
         num_track: 1
         num_keypoints: 13
         repeat: 1
@@ -84,7 +84,8 @@ processor_cfg:
     - type: "datasets.DataPipeline"
       data_source:
         type: "datasets.SkeletonLoaderTRI"
-        data_dir: skel_data_detectron/stgcn_normalized_100_center_pd_no_norm
+        data_dir: skel_data/stgcn_normalized_100_center_pd_no_norm
+        use_gait_feats: True
         num_track: 1
         num_keypoints: 13
         repeat: 1
