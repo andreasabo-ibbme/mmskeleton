@@ -169,43 +169,46 @@ def train(
     # PD lablled dir (only use this data for supervised contrastive)
     data_dir_pd_data = dataset_cfg[1]['data_source']['data_dir']
     pd_all_files = [os.path.join(data_dir_pd_data, f) for f in os.listdir(data_dir_pd_data) if os.path.isfile(os.path.join(data_dir_pd_data, f))]
-    pd_all_file_names_only = os.listdir(data_dir_pd_data)
+    # pd_all_file_names_only = os.listdir(data_dir_pd_data)
     pd_all_file_names_only = [f for f in os.listdir(data_dir_pd_data) if os.path.isfile(os.path.join(data_dir_pd_data, f))]
     print("pd_all_files: ", len(pd_all_files))
 
+    # sort all of the files
+    all_files.sort()
+    all_file_names_only.sort()
+    pd_all_files.sort()
+    pd_all_file_names_only.sort()
 
     original_wandb_group = wandb_group
     workflow_orig = copy.deepcopy(workflow)
     for test_id in test_ids:
         try:
-
             plt.close('all')
             ambid = id_mapping[test_id]
             work_dir_amb = work_dir + "/" + str(ambid)
 
             # These are all of the walks (both labelled and not) of the test participant and cannot be included in training data at any point (for LOSOCV)
-            test_subj_walks_name_only_all = [i for i in all_file_names_only if re.search('ID_'+str(test_id), i) ]
-            test_subj_walks_name_only_pd_only = [i for i in pd_all_file_names_only if re.search('ID_'+str(test_id), i) ]
+            test_subj_walks_name_only_all = sorted([i for i in all_file_names_only if re.search('ID_'+str(test_id), i) ])
+            test_subj_walks_name_only_pd_only = sorted([i for i in pd_all_file_names_only if re.search('ID_'+str(test_id), i) ])
             
             print(f"test_subj_walks_name_only_all: {len(test_subj_walks_name_only_all)}")
             print(f"test_subj_walks_name_only_pd_only: {len(test_subj_walks_name_only_pd_only)}")
 
             # These are the walks that can potentially be included in the train/val sets at some stage
-            non_test_subj_walks_name_only_all = list(set(all_file_names_only).difference(set(test_subj_walks_name_only_all)))
-            non_test_subj_walks_name_only_pd_only = list(set(pd_all_file_names_only).difference(set(test_subj_walks_name_only_pd_only)))
-            non_test_subj_walks_name_only_non_pd_only = list(set(non_test_subj_walks_name_only_all).difference(set(non_test_subj_walks_name_only_pd_only)))
+            non_test_subj_walks_name_only_all = sorted(list(set(all_file_names_only).difference(set(test_subj_walks_name_only_all))))
+            non_test_subj_walks_name_only_pd_only = sorted(list(set(pd_all_file_names_only).difference(set(test_subj_walks_name_only_pd_only))))
+            non_test_subj_walks_name_only_non_pd_only = sorted(list(set(non_test_subj_walks_name_only_all).difference(set(non_test_subj_walks_name_only_pd_only))))
 
 
             print(f"non_test_subj_walks_name_only_all: {len(non_test_subj_walks_name_only_all)}")
             print(f"non_test_subj_walks_name_only_pd_only: {len(non_test_subj_walks_name_only_pd_only)}")
 
 
-
             # These are all of the labelled walks from the current participant that we want to evaluate our eventual model on
-            test_walks_pd_labelled = [os.path.join(data_dir_pd_data, f) for f in test_subj_walks_name_only_pd_only]
-            non_test_walks_pd_labelled = [os.path.join(data_dir_pd_data, f) for f in non_test_subj_walks_name_only_pd_only]
-            non_test_walks_all = [os.path.join(data_dir_all_data, f) for f in non_test_subj_walks_name_only_all]
-            non_test_walks_all_no_pd_label = [os.path.join(data_dir_all_data, f) for f in non_test_subj_walks_name_only_non_pd_only]
+            test_walks_pd_labelled = sorted([os.path.join(data_dir_pd_data, f) for f in test_subj_walks_name_only_pd_only])
+            non_test_walks_pd_labelled = sorted([os.path.join(data_dir_pd_data, f) for f in non_test_subj_walks_name_only_pd_only])
+            non_test_walks_all = sorted([os.path.join(data_dir_all_data, f) for f in non_test_subj_walks_name_only_all])
+            non_test_walks_all_no_pd_label = sorted([os.path.join(data_dir_all_data, f) for f in non_test_subj_walks_name_only_non_pd_only])
             # print(len(non_test_walks_all_no_pd_label))
             # print(len(non_test_subj_walks_name_only_non_pd_only))
             
@@ -479,15 +482,27 @@ def finetune_model(
         train_extrema_for_epochs=0,
 ):
     print("Starting STAGE 2: Fine-tuning...")
+    set_seed(0)
+
+    train_dataloader = torch.utils.data.DataLoader(dataset=call_obj(**datasets[0]),
+                                    batch_size=batch_size,
+                                    shuffle=True,
+                                    num_workers=workers,
+                                    drop_last=False)
+    # Normalize by the train scaler
+
+    for d in datasets[1:]:
+        d['data_source']['scaler'] = train_dataloader.dataset.get_scaler()
 
     data_loaders = [
         torch.utils.data.DataLoader(dataset=call_obj(**d),
                                     batch_size=batch_size,
                                     shuffle=True,
                                     num_workers=workers,
-                                    drop_last=False) for d in datasets
+                                    drop_last=False) for d in datasets[1:]
     ]
 
+    data_loaders.insert(0, train_dataloader) # insert the train dataloader
     data_loaders[0].dataset.data_source.sample_extremes = True
     workflow = [tuple(w) for w in workflow]
     global balance_classes
@@ -496,6 +511,7 @@ def finetune_model(
         class_weights_dict[workflow[i][0]] = data_loaders[i].dataset.data_source.get_class_dist()
 
 
+    set_seed(0)
 
     loss_cfg_local = copy.deepcopy(loss_cfg)
     training_hooks_local = copy.deepcopy(training_hooks)
@@ -547,12 +563,14 @@ def pretrain_model(
         path_to_pretrained_model=None):
     print("============= Starting STAGE 1: Pretraining...")
     print(path_to_pretrained_model)
+    set_seed(0)
+
     model_cfg_local = copy.deepcopy(model_cfg)
     loss_cfg_local = copy.deepcopy(loss_cfg)
     training_hooks_local = copy.deepcopy(training_hooks)
     optimizer_cfg_local = copy.deepcopy(optimizer_cfg)
 
-
+    
     # put model on gpus
     if isinstance(model_cfg, list):
         model = [call_obj(**c) for c in model_cfg_local]
@@ -586,6 +604,7 @@ def pretrain_model(
     model.apply(weights_init)
     model = MMDataParallel(model, device_ids=range(gpus)).cuda()
 
+    set_seed(0)
     data_loaders = [
         torch.utils.data.DataLoader(dataset=call_obj(**d),
                                     batch_size=batch_size,

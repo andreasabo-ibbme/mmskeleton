@@ -18,7 +18,7 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
     """
     def __init__(self, data_dir, num_track=1, repeat=1, num_keypoints=-1, 
                 outcome_label='UPDRS_gait', missing_joint_val=0, csv_loader=False, 
-                cache=False, layout='coco', flip_skels=False, belmont_data_mult = 5, use_gait_feats=False):
+                cache=False, layout='coco', flip_skels=False, belmont_data_mult = 5, use_gait_feats=False, scaler=None):
 
         self.data_dir = data_dir
         self.num_track = num_track
@@ -62,7 +62,7 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
         # Load in the gait features if available
         self.gait_feats = None
         self.use_gait_feats = use_gait_feats
-
+        self.fit_min_max_scaler = scaler
         if self.use_gait_feats:
             try:
                 base, _ = os.path.split(self.data_dir[0])
@@ -72,14 +72,13 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
 
                 column_names_to_normalize = gait_feature_names
                 x = df[column_names_to_normalize].values
-                min_max_scaler = preprocessing.MinMaxScaler()
-                x_scaled = min_max_scaler.fit_transform(x)
-                df_temp = pd.DataFrame(x_scaled, columns=column_names_to_normalize, index = df.index)
+                if self.fit_min_max_scaler is None:
+                    self.min_max_scaler = preprocessing.MinMaxScaler()
+                    self.fit_min_max_scaler = self.min_max_scaler.fit_transform(x)
+                df_temp = pd.DataFrame(self.fit_min_max_scaler, columns=column_names_to_normalize, index = df.index)
                 df[column_names_to_normalize] = df_temp
                 df.fillna(0, inplace=True)
                 self.gait_feats = df
-
-
 
             except:
                 self.gait_feats = None
@@ -89,6 +88,9 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
             for index in range(self.__len__()):
                 self.get_item_loc(index)
             # print(self.cached_extreme_inds)
+
+    def get_scaler(self):
+        return self.fit_min_max_scaler
 
     def get_class_dist(self):
         if self.sample_extremes:
@@ -207,7 +209,8 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
             return_flip = False
 
 
-
+        print(self.files[index], index)
+        input('this')
         if self.csv_loader:
             file_index = index
             if index >= len(self.files):

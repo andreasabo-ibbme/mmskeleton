@@ -26,4 +26,6 @@ class DataPipeline(torch.utils.data.Dataset):
 
     def reassignLabel(self, index, new_label):
         self.data_source.relabelItem(index, new_label)
-        pass
+
+    def get_scaler(self):
+        return self.data_source.get_scaler()    
