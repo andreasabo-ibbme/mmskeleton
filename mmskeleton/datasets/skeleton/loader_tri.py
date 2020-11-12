@@ -209,8 +209,8 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
             return_flip = False
 
 
-        print(self.files[index], index)
-        input('this')
+        # print(self.files[index], index)
+        # input('this')
         if self.csv_loader:
             file_index = index
             if index >= len(self.files):
