@@ -24,6 +24,8 @@ turn_off_wd = True
 fast_dev = False
 log_incrementally = True
 log_code = False
+# os.environ['WANDB_MODE'] = 'dryrun'
+
 
 # Global variables
 num_class = 4
@@ -128,6 +130,12 @@ def train(
     # prepare data loaders
     if isinstance(dataset_cfg, dict):
         dataset_cfg = [dataset_cfg]
+
+    # Check if we should use gait features
+    if 'use_gait_feats' in dataset_cfg[1]['data_source']:
+        model_cfg['use_gait_features'] = dataset_cfg[1]['data_source']['use_gait_feats']
+
+
 
     print("==================================")
     print('have cuda: ', torch.cuda.is_available())

@@ -37,10 +37,15 @@ class ST_GCN_18_ordinal_smaller_2_position_pretrain(nn.Module):
                  head='stgcn',
                  temporal_kernel_size = 9,
                  gait_feat_num = 9,
+                 use_gait_features = False,
                  **kwargs):
         super().__init__()
         print('In ST_GCN_18 ordinal supcon: ', graph_cfg)
         print(kwargs)
+        self.use_gait_features = use_gait_features
+        if not use_gait_features:
+            gait_feat_num = 0
+            
         self.encoder = ST_GCN_18_ordinal_smaller_2_encoder(
                  in_channels,
                  num_class,
@@ -88,8 +93,11 @@ class ST_GCN_18_ordinal_smaller_2_position_pretrain(nn.Module):
             gait_feats = gait_feats.view(gait_feats.size(0), gait_feats.size(1), 1 , 1)
             # print('shape of x before encoder is: ', x.size())
             # print('shape of gait feature before encoder is: ', gait_feats.size())
-            x = torch.cat([x, gait_feats], dim=1)
 
+            # If we have gait feaures, then combine at the feature level
+            if self.use_gait_features:
+                x = torch.cat([x, gait_feats], dim=1)
+                
             # prediction
             x = self.head(x)
             x = x.view(x.size(0), -1)
