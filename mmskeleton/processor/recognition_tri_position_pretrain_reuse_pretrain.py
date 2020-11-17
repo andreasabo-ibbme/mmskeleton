@@ -24,7 +24,7 @@ turn_off_wd = True
 fast_dev = False
 log_incrementally = True
 log_code = False
-os.environ['WANDB_MODE'] = 'dryrun'
+# os.environ['WANDB_MODE'] = 'dryrun'
 
 
 # Global variables
