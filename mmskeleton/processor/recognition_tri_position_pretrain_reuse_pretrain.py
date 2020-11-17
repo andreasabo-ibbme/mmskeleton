@@ -24,7 +24,7 @@ turn_off_wd = True
 fast_dev = False
 log_incrementally = True
 log_code = False
-# os.environ['WANDB_MODE'] = 'dryrun'
+os.environ['WANDB_MODE'] = 'dryrun'
 
 
 # Global variables
@@ -602,10 +602,19 @@ def pretrain_model(
         checkpoint_file = os.path.join(path_to_pretrained_model, 'checkpoint.pt')
         if os.path.isfile(checkpoint_file):
             print(checkpoint_file)
-            model.load_state_dict(torch.load(checkpoint_file))
+            # Only copy over the ST-GCN layer from this model
+            model_state = model.state_dict()
+
+            pretrained_state = torch.load(checkpoint_file)
+            pretrained_state = { k:v for k,v in pretrained_state.items() if k in model_state and v.size() == model_state[k].size() }  
+
+
+            model_state.update(pretrained_state)
+            model.load_state_dict(model_state)
+            # input(model.use_gait_features)
+
             model = MMDataParallel(model, device_ids=range(gpus)).cuda()
 
-            # input('loaded')
             return model
 
     # Step 1: Initialize the model with random weights, 
