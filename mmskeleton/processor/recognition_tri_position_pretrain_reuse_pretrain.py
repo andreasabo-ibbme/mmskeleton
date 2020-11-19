@@ -21,7 +21,7 @@ from mmskeleton.processor.supcon_loss import *
 
 
 turn_off_wd = True
-fast_dev = False
+fast_dev = True
 log_incrementally = True
 log_code = False
 # os.environ['WANDB_MODE'] = 'dryrun'
@@ -490,6 +490,7 @@ def finetune_model(
         train_extrema_for_epochs=0,
 ):
     print("Starting STAGE 2: Fine-tuning...")
+
     set_seed(0)
 
     train_dataloader = torch.utils.data.DataLoader(dataset=call_obj(**datasets[0]),
@@ -518,7 +519,12 @@ def finetune_model(
     for i in range(len(data_loaders)):
         class_weights_dict[workflow[i][0]] = data_loaders[i].dataset.data_source.get_class_dist()
 
-
+    set_seed(0)
+    model.module.set_classification_head_size(data_loaders[i].dataset.data_source.get_num_gait_feats())
+    model.module.set_stage_2()
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model.to(device)
+    # input(model)
     set_seed(0)
 
     loss_cfg_local = copy.deepcopy(loss_cfg)
@@ -602,6 +608,7 @@ def pretrain_model(
         checkpoint_file = os.path.join(path_to_pretrained_model, 'checkpoint.pt')
         if os.path.isfile(checkpoint_file):
             print(checkpoint_file)
+
             # Only copy over the ST-GCN layer from this model
             model_state = model.state_dict()
 
@@ -618,6 +625,7 @@ def pretrain_model(
             return model
 
     # Step 1: Initialize the model with random weights, 
+    set_seed(0)
     model.apply(weights_init)
     model = MMDataParallel(model, device_ids=range(gpus)).cuda()
 

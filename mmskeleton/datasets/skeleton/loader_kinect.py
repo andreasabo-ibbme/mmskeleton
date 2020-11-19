@@ -6,6 +6,8 @@ import csv
 import math
 import pandas as pd
 import copy
+from sklearn import preprocessing
+
 
 class SkeletonLoaderKinect(torch.utils.data.Dataset):
     """ Feeder for skeleton-based action recognition
@@ -17,7 +19,8 @@ class SkeletonLoaderKinect(torch.utils.data.Dataset):
     """
     def __init__(self, data_dir, num_track=1, repeat=1, num_keypoints=-1, 
                 outcome_label='UPDRS_gait', missing_joint_val=0, csv_loader=False, 
-                cache=False, layout='kinect_coco_simplified_head', flip_skels=False, belmont_data_mult = 0):
+                cache=False, layout='kinect_coco_simplified_head', flip_skels=False, 
+                belmont_data_mult = 0, use_gait_feats=False, scaler=None):
         self.data_dir = data_dir
         self.num_track = num_track
         self.num_keypoints = num_keypoints
@@ -57,6 +60,69 @@ class SkeletonLoaderKinect(torch.utils.data.Dataset):
         self.sample_extremes = False
         self.cached_extreme_inds = []
 
+        # Load in the gait features if available
+        self.gait_feats = None
+        self.num_gait_feats = 0
+        self.gait_feats_names = []
+        self.use_gait_feats = use_gait_feats
+        self.fit_min_max_scaler = scaler
+        if self.use_gait_feats:
+            try:
+                base, _ = os.path.split(self.data_dir[0])
+                gait_file = os.path.join(base, "gait_feats", "gait_features.csv")
+                df = pd.read_csv(gait_file, engine='python')
+                gait_feature_names_2d = ['cadence','avgMOS','avgminMOS','timeoutMOS',  'avgstepwidth',  'CVstepwidth',  'CVsteptime', 'SIStepTime', 'stepsofwalk']
+
+                gait_feature_names_3d = ['walk_speed', 'cadence', 'step_time','step_length','step_width','CV_step_time','CV_step_length','CV_step_width','Symmetry_step_time','Symmetry_step_length' ,'Symmetry_step_width'	,'MOS_average', 'MOS_minimum']
+
+                try:
+                    x = df[gait_feature_names_2d].values
+                    self.gait_feats_names = gait_feature_names_2d
+                except:
+                    x = df[gait_feature_names_3d].values
+                    self.gait_feats_names = gait_feature_names_3d
+                    
+                if self.fit_min_max_scaler is None:
+                    self.min_max_scaler = preprocessing.MinMaxScaler()
+                    self.fit_min_max_scaler = self.min_max_scaler.fit_transform(x)
+                df_temp = pd.DataFrame(self.fit_min_max_scaler, columns=self.gait_feats_names, index = df.index)
+                df[self.gait_feats_names] = df_temp
+                df.fillna(0, inplace=True)
+
+                # For kinect also need to clean up the filenames
+                def cleanup_names(name):
+                    # input(name)
+                    # max length is 42
+                    temp_name = name[6:42]
+                    # Now split this and remove trailing Skel
+                    parts = temp_name.split("_")
+                    # input(name)
+                    if (parts[-1]).isalpha():
+                        parts = parts[0:-1]
+                        # print(parts)
+                    elif ((parts[-1]).isnumeric() and (parts[-2]).isnumeric()):
+                        parts.insert(-1, '')
+                        # print("_".join(parts))
+
+                    
+
+                    return "_".join(parts)
+
+                df['walk_name'] = df['walk_name_full'].apply(cleanup_names)
+    
+                # input(df)
+
+
+
+                self.gait_feats = df
+                self.num_gait_feats = len(self.gait_feats_names)
+
+
+
+
+            except:
+                self.gait_feats = None
+
         if self.cache:
             print("loading data to cache...")
             for index in range(self.__len__()):
@@ -82,6 +148,12 @@ class SkeletonLoaderKinect(torch.utils.data.Dataset):
 
     def extremaLength(self):
         return len(self.cached_extreme_inds)
+
+    def get_scaler(self):
+        return self.fit_min_max_scaler
+
+    def get_num_gait_feats(self):
+        return self.num_gait_feats
 
     def relabelItem(self, index, newLabel):
         if index not in self.cached_data:
@@ -206,31 +278,28 @@ class SkeletonLoaderKinect(torch.utils.data.Dataset):
                             except ValueError as e:
                                 data_struct[colname].append(row[colname])
 
+            gait_feature_vec = [0.0] * self.num_gait_feats
 
-            if self.layout == 'coco':
-                num_kp = 17
-                order_of_keypoints = ['Nose', 
-                    'LEye', 'REye', 'LEar', 'REar',
-                    'LShoulder', 'RShoulder',
-                    'LElbow', 'RElbow', 
-                    'LWrist', 'RWrist', 
-                    'LHip', 'RHip',
-                    'LKnee', 'RKnee',
-                    'LAnkle', 'RAnkle',
-                ]
+            # Load in the gait features
+            if self.use_gait_feats:
+                # How we clean the walk name depends if we have 2D or 3D data
+                # For 3D data we need to keep the state
 
-            elif self.layout == 'coco_simplified_head' or self.layout == 'coco_simplified_head_ankles_ankle_wrists':
-                num_kp = 13
-                order_of_keypoints = ['Nose', 
-                    'LShoulder', 'RShoulder',
-                    'LElbow', 'RElbow', 
-                    'LWrist', 'RWrist', 
-                    'LHip', 'RHip',
-                    'LKnee', 'RKnee',
-                    'LAnkle', 'RAnkle',
-                ]
+                clean_walk_name = data_struct['walk_name'][0][0:-8]
+                # print(clean_walk_name)
+                # input("inkinectlaoder")
 
-            elif self.layout == 'kinect_coco_simplified_head':
+                # Use the gait features if requested and available
+                if self.gait_feats is not None:
+                    row = self.gait_feats.loc[self.gait_feats['walk_name'] == clean_walk_name, self.gait_feats_names]
+                    if not row.empty:
+                        # row = row / 100
+                        # input('found ' + clean_walk_name)
+                        gait_feature_vec = row.values.tolist()[0]
+
+
+
+            if self.layout == 'kinect_coco_simplified_head':
                 num_kp = 13
                 order_of_keypoints = ['Head', 
                     'LShoulder', 'RShoulder',
@@ -240,7 +309,6 @@ class SkeletonLoaderKinect(torch.utils.data.Dataset):
                     'LKnee', 'RKnee',
                     'LAnkle', 'RAnkle',
                 ]
-
 
             else:
                 raise ValueError(f"The layout {self.layout} does not exist")
@@ -415,6 +483,9 @@ class SkeletonLoaderKinect(torch.utils.data.Dataset):
             data['have_true_label'] = 1
         else:
             data['have_true_label'] = 0
+
+        data['gait_feats'] = gait_feature_vec
+
 
         flipped_data = copy.deepcopy(data)
         temp_flipped = flipped_data['data_flipped']

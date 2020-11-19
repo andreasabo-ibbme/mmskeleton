@@ -61,6 +61,8 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
 
         # Load in the gait features if available
         self.gait_feats = None
+        self.num_gait_feats = 0
+        self.gait_feats_names = []
         self.use_gait_feats = use_gait_feats
         self.fit_min_max_scaler = scaler
         if self.use_gait_feats:
@@ -68,17 +70,25 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
                 base, _ = os.path.split(self.data_dir[0])
                 gait_file = os.path.join(base, "gait_feats", "gait_features.csv")
                 df = pd.read_csv(gait_file, engine='python')
-                gait_feature_names = ['cadence','avgMOS','avgminMOS','timeoutMOS',  'avgstepwidth',  'CVstepwidth',  'CVsteptime', 'SIStepTime', 'stepsofwalk']
+                gait_feature_names_2d = ['cadence','avgMOS','avgminMOS','timeoutMOS',  'avgstepwidth',  'CVstepwidth',  'CVsteptime', 'SIStepTime', 'stepsofwalk']
 
-                column_names_to_normalize = gait_feature_names
-                x = df[column_names_to_normalize].values
+                gait_feature_names_3d = ['walk_speed', 'cadence', 'step_time','step_length','step_width','CV_step_time','CV_step_length','CV_step_width','Symmetry_step_time','Symmetry_step_length' ,'Symmetry_step_width'	,'MOS_average', 'MOS_minimum']
+
+                try:
+                    x = df[gait_feature_names_2d].values
+                    self.gait_feats_names = gait_feature_names_2d
+                except:
+                    x = df[gait_feature_names_3d].values
+                    self.gait_feats_names = gait_feature_names_3d
+                    
                 if self.fit_min_max_scaler is None:
                     self.min_max_scaler = preprocessing.MinMaxScaler()
                     self.fit_min_max_scaler = self.min_max_scaler.fit_transform(x)
-                df_temp = pd.DataFrame(self.fit_min_max_scaler, columns=column_names_to_normalize, index = df.index)
-                df[column_names_to_normalize] = df_temp
+                df_temp = pd.DataFrame(self.fit_min_max_scaler, columns=self.gait_feats_names, index = df.index)
+                df[self.gait_feats_names] = df_temp
                 df.fillna(0, inplace=True)
                 self.gait_feats = df
+                self.num_gait_feats = len(self.gait_feats_names)
 
             except:
                 self.gait_feats = None
@@ -91,6 +101,9 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
 
     def get_scaler(self):
         return self.fit_min_max_scaler
+
+    def get_num_gait_feats(self):
+        return self.num_gait_feats
 
     def get_class_dist(self):
         if self.sample_extremes:
@@ -238,17 +251,21 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
                                 data_struct[colname].append(row[colname])
 
 
-            clean_walk_name = data_struct['walk_name'][0][0:34]
+            gait_feature_vec = [0.0] * self.num_gait_feats
 
-            gait_feature_names = ['cadence','avgMOS','avgminMOS','timeoutMOS',  'avgstepwidth',  'CVstepwidth',  'CVsteptime', 'SIStepTime', 'stepsofwalk']
-            gait_feature_vec = [0] * len(gait_feature_names)
+            # Load in the gait features
+            if self.use_gait_feats:
+                # How we clean the walk name depends if we have 2D or 3D data
+                # For 3D data we need to keep the state
 
-            # Use the gait features if requested and available
-            if self.use_gait_feats and self.gait_feats is not None:
-                row = self.gait_feats.loc[self.gait_feats['walk_name'] == clean_walk_name, gait_feature_names]
-                if not row.empty:
-                    # row = row / 100
-                    gait_feature_vec = row.values.tolist()[0]
+                clean_walk_name = data_struct['walk_name'][0][0:34]
+
+                # Use the gait features if requested and available
+                if self.gait_feats is not None:
+                    row = self.gait_feats.loc[self.gait_feats['walk_name'] == clean_walk_name, self.gait_feats_names]
+                    if not row.empty:
+                        # row = row / 100
+                        gait_feature_vec = row.values.tolist()[0]
 
 
             if self.layout == 'coco':
