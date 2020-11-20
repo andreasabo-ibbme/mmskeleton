@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd /home/asabo/projects/def-btaati/asabo/mmskeleton/batch/pretrain/SAS/v6
+cd /home/asabo/projects/def-btaati/asabo/mmskeleton/batch/pretrain/SAS/v6_kinect
 
 # SAS
 sbatch temp5/SAS_0_120_pred_15_do_0.1.sh
