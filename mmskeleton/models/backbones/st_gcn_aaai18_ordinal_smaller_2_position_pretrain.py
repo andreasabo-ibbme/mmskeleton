@@ -36,8 +36,8 @@ class ST_GCN_18_ordinal_smaller_2_position_pretrain(nn.Module):
                  num_joints_predicting=13, 
                  head='stgcn',
                  temporal_kernel_size = 9,
-                 gait_feat_num = 9,
-                 use_gait_features = False,
+                 gait_feat_num = 0,
+                 use_gait_features = True,
                  **kwargs):
         super().__init__()
         print('In ST_GCN_18 ordinal supcon: ', graph_cfg)
@@ -72,6 +72,16 @@ class ST_GCN_18_ordinal_smaller_2_position_pretrain(nn.Module):
         self.classification_head = nn.Conv2d(dim_in2, 1, kernel_size=1)
 
         self.head = self.pretrain_head
+        self.gait_feat_num = gait_feat_num
+
+    def set_classification_head_size(self, num_gait_feats):
+        if not self.use_gait_features:
+            return
+        print('setting classification head to', num_gait_feats)
+        self.gait_feat_num = num_gait_feats
+        dim_in2 = self.encoder.output_filters + self.gait_feat_num
+        self.classification_head = nn.Conv2d(dim_in2, 1, kernel_size=1)
+
 
     def set_stage_2(self):
         self.head = self.classification_head

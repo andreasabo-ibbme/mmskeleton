@@ -43,7 +43,6 @@ class ST_GCN_18_ordinal_orig_position_pretrain(nn.Module):
         print('In ST_GCN_18 ordinal supcon: ', graph_cfg)
         print(kwargs)
         self.use_gait_features = use_gait_features
-
         if not use_gait_features:
             gait_feat_num = 0
 

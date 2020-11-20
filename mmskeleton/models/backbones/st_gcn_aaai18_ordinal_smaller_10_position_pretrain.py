@@ -69,12 +69,17 @@ class ST_GCN_18_ordinal_smaller_10_position_pretrain(nn.Module):
 
         # The classifcation head is used in stage 2 to predict the clinical score for each walk
         self.classification_head = nn.Conv2d(dim_in2, 1, kernel_size=1)
-
         self.head = self.pretrain_head
-
-
-
         self.num_class = num_class
+
+    def set_classification_head_size(self, num_gait_feats):
+        if not self.use_gait_features:
+            return
+        print('setting classification head to', num_gait_feats)
+        self.gait_feat_num = num_gait_feats
+        dim_in2 = self.encoder.output_filters + self.gait_feat_num
+        self.classification_head = nn.Conv2d(dim_in2, 1, kernel_size=1)
+
 
     def set_stage_2(self):
         self.head = self.classification_head
