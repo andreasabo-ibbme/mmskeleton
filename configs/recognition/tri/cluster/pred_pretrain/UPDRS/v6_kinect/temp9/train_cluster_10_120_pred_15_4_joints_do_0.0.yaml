@@ -22,8 +22,8 @@ processor_cfg:
   group_notes: "120_v10_pred15_ankles_wrists_wing"
   weight_classes: True
   flip_loss: 0
-  launch_from_local: True
-  wandb_project: "nov17_UPDRS_kinect_NO_gait_feats_repro"
+  launch_from_local: False
+  wandb_project: "nov17_UPDRS_kinect_WITH_gait_feats_repro"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 25
