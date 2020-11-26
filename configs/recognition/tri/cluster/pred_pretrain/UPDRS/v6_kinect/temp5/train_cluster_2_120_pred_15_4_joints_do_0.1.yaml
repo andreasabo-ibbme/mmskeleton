@@ -39,7 +39,7 @@ processor_cfg:
   model_cfg:
     type: 'models.backbones.ST_GCN_18_ordinal_smaller_2_position_pretrain'
     in_channels: 3
-    num_class: 4
+    num_class: 3
     edge_importance_weighting: True
     dropout: 0.1
     num_ts_predicting: 1
