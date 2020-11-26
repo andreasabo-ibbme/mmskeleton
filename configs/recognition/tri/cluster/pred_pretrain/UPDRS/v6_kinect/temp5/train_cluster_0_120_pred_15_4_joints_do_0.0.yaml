@@ -79,7 +79,6 @@ processor_cfg:
         - {type: "datasets.skeleton.to_tuple"}
 
 
-
     # PD labelled data
     - type: "datasets.DataPipeline"
       data_source:
