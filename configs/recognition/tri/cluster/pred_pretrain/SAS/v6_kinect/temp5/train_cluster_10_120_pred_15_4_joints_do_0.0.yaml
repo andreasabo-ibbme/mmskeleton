@@ -23,7 +23,7 @@ processor_cfg:
   weight_classes: True
   flip_loss: 0
   launch_from_local: False
-  wandb_project: "nov17_SAS_kinect_NO_gait_feats_repro"
+  wandb_project: "nov27_SAS_kinect_NO_gait_feats_repro_3_channel"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 25
@@ -34,11 +34,11 @@ processor_cfg:
   head: "stgcn"
   train_extrema_for_epochs: 25
   do_position_pretrain: True
-  model_save_root: "kinect_nov19" 
+  model_save_root: "kinect_nov27_3_channel" 
   # model setting
   model_cfg:
     type: 'models.backbones.ST_GCN_18_ordinal_smaller_10_position_pretrain'
-    in_channels: 2
+    in_channels: 3
     num_class: 4
     edge_importance_weighting: True
     dropout: 0.0

@@ -38,7 +38,7 @@ processor_cfg:
   # model setting
   model_cfg:
     type: 'models.backbones.ST_GCN_18_ordinal_orig_position_pretrain'
-    in_channels: 2
+    in_channels: 3
     num_class: 4
     edge_importance_weighting: True
     dropout: 0.0
