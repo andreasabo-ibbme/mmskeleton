@@ -22,7 +22,7 @@ processor_cfg:
   group_notes: "120_v10_pred15_ankles_wrists_wing"
   weight_classes: True
   flip_loss: 0
-  launch_from_local: True
+  launch_from_local: False
   wandb_project: "nov9_op_best_check_v2"
   early_stopping: True
   force_run_all_epochs: False
@@ -59,7 +59,7 @@ processor_cfg:
     - type: "datasets.DataPipeline"
       data_source:
         type: "datasets.SkeletonLoaderTRI"
-        data_dir: skel_data/stgcn_normalized_100_center_all_no_norm_plus_belmont
+        data_dir: skel_data_alphapose/stgcn_normalized_100_center_all_no_norm_plus_belmont
         num_track: 1
         num_keypoints: 13
         repeat: 1
@@ -84,7 +84,7 @@ processor_cfg:
     - type: "datasets.DataPipeline"
       data_source:
         type: "datasets.SkeletonLoaderTRI"
-        data_dir: skel_data/stgcn_normalized_100_center_pd_no_norm
+        data_dir: skel_data_alphapose/stgcn_normalized_100_center_pd_no_norm
         use_gait_feats: True
         num_track: 1
         num_keypoints: 13

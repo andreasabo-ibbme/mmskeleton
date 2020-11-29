@@ -22,8 +22,8 @@ processor_cfg:
   group_notes: "120_v0_pred15_ankles_wrists_wing_do_0.1"
   weight_classes: True
   flip_loss: 0
-  launch_from_local: True
-  wandb_project: "nov17_UPDRS_openpose_NO_gait_feats_repro"
+  launch_from_local: False
+  wandb_project: "nov29_UPDRS_alphapose_NO_gait_feats_repro"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 25
@@ -34,12 +34,12 @@ processor_cfg:
   head: "stgcn"
   train_extrema_for_epochs: 25
   do_position_pretrain: True
-  model_save_root: "openpose_nov9" 
+  model_save_root: "alphapose_nov29" 
   # model setting
   model_cfg:
     type: 'models.backbones.ST_GCN_18_ordinal_orig_position_pretrain'
     in_channels: 2
-    num_class: 4
+    num_class: 3
     edge_importance_weighting: True
     dropout: 0.3
     num_ts_predicting: 1
@@ -59,7 +59,7 @@ processor_cfg:
     - type: "datasets.DataPipeline"
       data_source:
         type: "datasets.SkeletonLoaderTRI"
-        data_dir: skel_data/stgcn_normalized_100_center_all_no_norm_plus_belmont
+        data_dir: skel_data_alphapose/stgcn_normalized_100_center_all_no_norm_plus_belmont
         num_track: 1
         num_keypoints: 13
         repeat: 1
@@ -84,7 +84,7 @@ processor_cfg:
     - type: "datasets.DataPipeline"
       data_source:
         type: "datasets.SkeletonLoaderTRI"
-        data_dir: skel_data/stgcn_normalized_100_center_pd_no_norm
+        data_dir: skel_data_alphapose/stgcn_normalized_100_center_pd_no_norm
         use_gait_feats: False
         num_track: 1
         num_keypoints: 13
