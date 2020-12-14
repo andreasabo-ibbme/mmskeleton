@@ -23,7 +23,7 @@ processor_cfg:
   weight_classes: True
   flip_loss: 0
   launch_from_local: False
-  wandb_project: "nov30_UPDRS_detectron_WITH_gait_feats_repro"
+  wandb_project: "nov30_UPDRS_detectron_NO_gait_feats_repro"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 25
@@ -85,7 +85,7 @@ processor_cfg:
       data_source:
         type: "datasets.SkeletonLoaderTRI"
         data_dir: skel_data_detectron/stgcn_normalized_100_center_pd_no_norm
-        use_gait_feats: True
+        use_gait_feats: False
         num_track: 1
         num_keypoints: 13
         repeat: 1
