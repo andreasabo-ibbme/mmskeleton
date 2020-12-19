@@ -23,7 +23,7 @@ processor_cfg:
   weight_classes: True
   flip_loss: 0
   launch_from_local: False
-  wandb_project: "DEC17_SAS_3d_Kinect_WITH_GAIT_FEATS"
+  wandb_project: "DEC17_SAS_3d_Kinect_NO_GAIT_FEATS"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 25
@@ -88,7 +88,7 @@ processor_cfg:
         type: "datasets.SkeletonLoaderKinect"
         # data_dir: skel_data/stgcn_normalized_100_center_pd_no_norm
         data_dir: kinect_skel_data/kinect_pd
-        use_gait_feats: True
+        use_gait_feats: False
         num_track: 1
         num_keypoints: 13
         repeat: 1
