@@ -22,8 +22,8 @@ processor_cfg:
   group_notes: "120_v10_pred15_ankles_wrists_wing"
   weight_classes: True
   flip_loss: 0
-  launch_from_local: False
-  wandb_project: "nov9_op_best_check_v2"
+  launch_from_local: True
+  wandb_project: "dev_2d"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 25
@@ -34,7 +34,7 @@ processor_cfg:
   head: "stgcn"
   train_extrema_for_epochs: 25
   do_position_pretrain: True
-  model_save_root: "openpose_nov10" 
+  model_save_root: "kinect_2d_dont_use" 
   # model setting
   model_cfg:
     type: 'models.backbones.ST_GCN_18_ordinal_orig_position_pretrain'
@@ -87,7 +87,7 @@ processor_cfg:
       data_source:
         type: "datasets.SkeletonLoaderKinect"
         data_dir: kinect_skel_data_2d/kinect_pd
-        use_gait_feats: False
+        use_gait_feats: True
         num_track: 1
         num_keypoints: 13
         repeat: 1

@@ -370,9 +370,9 @@ class SkeletonLoaderKinect(torch.utils.data.Dataset):
                             x = data_struct_interpolated[kp + '_x'][ts]          
                             y = data_struct_interpolated[kp + '_y'][ts] 
                             if self.export_2d: 
-                                z = data_struct_interpolated[kp + '_z'][ts]     
-                            else:
                                 z = self.missing_joint_val
+                            else:
+                                z = data_struct_interpolated[kp + '_z'][ts]     
 
                         else:           
                             x = self.missing_joint_val

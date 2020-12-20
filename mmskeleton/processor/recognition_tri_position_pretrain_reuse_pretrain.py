@@ -21,7 +21,7 @@ from mmskeleton.processor.supcon_loss import *
 
 
 turn_off_wd = True
-fast_dev = False
+fast_dev = True
 log_incrementally = True
 log_code = False
 # os.environ['WANDB_MODE'] = 'dryrun'
