@@ -20,11 +20,11 @@ class SkeletonLoaderKinect(torch.utils.data.Dataset):
     def __init__(self, data_dir, num_track=1, repeat=1, num_keypoints=-1, 
                 outcome_label='UPDRS_gait', missing_joint_val=0, csv_loader=False, 
                 cache=False, layout='kinect_coco_simplified_head', flip_skels=False, 
-                belmont_data_mult = 0, use_gait_feats=False, scaler=None):
+                belmont_data_mult = 0, use_gait_feats=False, scaler=None, export_2d=False):
         self.data_dir = data_dir
         self.num_track = num_track
         self.num_keypoints = num_keypoints
-
+        self.export_2d = export_2d
         self.files = data_dir * repeat
         
         # Look for belmont data and repeat it if necessary
@@ -316,13 +316,19 @@ class SkeletonLoaderKinect(torch.utils.data.Dataset):
             # print(data_struct)
             try:
                 info_struct = {
-                    "video_name": data_struct['walk_name'][0],
-                    "resolution": [1920, 1080],
-                    "num_frame": len(data_struct['time']),
-                    "num_keypoints": num_kp,
-                    "keypoint_channels": ["x", "y", "z"],
-                    "version": "1.0"
+                        "video_name": data_struct['walk_name'][0],
+                        "resolution": [1920, 1080],
+                        "num_frame": len(data_struct['time']),
+                        "keypoint_channels": ["x", "y", "z"],
+                        "num_keypoints": num_kp,
+                        "version": "1.0"
                 }
+
+                # if self.export_2d:
+                #     info_struct["keypoint_channels"] =  ["x", "y"]
+                # else:
+                #     info_struct["keypoint_channels"] =  ["x", "y", "z"]
+
             except:
                 print('data_struct', data_struct)            
                 raise ValueError("something is wrong with the data struct", self.files[file_index])
@@ -347,11 +353,14 @@ class SkeletonLoaderKinect(torch.utils.data.Dataset):
                 for kp_num, kp in enumerate(order_of_keypoints):
 
                     x = data_struct[kp + '_x'][ts]          
-                    y = data_struct[kp + '_y'][ts]          
-                    z = data_struct[kp + '_z'][ts]      
+                    y = data_struct[kp + '_y'][ts]
+                    if self.export_2d: 
+                        z = self.missing_joint_val
+                    else:
+                        z = data_struct[kp + '_z'][ts]      
                 
 
-                    # missing actual joint coordinates
+                    # check if we are missing actual joint coordinates
                     try:
                         x = float(x)
                         y = float(y)
@@ -359,8 +368,12 @@ class SkeletonLoaderKinect(torch.utils.data.Dataset):
                     except:
                         if self.interpolate_with_mean:
                             x = data_struct_interpolated[kp + '_x'][ts]          
-                            y = data_struct_interpolated[kp + '_y'][ts]          
-                            z = data_struct_interpolated[kp + '_z'][ts]          
+                            y = data_struct_interpolated[kp + '_y'][ts] 
+                            if self.export_2d: 
+                                z = data_struct_interpolated[kp + '_z'][ts]     
+                            else:
+                                z = self.missing_joint_val
+
                         else:           
                             x = self.missing_joint_val
                             y = self.missing_joint_val
