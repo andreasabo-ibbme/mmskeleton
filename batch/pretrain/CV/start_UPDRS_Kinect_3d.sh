@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd /home/asabo/projects/def-btaati/asabo/mmskeleton/batch/pretrain/CV/UPDRS/Kinect_3d/gait_features
+cd /home/asabo/projects/def-btaati/asabo/mmskeleton/batch/pretrain/CV/UPDRS/Kinect_3d
 
 sbatch gait_features/config_1.sh
 sbatch gait_features/config_2.sh
