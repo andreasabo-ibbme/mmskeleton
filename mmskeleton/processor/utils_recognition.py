@@ -20,6 +20,7 @@ from torch import nn
 import wandb
 import shutil
 import random
+import time
 
 def set_seed(seed):
     torch.manual_seed(seed)
@@ -272,7 +273,7 @@ def set_up_results_table(workflow, num_class):
         # Calculate the mean metrics across classes
         average_types = ['macro', 'micro', 'weighted']
         average_metrics_to_log = ['precision', 'recall', 'f1score', 'support']
-        prefix_name = mode + '/'
+        prefix_name = 'final/'+ mode + '/'
         for av in average_types:
             for m in average_metrics_to_log:
                 col_names.append(prefix_name + m +'_average_' + av)
@@ -347,9 +348,11 @@ def final_stats_per_trial(final_results_local_path, wandb_group, wandb_project, 
 
 
 def final_stats_variance(results_df, wandb_group, wandb_project, total_epochs, num_class, workflow):
-    wandb.init(name="ALL", project=wandb_project, group=wandb_group, tags=['summary'], reinit=True)
+    wandb.init(name="ALL_var", project=wandb_project, group=wandb_group, tags=['summary'], reinit=True)
+    print(results_df)
     stdev = results_df.std().to_dict()
     means = results_df.mean().to_dict()
+    print(means)
     all_stats = dict()
     for k,v in stdev.items():
         all_stats[k + "_stdev"] = stdev[k]
@@ -359,56 +362,23 @@ def final_stats_variance(results_df, wandb_group, wandb_project, total_epochs, n
     wandb.log(all_stats)
 
 
-def final_stats_worker(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, log_name, wandb_log_local_group):
+def final_stats_worker(work_dir, folder_count, wandb_group, wandb_project, total_epochs, num_class, workflow, log_name, wandb_log_local_group, results_table=None):
     max_label = num_class
     # Compute summary statistics (accuracy and confusion matrices)
-    final_results_dir = os.path.join(work_dir, 'all_final_eval', wandb_group)
-    final_results_dir2 = os.path.join(work_dir, 'all_test', wandb_group)
+    final_results_dir = os.path.join(work_dir, 'all_final_eval', str(folder_count))
+    final_results_dir2 = os.path.join(work_dir, 'all_test', wandb_group) # we just delete the contents of this
 
     if wandb_log_local_group is not None:
-        # wandb.init(dir=wandb_log_local_group, project=wandb_project, group=wandb_group,  name=log_name, wandb_group=wandb_log_local_group, reinit=True)
         wandb.init(dir=wandb_log_local_group, name=log_name, project=wandb_project, group=wandb_group, config = {'wandb_group':wandb_group}, tags=['summary'], reinit=True)
     else:
         wandb.init(name=log_name, project=wandb_project, group=wandb_group, config = {'wandb_group':wandb_group}, tags=['summary'], reinit=True)
-        # wandb.init(project=wandb_project, group=wandb_group,  wandb_group=wandb_log_local_group, name=log_name, reinit=True)
 
     print("getting final results from: ", final_results_dir)
     print("total_epochs: ", total_epochs)
-    # input('')
-    # for e in range(0, total_epochs):
-    #     print("e", e)
-    #     log_vars = {}
-    #     results_file = os.path.join(final_results_dir, "test_" + str(e + 1) + ".csv")
-    #     print('results file is: ', results_file)
-    #     try:
-    #         df = pd.read_csv(results_file)
-    #     except:
-    #         print("failed to load from results file")
-    #         input("failed to load")
-    #         break
-    #     true_labels = df['true_score']
-    #     preds = df['pred_round']
-    #     preds_raw = df['pred_raw']
-
-    #     log_vars['eval/mae_rounded'] = mean_absolute_error(true_labels, preds)
-    #     log_vars['eval/mae_raw'] = mean_absolute_error(true_labels, preds_raw)
-    #     log_vars['eval/accuracy'] = accuracy_score(true_labels, preds)
-    #     wandb.log(log_vars, step=e+1)
-
-    #     if e % 5 == 0:
-    #         class_names = [str(i) for i in range(num_class)]
-
-    #         fig = plot_confusion_matrix( true_labels,preds, class_names, max_label)
-    #         wandb.log({"confusion_matrix/eval_"+ str(e)+".png": fig}, step=e+1)
-    #         fig_title = "Regression for ALL unseen participants"
-    #         reg_fig = regressionPlot(true_labels,preds_raw, class_names, fig_title)
-    #         try:
-    #             wandb.log({"regression/eval_"+ str(e)+".png": [wandb.Image(reg_fig)]}, step=e+1)
-    #         except:
-    #             pass
 
     # final results +++++++++++++++++++++++++++++++++++++++++
 
+    dict_for_table = {}
     for i, flow in enumerate(workflow):
         mode, _ = flow
 
@@ -482,30 +452,62 @@ def final_stats_worker(work_dir, wandb_group, wandb_project, total_epochs, num_c
             wandb.log({"final_results_csv/"+mode: wandb.Table(data=df.values.tolist(), columns=header)})
         except: 
             logging.exception("Could not save final table =================================================\n")
-    
-    # Remove the files generated so we don't take up this space
-    print('removing ', final_results_dir)
-    shutil.rmtree(final_results_dir)
-    print('removing ', final_results_dir2)
-    shutil.rmtree(final_results_dir2)
+
+
+        dict_for_table.update(log_vars)
+        dict_for_table.update(per_class_stats)
+        dict_for_table.update(average_dict)
+    if results_table is not None:
+        df = pd.DataFrame(dict_for_table, index=[0])
+        results_table = results_table.append(df)
+
+    try:
+        # Remove the files generated so we don't take up this space
+        print('removing ', final_results_dir)
+        shutil.rmtree(final_results_dir)
+        print('removing ', final_results_dir2)
+        shutil.rmtree(final_results_dir2)
+    except:
+        pass
+    return results_table
+
 
 def final_stats(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, num_self_train_iter=0, wandb_log_local_group=None):
+    ## DEPRECATED
     # input("the group is: " + wandb_group)
     work_dir_back = work_dir
     try:
         if num_self_train_iter == 0:
             work_dir = work_dir_back 
-            final_stats_worker(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, log_name="ALL", wandb_log_local_group=wandb_log_local_group)
+            final_stats_worker(work_dir, num_self_train_iter, wandb_group, wandb_project, total_epochs, num_class, workflow, log_name="ALL", wandb_log_local_group=wandb_log_local_group)
         else:
             for iter_count in range(num_self_train_iter):
                 work_dir = work_dir_back + "/" + str(iter_count)
-                final_stats_worker(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, log_name="ALL_" + str(iter_count), wandb_log_local_group=wandb_log_local_group)
+                final_stats_worker(work_dir, num_self_train_iter, wandb_group, wandb_project, total_epochs, num_class, workflow, log_name="ALL_" + str(iter_count), wandb_log_local_group=wandb_log_local_group)
                 
 
     except:
         print('something when wrong in the summary stats')
         logging.exception("Error message =================================================")    
 
+
+def final_stats_numbered(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, num_self_train_iter=1, wandb_log_local_group=None):
+    # input("the group is: " + wandb_group)
+    results_df = set_up_results_table(workflow, num_class)
+
+    try:
+        for iter_count in range(num_self_train_iter):
+            print(str(iter_count + 1) + "/" + str(num_self_train_iter))
+            folder_count = iter_count + 1
+            results_df = final_stats_worker(work_dir, folder_count, wandb_group, wandb_project, total_epochs, num_class, workflow, log_name="ALL_" + str(folder_count), wandb_log_local_group=wandb_log_local_group, results_table = results_df)
+
+        # if we ran multiple trials, compute the summary stats
+        if num_self_train_iter is not 1:
+            final_stats_variance(results_df, wandb_group, wandb_project, total_epochs, num_class, workflow)
+
+    except:
+        print('something when wrong in the summary stats')
+        logging.exception("Error message =================================================")    
 
 
 
@@ -686,8 +688,10 @@ def plot_confusion_matrix( y_true, y_pred, classes, max_label, normalize=False,t
     cm = confusion_matrix(y_true, y_pred, labels=class_names_int)
 
     if normalize:
-        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-
+        try:
+            cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        except:
+            pass
     fig, ax = plt.subplots(figsize=(8, 6))
     im = ax.imshow(cm, interpolation='nearest', cmap=cmap)
     ax.figure.colorbar(im, ax=ax)
@@ -843,12 +847,12 @@ def regressionPlot(labels, raw_preds, classes, fig_title):
 
 
 def rmdir(directory):
-    directory = Path(directory)
-    for item in directory.iterdir():
-        if item.is_dir():
-            rmdir(item)
-        else:
-            item.unlink()
+    # directory = Path(directory)
+    # for item in directory.iterdir():
+    #     if item.is_dir():
+    #         rmdir(item)
+    #     else:
+    #         item.unlink()
     # print("deleting: ", directory)
     # print("with: ", os.listdir(directory))
     # for f in os.listdir(directory):
@@ -860,8 +864,7 @@ def rmdir(directory):
     try:
         directory.rmdir()
     except:
-        pass
-        # print("couldn't delete: ", directory)
+        print("couldn't delete: ", directory)
 
 
 def robust_rmtree(path, logger=None, max_retries=3):
