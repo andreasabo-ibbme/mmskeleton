@@ -18,4 +18,4 @@ module load cuda/10.1
 source ~/ENV/bin/activate
 
 cd /home/asabo/projects/def-btaati/asabo/mmskeleton
-python mmskl.py
+python mmskl.py configs/recognition/tri/cluster/pred_pretrain/CV_configs/UPDRS/openpose/gait_features/train_cluster_0_120_pred_15_4_joints_do_0.3.yaml
