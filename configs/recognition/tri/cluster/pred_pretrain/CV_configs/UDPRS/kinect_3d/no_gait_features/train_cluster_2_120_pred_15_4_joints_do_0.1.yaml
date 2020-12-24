@@ -19,7 +19,7 @@ processor_cfg:
   cv: 5
   exclude_cv: False
   notes: "two_part_loss"
-  group_notes: "120_v0_pred15_ankles_wrists_wing_do_0.1"
+  group_notes: "120_v2_pred15_ankles_wrists_wing_do_0.1"
   weight_classes: True
   flip_loss: 0
   launch_from_local: False
@@ -37,11 +37,11 @@ processor_cfg:
   model_save_root: "kinect_dec17_3d_positions" 
   # model setting
   model_cfg:
-    type: 'models.backbones.ST_GCN_18_ordinal_orig_position_pretrain'
+    type: 'models.backbones.ST_GCN_18_ordinal_smaller_2_position_pretrain'
     in_channels: 3
     num_class: 3
     edge_importance_weighting: True
-    dropout: 0.3
+    dropout: 0.1
     num_ts_predicting: 1
     num_joints_predicting: 4
     temporal_kernel_size: 13
@@ -124,7 +124,7 @@ processor_cfg:
 
   # runtime setting
   workflow: [['train', 1], ['val', 1], ['test', 1]]
-  work_dir: ./work_dir/recognition/tri_all/dataset_example/v2/UPDRS/120_v0_pred15_ankles_wrists_wing_do_01
+  work_dir: ./work_dir/recognition/tri_all/dataset_example/v2/UPDRS/120_v2_pred15_ankles_wrists_wing_do_0.1
   total_epochs: 1000
   training_hooks:
   training_hooks:

@@ -19,7 +19,7 @@ processor_cfg:
   cv: 5
   exclude_cv: False
   notes: "two_part_loss"
-  group_notes: "120_v0_pred15_ankles_wrists_wing"
+  group_notes: "120_v10_pred15_ankles_wrists_wing"
   weight_classes: True
   flip_loss: 0
   launch_from_local: False
@@ -37,14 +37,14 @@ processor_cfg:
   model_save_root: "kinect_dec17_3d_positions" 
   # model setting
   model_cfg:
-    type: 'models.backbones.ST_GCN_18_ordinal_orig_position_pretrain'
+    type: 'models.backbones.ST_GCN_18_ordinal_smaller_10_position_pretrain'
     in_channels: 3
     num_class: 3
     edge_importance_weighting: True
     dropout: 0.0
     num_ts_predicting: 1
     num_joints_predicting: 4
-    temporal_kernel_size: 9
+    temporal_kernel_size: 13
     graph_cfg:
       layout: 'kinect_coco_simplified_head'
       strategy: 'spatial'
