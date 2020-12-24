@@ -2,7 +2,7 @@
 
 cd /home/asabo/projects/def-btaati/asabo/mmskeleton/batch/pretrain_coco_simplified_head_ankles_ankle_wrists
 
-# UDPRS
+# UPDRS
 cd ./UPDRS/v2/
 sbatch SAS_0_120_pred_15.sh
 sbatch SAS_0_120_pred_15_mse.sh
