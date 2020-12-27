@@ -84,7 +84,10 @@ def train(
 ):
     # Reproductibility
     set_seed(0)
-
+    print("==================================")
+    print('have cuda: ', torch.cuda.is_available())
+    print('using device: ', torch.cuda.get_device_name())
+    
     global log_incrementally
     if log_incrementally:
         os.environ['WANDB_MODE'] = 'run'
@@ -136,9 +139,7 @@ def train(
 
 
 
-    print("==================================")
-    print('have cuda: ', torch.cuda.is_available())
-    print('using device: ', torch.cuda.get_device_name())
+
 
     wandb_local_id = wandb.util.generate_id()
 
