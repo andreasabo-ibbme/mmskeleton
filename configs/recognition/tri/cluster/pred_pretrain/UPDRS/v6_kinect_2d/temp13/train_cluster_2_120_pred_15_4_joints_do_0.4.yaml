@@ -17,7 +17,7 @@ processor_cfg:
   workers: 1
   test_ids: [48, 47, 34, 37, 27, 39, 46, 50, 52, 55, 57, 59, 66, 33]
   cv: 5
-  exclude_cv: False
+  exclude_cv: True
   notes: "two_part_loss"
   group_notes: "120_v2_pred15_ankles_wrists_wing_do_0.1"
   weight_classes: True
