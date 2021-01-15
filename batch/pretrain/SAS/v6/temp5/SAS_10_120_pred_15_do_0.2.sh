@@ -2,7 +2,7 @@
 #SBATCH --gres=gpu:1              # Number of GPUs (per node)
 #SBATCH --mem=16000               # memory (per node)
 #SBATCH --cpus-per-task=8
-#SBATCH --time=4-04:00            # time (DD-HH:MM)
+#SBATCH --time=1-04:00            # time (DD-HH:MM)
 #SBATCH --job-name=SAS_openpose_0.2
 #SBATCH --output=%x-%j_32hour.out
 #SBATCH --account=def-btaati
