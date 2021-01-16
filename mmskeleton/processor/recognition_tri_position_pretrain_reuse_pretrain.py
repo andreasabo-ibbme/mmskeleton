@@ -18,6 +18,7 @@ import pickle
 import shutil
 from mmskeleton.processor.utils_recognition import *
 from mmskeleton.processor.supcon_loss import *
+import time
 
 turn_off_wd = True
 fast_dev = False
@@ -579,10 +580,13 @@ def finetune_model(
 
     # run
     final_model, num_epoches_early_stop_finetune = runner.run(data_loaders, workflow, total_epochs, train_extrema_for_epochs=train_extrema_for_epochs, loss=loss, flip_loss_mult=flip_loss_mult, balance_classes=balance_classes, class_weights_dict=class_weights_dict)
-    # try:
-    #     shutil.rmtree(wandb.run.dir)
-    # except:
-    #     print('failed to delete the wandb folder')    
+    
+    try:
+        # Wait half a minute so the WANDB thread can sync
+        time.sleep(30)
+        shutil.rmtree(wandb.run.dir)
+    except:
+        print('failed to delete the wandb folder')    
     
     return final_model, num_epoches_early_stop_finetune
 
