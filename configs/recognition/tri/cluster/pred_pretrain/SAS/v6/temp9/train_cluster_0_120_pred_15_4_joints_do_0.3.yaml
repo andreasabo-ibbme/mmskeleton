@@ -85,7 +85,7 @@ processor_cfg:
       data_source:
         type: "datasets.SkeletonLoaderTRI"
         data_dir: skel_data_alphapose/stgcn_normalized_100_center_pd_no_norm
-        use_gait_feats: True
+        use_gait_feats: False
         num_track: 1
         num_keypoints: 13
         repeat: 1
