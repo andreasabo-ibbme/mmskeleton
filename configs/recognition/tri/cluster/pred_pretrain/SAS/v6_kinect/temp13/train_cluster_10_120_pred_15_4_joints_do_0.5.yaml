@@ -59,7 +59,7 @@ processor_cfg:
     - type: "datasets.DataPipeline"
       data_source:
         type: "datasets.SkeletonLoaderKinect"
-        data_dir: kinect_skel_data/kinect_all
+        data_dir: kinect_skel_data_3d/kinect_all
         num_track: 1
         num_keypoints: 13
         repeat: 1
@@ -84,7 +84,7 @@ processor_cfg:
     - type: "datasets.DataPipeline"
       data_source:
         type: "datasets.SkeletonLoaderKinect"
-        data_dir: kinect_skel_data/kinect_pd
+        data_dir: kinect_skel_data_3d/kinect_pd
         use_gait_feats: False
         num_track: 1
         num_keypoints: 13
