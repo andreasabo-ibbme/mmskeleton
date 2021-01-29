@@ -24,6 +24,7 @@ turn_off_wd = True
 fast_dev = False
 log_incrementally = True
 log_code = False
+log_conf_mat = False
 # os.environ['WANDB_MODE'] = 'dryrun'
 
 
@@ -575,7 +576,10 @@ def finetune_model(
     # print('training hooks: ', training_hooks_local)
     # build runner
     optimizer = call_obj(params=model.parameters(), **optimizer_cfg_local)
-    runner = Runner(model, batch_processor, optimizer, work_dir, log_level, num_class=num_class, things_to_log=things_to_log, early_stopping=early_stopping, force_run_all_epochs=force_run_all_epochs, es_patience=es_patience, es_start_up=es_start_up, freeze_encoder=freeze_encoder, finetuning=True)
+    runner = Runner(model, batch_processor, optimizer, work_dir, log_level, num_class=num_class, \
+                    things_to_log=things_to_log, early_stopping=early_stopping, force_run_all_epochs=force_run_all_epochs, \
+                    es_patience=es_patience, es_start_up=es_start_up, freeze_encoder=freeze_encoder, finetuning=True,\
+                    log_conf_mat=log_conf_mat)
     runner.register_training_hooks(**training_hooks_local)
 
     # run
@@ -695,7 +699,9 @@ def pretrain_model(
     # build runner
     # loss = SupConLoss()
     optimizer = call_obj(params=model.parameters(), **optimizer_cfg_local)
-    runner = Runner(model, batch_processor_position_pretraining, optimizer, work_dir, log_level, things_to_log=things_to_log, early_stopping=early_stopping, force_run_all_epochs=force_run_all_epochs, es_patience=es_patience, es_start_up=es_start_up, visualize_preds=visualize_preds)
+    runner = Runner(model, batch_processor_position_pretraining, optimizer, work_dir, log_level, \
+                    things_to_log=things_to_log, early_stopping=early_stopping, force_run_all_epochs=force_run_all_epochs, \
+                    es_patience=es_patience, es_start_up=es_start_up, visualize_preds=visualize_preds, log_conf_mat=log_conf_mat)
     runner.register_training_hooks(**training_hooks_local)
 
     # run
