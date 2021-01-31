@@ -23,7 +23,7 @@ processor_cfg:
   weight_classes: True
   flip_loss: 0
   launch_from_local: False
-  wandb_project: "SAS_kinect_NO_gait_feats_2d_positions"
+  wandb_project: "SAS_KINECT2D_CV_JAN30_pretrained_nofliploss"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 25
