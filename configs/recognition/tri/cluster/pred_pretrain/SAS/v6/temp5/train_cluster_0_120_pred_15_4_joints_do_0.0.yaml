@@ -23,7 +23,7 @@ processor_cfg:
   weight_classes: True
   flip_loss: 0
   launch_from_local: False
-  wandb_project: "SAS_ALPHAPOSE_CV_JAN12_pretrained_nofliploss"
+  wandb_project: "SAS_DETECTRON_CV_FEB6_pretrained_nofliploss"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 25
@@ -34,7 +34,7 @@ processor_cfg:
   head: "stgcn"
   train_extrema_for_epochs: 25
   do_position_pretrain: True
-  model_save_root: "alphapose_nov30" 
+  model_save_root: "detectron_nov30" 
 
   # model setting
   model_cfg:
