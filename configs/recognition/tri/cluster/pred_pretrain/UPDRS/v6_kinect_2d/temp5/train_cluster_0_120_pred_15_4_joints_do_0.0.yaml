@@ -86,7 +86,7 @@ processor_cfg:
       data_source:
         type: "datasets.SkeletonLoaderKinect"
         data_dir: kinect_skel_data_2d/kinect_pd
-        use_gait_feats: False
+        use_gait_feats: True
         num_track: 1
         num_keypoints: 13
         repeat: 1
