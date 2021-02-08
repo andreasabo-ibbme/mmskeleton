@@ -23,7 +23,7 @@ processor_cfg:
   weight_classes: True
   flip_loss: 0
   launch_from_local: False
-  wandb_project: "UPDRS_DETECTRON_CV_FEB6_pretrained_nofliploss"
+  wandb_project: "UPDRS_OPENPOSE_CV_FEB8_pretrained_nofliploss"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 25
@@ -34,7 +34,7 @@ processor_cfg:
   head: "stgcn"
   train_extrema_for_epochs: 25
   do_position_pretrain: True
-  model_save_root: "detectron_nov30" 
+  model_save_root: "openpose_nov9" 
   # model setting
   model_cfg:
     type: 'models.backbones.ST_GCN_18_ordinal_smaller_10_position_pretrain'
