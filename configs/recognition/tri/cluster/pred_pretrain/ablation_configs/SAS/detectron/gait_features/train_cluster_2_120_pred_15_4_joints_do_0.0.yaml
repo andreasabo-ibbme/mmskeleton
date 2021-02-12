@@ -15,15 +15,15 @@ argparse_cfg:
 processor_cfg:
   type: 'processor.recognition_tri_position_pretrain_reuse_pretrain.train'
   workers: 1
-  test_ids: [27] #,48 47, 34, 37, 27, 39, 46, 50, 52, 55, 57, 59, 66, 33]
+  test_ids: [48, 47, 34, 37, 27, 39, 46, 50, 52, 55, 57, 59, 66, 33]
   cv: 5
   exclude_cv: False
   notes: "two_part_loss"
-  group_notes: "120_v10_pred15_ankles_wrists_wing"
+  group_notes: "120_v2_pred15_ankles_wrists_wing"
   weight_classes: True
   flip_loss: 0
-  launch_from_local: True
-  wandb_project: "dev_2d"
+  launch_from_local: False
+  wandb_project: "SAS_ABLATION_PRETRAIN"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 25
@@ -34,10 +34,10 @@ processor_cfg:
   head: "stgcn"
   train_extrema_for_epochs: 25
   do_position_pretrain: True
-  model_save_root: "kinect_2d_dont_use" 
+  model_save_root: "detectron_nov30" 
   # model setting
   model_cfg:
-    type: 'models.backbones.ST_GCN_18_ordinal_orig_position_pretrain'
+    type: 'models.backbones.ST_GCN_18_ordinal_smaller_2_position_pretrain'
     in_channels: 2
     num_class: 4
     edge_importance_weighting: True
@@ -46,7 +46,7 @@ processor_cfg:
     num_joints_predicting: 4
     temporal_kernel_size: 5
     graph_cfg:
-      layout: 'kinect_coco_simplified_head'
+      layout: 'coco_simplified_head'
       strategy: 'spatial'
   loss_cfg:
     - {type: 'mmskeleton.processor.utils_recognition.WingLoss'} # This is for pretraining
@@ -58,8 +58,8 @@ processor_cfg:
     # ALL data
     - type: "datasets.DataPipeline"
       data_source:
-        type: "datasets.SkeletonLoaderKinect"
-        data_dir: kinect_skel_data_2d/kinect_all
+        type: "datasets.SkeletonLoaderTRI"
+        data_dir: skel_data_detectron/stgcn_normalized_100_center_all_no_norm_plus_belmont
         num_track: 1
         num_keypoints: 13
         repeat: 1
@@ -68,8 +68,6 @@ processor_cfg:
         missing_joint_val: mean
         cache: True
         flip_skels: True
-        export_2d: True
-
 
       pipeline:
         - {type: "datasets.skeleton.normalize_by_resolution"}
@@ -85,8 +83,8 @@ processor_cfg:
     # PD labelled data
     - type: "datasets.DataPipeline"
       data_source:
-        type: "datasets.SkeletonLoaderKinect"
-        data_dir: kinect_skel_data_2d/kinect_pd
+        type: "datasets.SkeletonLoaderTRI"
+        data_dir: skel_data_detectron/stgcn_normalized_100_center_pd_no_norm
         use_gait_feats: True
         num_track: 1
         num_keypoints: 13
@@ -96,8 +94,6 @@ processor_cfg:
         missing_joint_val: mean
         cache: True
         flip_skels: True
-        export_2d: True
-
 
       pipeline:
         - {type: "datasets.skeleton.normalize_by_resolution"}
@@ -128,7 +124,7 @@ processor_cfg:
 
   # runtime setting
   workflow: [['train', 1], ['val', 1], ['test', 1]]
-  work_dir: ./work_dir/recognition/tri_all/dataset_example/v2/SAS/120_v0_pred15_ankles_wrists_wing
+  work_dir: ./work_dir/recognition/tri_all/dataset_example/v2/SAS/120_v2_pred15_ankles_wrists_wing
   total_epochs: 1000
   training_hooks:
   training_hooks:
