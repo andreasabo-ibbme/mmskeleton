@@ -420,12 +420,15 @@ def train(
 
                     print('optimizer_cfg_stage_2 ', optimizer_cfg_stage_2)
 
+                    # if we don't want to use the pretrained head, reset to norm init
+                    if not pretrain_model:
+                        pretrained_model.module.encoder.apply(weights_init)
 
-                    # Reset the head
+                    # Reset the head for finetuning
                     pretrained_model.module.set_stage_2()
                     pretrained_model.module.head.apply(weights_init)
 
-                    things_to_log = {'num_reps_pd': num_reps_pd, 'train_extrema_for_epochs': train_extrema_for_epochs, 'supcon_head': head, 'freeze_encoder': freeze_encoder, 'es_start_up_2': es_start_up_2, 'es_patience_2': es_patience_2, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg_stage_2, 'optimizer_cfg': optimizer_cfg_stage_2, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
+                    things_to_log = {'do_position_pretrain': do_position_pretrain, 'num_reps_pd': num_reps_pd, 'train_extrema_for_epochs': train_extrema_for_epochs, 'supcon_head': head, 'freeze_encoder': freeze_encoder, 'es_start_up_2': es_start_up_2, 'es_patience_2': es_patience_2, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': ambid, 'test_AMBID_num': len(test_walks_pd_labelled), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg_stage_2, 'optimizer_cfg': optimizer_cfg_stage_2, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
 
                     # print("final model for fine_tuning is: ", pretrained_model)
                     # input("here: " + work_dir_amb)
@@ -644,6 +647,7 @@ def pretrain_model(
 
 
     if not do_position_pretrain:
+        print("SKIPPING PRETRAINING-------------------")
         model = MMDataParallel(model, device_ids=range(gpus)).cuda()
         return model
 

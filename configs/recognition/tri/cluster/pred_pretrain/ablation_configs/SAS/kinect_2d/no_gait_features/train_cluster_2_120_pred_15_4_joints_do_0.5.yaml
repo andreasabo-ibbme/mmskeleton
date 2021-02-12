@@ -33,7 +33,7 @@ processor_cfg:
   freeze_encoder: False
   head: "stgcn"
   train_extrema_for_epochs: 25
-  do_position_pretrain: True
+  do_position_pretrain: False
   model_save_root: "kinect_dec20_2d_position" 
   # model setting
   model_cfg:
