@@ -6,6 +6,7 @@ from torch.autograd import Variable
 from mmskeleton.ops.st_gcn import ConvTemporalGraphical, Graph
 from .st_gcn_aaai18_ordinal_smaller_2_encoder import ST_GCN_18_ordinal_smaller_2_encoder
 
+
 class ST_GCN_18_ordinal_smaller_2_position_pretrain(nn.Module):
     r"""Spatial temporal graph convolutional networks.
 
@@ -33,11 +34,11 @@ class ST_GCN_18_ordinal_smaller_2_position_pretrain(nn.Module):
                  edge_importance_weighting=True,
                  data_bn=True,
                  num_ts_predicting=2,
-                 num_joints_predicting=13, 
+                 num_joints_predicting=13,
                  head='stgcn',
-                 temporal_kernel_size = 9,
-                 gait_feat_num = 0,
-                 use_gait_features = True,
+                 temporal_kernel_size=9,
+                 gait_feat_num=0,
+                 use_gait_features=True,
                  **kwargs):
         super().__init__()
         print('In ST_GCN_18 ordinal supcon: ', graph_cfg)
@@ -45,34 +46,33 @@ class ST_GCN_18_ordinal_smaller_2_position_pretrain(nn.Module):
         self.use_gait_features = use_gait_features
         if not use_gait_features:
             gait_feat_num = 0
-            
+
         self.encoder = ST_GCN_18_ordinal_smaller_2_encoder(
-                 in_channels,
-                 num_class,
-                 graph_cfg,
-                 temporal_kernel_size,
-                 head, 
-                 edge_importance_weighting,
-                 data_bn,
-                 **kwargs)
+            in_channels,
+            num_class,
+            graph_cfg,
+            temporal_kernel_size,
+            head,
+            edge_importance_weighting,
+            data_bn,
+            **kwargs)
         self.stage_2 = False
-        self.num_class = num_class
+        self.num_joints_predicting = num_joints_predicting
         self.in_channels = in_channels
+        self.gait_feat_num = gait_feat_num
+
         # fcn for prediction
         dim_in = self.encoder.output_filters
         dim_in2 = self.encoder.output_filters + gait_feat_num
-        self.num_joints_predicting = num_joints_predicting
-
-        feat_dim = self.num_joints_predicting *self.in_channels*num_ts_predicting
+        feat_dim = self.num_joints_predicting * self.in_channels*num_ts_predicting
 
         # the pretrain head predicts each joint location at a future time step
         self.pretrain_head = nn.Conv2d(dim_in, feat_dim, kernel_size=1)
 
         # The classifcation head is used in stage 2 to predict the clinical score for each walk
         self.classification_head = nn.Conv2d(dim_in2, 1, kernel_size=1)
-
         self.head = self.pretrain_head
-        self.gait_feat_num = gait_feat_num
+        self.num_class = num_class
 
     def set_classification_head_size(self, num_gait_feats):
         if not self.use_gait_features:
@@ -82,10 +82,9 @@ class ST_GCN_18_ordinal_smaller_2_position_pretrain(nn.Module):
         dim_in2 = self.encoder.output_filters + self.gait_feat_num
         self.classification_head = nn.Conv2d(dim_in2, 1, kernel_size=1)
 
-
     def set_stage_2(self):
         self.head = self.classification_head
-        self.stage_2=True
+        self.stage_2 = True
 
         # print("encoder: ", self.encoder)
         # print('projection head', self.head)
@@ -93,21 +92,22 @@ class ST_GCN_18_ordinal_smaller_2_position_pretrain(nn.Module):
     def forward(self, x, gait_feats):
         # print('input is of size: ', x.size())
         x = x[:, 0:self.in_channels, :, :, :]
-        
+
         # print('input is of size: ', x.size())
 
         # Fine-tuning
         if self.stage_2:
-            x = self.encoder(x) # STGCN output
-            
-            gait_feats = gait_feats.view(gait_feats.size(0), gait_feats.size(1), 1 , 1)
+            x = self.encoder(x)  # STGCN output
+
+            gait_feats = gait_feats.view(
+                gait_feats.size(0), gait_feats.size(1), 1, 1)
             # print('shape of x before encoder is: ', x.size())
             # print('shape of gait feature before encoder is: ', gait_feats.size())
 
             # If we have gait feaures, then combine at the feature level
             if self.use_gait_features:
                 x = torch.cat([x, gait_feats], dim=1)
-                
+
             # prediction
             x = self.head(x)
             x = x.view(x.size(0), -1)
@@ -118,19 +118,17 @@ class ST_GCN_18_ordinal_smaller_2_position_pretrain(nn.Module):
 
             torch.clamp(x, min=-1, max=self.num_class)
 
-
-
         # Pretraining
         else:
             # print("============================================")
             # print('input is of size: ', x.size())
             x = self.encoder(x)
 
-            
             x = self.head(x)
             # print('shape of x before reshaping is: ', x.size())
             # reshape the output to be of size (13x2xnum_ts)
-            x = x.view(x.size(0), self.in_channels, self.num_joints_predicting , -1)
+            x = x.view(x.size(0), self.in_channels,
+                       self.num_joints_predicting, -1)
 
             # print('shape of x after reshaping is: ', x.size())
 

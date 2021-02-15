@@ -539,7 +539,6 @@ def finetune_model(
                                     num_workers=workers,
                                     drop_last=False)
     # Normalize by the train scaler
-
     for d in datasets[1:]:
         d['data_source']['scaler'] = train_dataloader.dataset.get_scaler()
 
@@ -559,6 +558,7 @@ def finetune_model(
     for i in range(len(data_loaders)):
         class_weights_dict[workflow[i][0]] = data_loaders[i].dataset.data_source.get_class_dist()
 
+    # Set up model for finetuning
     set_seed(0)
     model.module.set_classification_head_size(data_loaders[i].dataset.data_source.get_num_gait_feats())
     model.module.set_stage_2()
