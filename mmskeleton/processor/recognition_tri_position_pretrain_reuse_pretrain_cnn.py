@@ -467,7 +467,7 @@ def train(
                 print('failed to delete the participant folder')
 
         except TooManyRetriesException:
-            print("CAUGHT TooManyRetriesException - something is very wrong. Stopping")
+            # print("CAUGHT TooManyRetriesException - something is very wrong. Stopping")
             # sync_wandb(wandb_log_local_group)
 
             break

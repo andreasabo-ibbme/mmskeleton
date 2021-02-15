@@ -90,7 +90,8 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
                 self.gait_feats = df
                 self.num_gait_feats = len(self.gait_feats_names)
 
-            except:
+            except Exception as e:
+                print("something went wrong in gait feature load: ", e)
                 self.gait_feats = None
 
         if self.cache:
