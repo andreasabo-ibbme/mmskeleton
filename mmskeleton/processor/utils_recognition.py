@@ -45,6 +45,15 @@ def get_model_type(model_cfg):
         model_type = "v0"
     elif model_cfg['type'] == 'models.backbones.ST_GCN_18_ordinal_orig_position_pretrain_dynamic_v1':
         model_type = "dynamic_v1"
+    elif model_cfg['type'] == 'models.backbones.cnn_custom_1_pretrain':
+        model_type = "cnn_v1"
+    elif model_cfg['type'] == 'models.backbones.cnn_custom_2_pretrain':
+        model_type = "cnn_v2"
+    elif model_cfg['type'] == 'models.backbones.cnn_custom_3_pretrain':
+        model_type = "cnn_v3"
+    elif model_cfg['type'] == 'models.backbones.cnn_custom_4_pretrain':
+        model_type = "cnn_v4"
+
     else: 
         model_type = model_cfg['type']
 

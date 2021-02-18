@@ -4,10 +4,10 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 from mmskeleton.ops.st_gcn import ConvTemporalGraphical, Graph
-from .cnn_custom_1 import cnn_custom_1
+from .cnn_custom_3 import cnn_custom_3
 
 
-class cnn_custom_1_pretrain(nn.Module):
+class cnn_custom_3_pretrain(nn.Module):
     r"""Spatial temporal graph convolutional networks.
 
     Args:
@@ -47,7 +47,7 @@ class cnn_custom_1_pretrain(nn.Module):
         if not use_gait_features:
             gait_feat_num = 0
 
-        self.encoder = cnn_custom_1(
+        self.encoder = cnn_custom_3(
             in_channels,
             num_class,
             graph_cfg,

@@ -21,7 +21,7 @@ from mmskeleton.processor.supcon_loss import *
 import time
 
 turn_off_wd = True
-fast_dev = True
+fast_dev = False
 log_incrementally = True
 log_code = False
 log_conf_mat = False
@@ -42,8 +42,8 @@ cluster_output_wandb = '/home/asabo/projects/def-btaati/asabo/mmskeleton/wandb_d
 local_output_wandb = '/home/saboa/code/mmskeleton/wandb_dryrun'
 
 local_model_zoo_base = '/home/saboa/data/model_zoo'
-cluster_model_zoo_base = '/home/asabo/projects/def-btaati/asabo/model_zoo'
-cluster_model_zoo_base = '/home/asabo/scratch/model_zoo'
+cluster_model_zoo_base = '/home/asabo/projects/def-btaati/asabo/model_zoo_cnn'
+cluster_model_zoo_base = '/home/asabo/scratch/model_zoo_cnn'
 
 cluster_workdir_base = '/home/asabo/scratch/mmskel'
 

@@ -6,7 +6,7 @@ from torch.autograd import Variable
 from mmskeleton.ops.st_gcn import ConvTemporalGraphical, Graph
 
 
-class cnn_custom_2(nn.Module):
+class cnn_custom_4(nn.Module):
     r"""Spatial temporal graph convolutional networks.
 
     Args:
@@ -30,14 +30,12 @@ class cnn_custom_2(nn.Module):
                  in_channels,
                  num_class,
                  graph_cfg,
-                 temporal_kernel_size,
                  edge_importance_weighting=True,
                  data_bn=True,
                  input_timesteps=120,
                  **kwargs):
         super().__init__()
         print('In CNN custom: ', graph_cfg)
-        print('Additional kwargs: ', kwargs)
         # load graph
         self.graph = Graph(**graph_cfg)
         A = torch.tensor(
@@ -48,36 +46,44 @@ class cnn_custom_2(nn.Module):
         self.data_bn = nn.BatchNorm3d(1) if data_bn else lambda x: x
 
 
-        self.temporal_kernel = temporal_kernel_size
-        self.conv1_filters = 64
+        self.temporal_kernel = 9
+        self.conv1_filters = 128
         self.conv2_filters = 128
-        self.conv3_filters = 128
-        self.conv4_filters = 256
-        self.conv5_filters = 256
+        self.conv3_filters = 256
+        self.conv4_filters = 512
         self.fc1_out = 256
 
-        dropout_config = {k: v for k, v in kwargs.items() if k == 'dropout'}
-
-        self.dropout = nn.Dropout(p = dropout_config.get('dropout', 0.0))
-
         # build the CNN
-        self.conv1 = nn.Conv3d(1, self.conv1_filters, (1, 13, in_channels))
+        self.conv1 = nn.Conv3d(1, self.conv1_filters, (1, 13, 3))
         self.conv2 = nn.Conv1d(self.conv1_filters, self.conv2_filters, self.temporal_kernel)
         self.conv3 = nn.Conv1d(self.conv2_filters, self.conv3_filters, self.temporal_kernel)
         self.conv4 = nn.Conv1d(self.conv3_filters, self.conv4_filters, self.temporal_kernel)
-        self.conv5 = nn.Conv1d(self.conv4_filters, self.conv5_filters, self.temporal_kernel)
 
-        self.num_features_before_fc = (input_timesteps-4*(self.temporal_kernel-1)) * self.conv5_filters
-
-        # print(input_timesteps, self.temporal_kernel, self.conv4_filters)
-        # input(self.num_features_before_fc)
+        self.num_features_before_fc = (input_timesteps-3*(self.temporal_kernel-1)) * self.conv4_filters
 
         self.fc1 = nn.Linear(self.num_features_before_fc, self.fc1_out)
-        self.output_filters = self.fc1_out
+        self.fc2 = nn.Linear(self.fc1_out, 1)
+        self.num_class = num_class
 
-        # Move this to upper level
-        # self.fc2 = nn.Linear(self.fc1_out, 1)
-        # self.num_class = num_class
+# class Net(nn.Module):
+#     def __init__(self):
+#         super(Net, self).__init__()
+#         self.conv1 = nn.Conv2d(3, 6, 5)
+#         self.pool = nn.MaxPool2d(2, 2)
+#         self.conv2 = nn.Conv2d(6, 16, 5)
+#         self.fc1 = nn.Linear(16 * 5 * 5, 120)
+#         self.fc2 = nn.Linear(120, 84)
+#         self.fc3 = nn.Linear(84, 10)
+
+#     def forward(self, x):
+#         x = self.pool(F.relu(self.conv1(x)))
+#         x = self.pool(F.relu(self.conv2(x)))
+#         x = x.view(-1, 16 * 5 * 5)
+#         x = F.relu(self.fc1(x))
+#         x = F.relu(self.fc2(x))
+#         x = self.fc3(x)
+#         return x
+
 
     def forward(self, x):
         # Reshape the input to be of size [bs, 1, timestamps, num_joints, num_coords] 
@@ -89,16 +95,17 @@ class cnn_custom_2(nn.Module):
         x = x.squeeze()
 
         # 1d conv
-        x = self.dropout(F.relu(self.conv2(x)))
-        x = self.dropout(F.relu(self.conv3(x)))
-        x = self.dropout(F.relu(self.conv4(x)))
-        x = self.dropout(F.relu(self.conv5(x)))
-
+        x = F.relu(self.conv2(x))
+        x = F.relu(self.conv3(x))
+        x = F.relu(self.conv4(x))
         x = x.view(-1, self.num_features_before_fc)
 
         x = F.relu(self.fc1(x))
-        # x = F.relu(self.fc2(x))
-        # torch.clamp(x, min=-1, max=self.num_class)
+        x = F.relu(self.fc2(x))
+        torch.clamp(x, min=-1, max=self.num_class)
+
+
+
 
         return x
 

@@ -55,6 +55,10 @@ class cnn_custom_1(nn.Module):
         self.conv4_filters = 256                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
         self.fc1_out = 256
 
+        dropout_config = {k: v for k, v in kwargs.items() if k == 'dropout'}
+
+        self.dropout = nn.Dropout(p = dropout_config.get('dropout', 0.0))
+
         # build the CNN
         self.conv1 = nn.Conv3d(1, self.conv1_filters, (1, 13, in_channels))
         self.conv2 = nn.Conv1d(self.conv1_filters, self.conv2_filters, self.temporal_kernel)
@@ -83,9 +87,9 @@ class cnn_custom_1(nn.Module):
         x = x.squeeze()
 
         # 1d conv
-        x = F.relu(self.conv2(x))
-        x = F.relu(self.conv3(x))
-        x = F.relu(self.conv4(x))
+        x = self.dropout(F.relu(self.conv2(x)))
+        x = self.dropout(F.relu(self.conv3(x)))
+        x = self.dropout(F.relu(self.conv4(x)))
         x = x.view(-1, self.num_features_before_fc)
 
         x = F.relu(self.fc1(x))
