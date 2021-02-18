@@ -15,7 +15,7 @@ argparse_cfg:
 processor_cfg:
   type: 'processor.recognition_tri_position_pretrain_reuse_pretrain_cnn.train'
   workers: 1
-  test_ids: [48] #, 47, 34, 37, 27, 39, 46, 50, 52, 55, 57, 59, 66, 33]
+  test_ids: [48, 47, 34, 37, 27, 39, 46, 50, 52, 55, 57, 59, 66, 33]
   cv: 5
   exclude_cv: False
   notes: "two_part_loss"
@@ -34,17 +34,17 @@ processor_cfg:
   head: "stgcn"
   train_extrema_for_epochs: 25
   do_position_pretrain: False
-  model_save_root: "alphapose_nov30" 
+  model_save_root: "openpose_cnn" 
   # model setting
   model_cfg:
-    type: 'models.backbones.ST_GCN_18_ordinal_smaller_2_position_pretrain'
+    type: 'models.backbones.cnn_custom_3_pretrain'
     in_channels: 2
     num_class: 4
     edge_importance_weighting: True
     dropout: 0.0
     num_ts_predicting: 1
     num_joints_predicting: 4
-    temporal_kernel_size: 9
+    temporal_kernel_size: 5
     graph_cfg:
       layout: 'coco_simplified_head'
       strategy: 'spatial'
@@ -59,7 +59,7 @@ processor_cfg:
     - type: "datasets.DataPipeline"
       data_source:
         type: "datasets.SkeletonLoaderTRI"
-        data_dir: skel_data_alphapose/stgcn_normalized_100_center_all_no_norm_plus_belmont
+        data_dir: skel_data_openpose/stgcn_normalized_100_center_all_no_norm_plus_belmont
         num_track: 1
         num_keypoints: 13
         repeat: 1
@@ -84,7 +84,7 @@ processor_cfg:
     - type: "datasets.DataPipeline"
       data_source:
         type: "datasets.SkeletonLoaderTRI"
-        data_dir: skel_data_alphapose/stgcn_normalized_100_center_pd_no_norm
+        data_dir: skel_data_openpose/stgcn_normalized_100_center_pd_no_norm
         use_gait_feats: False
         num_track: 1
         num_keypoints: 13
