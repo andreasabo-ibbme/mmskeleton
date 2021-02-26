@@ -358,7 +358,7 @@ def train(
                     path_to_pretrained_model = os.path.join(model_zoo_root, model_save_root, model_type, \
                                                             str(model_cfg['temporal_kernel_size']), str(model_cfg['dropout']), str(test_id))
 
-                    path_to_saved_dataloaders = os.path.join(dataloader_temp, model_save_root, str(num_reps_pd), \
+                    path_to_saved_dataloaders = os.path.join(dataloader_temp, outcome_label, model_save_root, str(num_reps_pd), \
                                                             "gait_feats_" + str(model_cfg['use_gait_features']), str(test_id))
                     
 
