@@ -46,6 +46,9 @@ cluster_model_zoo_base = '/home/asabo/projects/def-btaati/asabo/model_zoo_cnn'
 cluster_model_zoo_base = '/home/asabo/scratch/model_zoo_cnn'
 
 cluster_workdir_base = '/home/asabo/scratch/mmskel'
+local_dataloader_temp = '/home/saboa/data/dataloader_temp'
+cluster_dataloader_temp = '/home/asabo/scratch/dataloader_temp'
+
 
 
 def train(
@@ -151,12 +154,15 @@ def train(
         wandb_log_local_group = os.path.join(local_output_wandb, wandb_local_id)
 
         model_zoo_root = local_model_zoo_base
+        dataloader_temp = local_dataloader_temp
+
         for i in range(len(dataset_cfg)):
             dataset_cfg[i]['data_source']['data_dir'] = os.path.join(local_data_base, dataset_cfg[i]['data_source']['data_dir'])
     else: # launching from the cluster
         global fast_dev
         fast_dev = False
         model_zoo_root = cluster_model_zoo_base
+        dataloader_temp = cluster_dataloader_temp
 
         for i in range(len(dataset_cfg)):
             dataset_cfg[i]['data_source']['data_dir'] = os.path.join(cluster_data_base, dataset_cfg[i]['data_source']['data_dir'])
@@ -194,8 +200,8 @@ def train(
     pd_all_files.sort()
     pd_all_file_names_only.sort()
 
-    original_wandb_group = wandb_group
-    workflow_orig = copy.deepcopy(workflow)
+    # original_wandb_group = wandb_group
+    # workflow_orig = copy.deepcopy(workflow)
 
     # Retest variables
 
@@ -352,6 +358,10 @@ def train(
                     path_to_pretrained_model = os.path.join(model_zoo_root, model_save_root, model_type, \
                                                             str(model_cfg['temporal_kernel_size']), str(model_cfg['dropout']), str(test_id))
 
+                    path_to_saved_dataloaders = os.path.join(dataloader_temp, model_save_root, str(num_reps_pd), \
+                                                            "gait_feats_" + str(model_cfg['use_gait_features']), str(test_id))
+                    
+
                     print('path_to_pretrained_model', path_to_pretrained_model)
                     if not os.path.exists(path_to_pretrained_model):
                         os.makedirs(path_to_pretrained_model)
@@ -381,7 +391,8 @@ def train(
                         es_patience_1,
                         es_start_up_1, 
                         do_position_pretrain, 
-                        path_to_pretrained_model
+                        path_to_pretrained_model, 
+                        path_to_saved_dataloaders
                         )
 
 
@@ -453,7 +464,8 @@ def train(
                                 es_start_up_2, 
                                 freeze_encoder, 
                                 num_class,
-                                train_extrema_for_epochs)
+                                train_extrema_for_epochs, 
+                                path_to_saved_dataloaders)
 
                     # # Summary stats for this rep
                     # results_df = final_stats_per_trial(final_results_path, wandb_group, wandb_project, num_class, workflow, num_epochs, results_df)
@@ -528,30 +540,50 @@ def finetune_model(
         freeze_encoder=False, 
         num_class=4,
         train_extrema_for_epochs=0,
+        path_to_saved_dataloaders=None
 ):
     print("Starting STAGE 2: Fine-tuning...")
 
-    set_seed(0)
+    load_data = True
+    base_dl_path = os.path.join(path_to_saved_dataloaders, 'finetuning') 
+    full_dl_path = os.path.join(base_dl_path, 'data.pt')
+    os.makedirs(base_dl_path, exist_ok=True) 
+    if os.path.isfile(full_dl_path):
+        try:
+            data_loaders = torch.load(full_dl_path)
+            load_data = False
+        except:
+            print(f'failed to load dataloaders from file: {full_dl_path}, loading from individual files')
 
-    train_dataloader = torch.utils.data.DataLoader(dataset=call_obj(**datasets[0]),
-                                    batch_size=batch_size,
-                                    shuffle=True,
-                                    num_workers=workers,
-                                    drop_last=False)
-    # Normalize by the train scaler
-    for d in datasets[1:]:
-        d['data_source']['scaler'] = train_dataloader.dataset.get_scaler()
+    if load_data:
+        set_seed(0)
 
-    data_loaders = [
-        torch.utils.data.DataLoader(dataset=call_obj(**d),
-                                    batch_size=batch_size,
-                                    shuffle=True,
-                                    num_workers=workers,
-                                    drop_last=False) for d in datasets[1:]
-    ]
+        train_dataloader = torch.utils.data.DataLoader(dataset=call_obj(**datasets[0]),
+                                        batch_size=batch_size,
+                                        shuffle=True,
+                                        num_workers=workers,
+                                        drop_last=False)
+    
 
-    data_loaders.insert(0, train_dataloader) # insert the train dataloader
-    data_loaders[0].dataset.data_source.sample_extremes = True
+        # Normalize by the train scaler
+        for d in datasets[1:]:
+            d['data_source']['scaler'] = train_dataloader.dataset.get_scaler()
+
+        data_loaders = [
+            torch.utils.data.DataLoader(dataset=call_obj(**d),
+                                        batch_size=batch_size,
+                                        shuffle=True,
+                                        num_workers=workers,
+                                        drop_last=False) for d in datasets[1:]
+        ]
+
+        data_loaders.insert(0, train_dataloader) # insert the train dataloader
+        data_loaders[0].dataset.data_source.sample_extremes = True
+
+        # Save for next time
+        torch.save(data_loaders, full_dl_path)
+        
+
     workflow = [tuple(w) for w in workflow]
     global balance_classes
     global class_weights_dict
@@ -620,7 +652,8 @@ def pretrain_model(
         es_patience=10,
         es_start_up=50,
         do_position_pretrain=True, 
-        path_to_pretrained_model=None):
+        path_to_pretrained_model=None, 
+        path_to_saved_dataloaders=None):
     print("============= Starting STAGE 1: Pretraining...")
     print(path_to_pretrained_model)
     set_seed(0)
@@ -676,14 +709,27 @@ def pretrain_model(
     model.apply(weights_init)
     model = MMDataParallel(model, device_ids=range(gpus)).cuda()
 
-    set_seed(0)
-    data_loaders = [
-        torch.utils.data.DataLoader(dataset=call_obj(**d),
-                                    batch_size=batch_size,
-                                    shuffle=True,
-                                    num_workers=workers,
-                                    drop_last=False) for d in datasets
-    ]
+
+    load_data = True
+    base_dl_path = os.path.join(path_to_saved_dataloaders, 'finetuning') 
+    full_dl_path = os.path.join(base_dl_path, 'data.pt')
+    os.makedirs(base_dl_path, exist_ok=True)     
+    if os.path.isfile(full_dl_path):
+        try:
+            data_loaders = torch.load(full_dl_path)
+            load_data = False
+        except:
+            print(f'failed to load dataloaders from file: {full_dl_path}, loading from individual files')
+
+    if load_data:
+        set_seed(0)
+        data_loaders = [
+            torch.utils.data.DataLoader(dataset=call_obj(**d),
+                                        batch_size=batch_size,
+                                        shuffle=True,
+                                        num_workers=workers,
+                                        drop_last=False) for d in datasets
+        ]
 
     global balance_classes
     global class_weights_dict
