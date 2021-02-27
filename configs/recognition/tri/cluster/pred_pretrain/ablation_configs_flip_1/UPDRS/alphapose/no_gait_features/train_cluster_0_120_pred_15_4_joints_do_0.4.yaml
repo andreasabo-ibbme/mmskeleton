@@ -13,7 +13,7 @@ argparse_cfg:
 
 
 processor_cfg:
-  type: 'processor.recognition_tri_position_pretrain_reuse_pretrain.train'
+  type: 'processor.recognition_tri_position_pretrain_reuse_pretrain_save_dl.train'
   workers: 1
   test_ids: [48, 47, 34, 37, 27, 39, 46, 50, 52, 55, 57, 59, 66, 33]
   cv: 5
@@ -22,7 +22,7 @@ processor_cfg:
   group_notes: "120_v0_pred15_ankles_wrists_wing_do_0.1"
   weight_classes: True
   flip_loss: 1
-  launch_from_local: False
+  launch_from_local: True
   wandb_project: "UPDRS_ABLATION_FLIPLOSS"
   early_stopping: True
   force_run_all_epochs: False

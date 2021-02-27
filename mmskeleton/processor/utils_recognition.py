@@ -217,6 +217,7 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
             losses = weighted_mae_loss(output, y_true, class_weights_dict)
     # Convert the output to classes and clip from 0 to number of classes
     y_pred_rounded = output.detach().cpu().numpy()
+    y_pred_rounded = np.nan_to_num(y_pred_rounded)
     output = y_pred_rounded
     output_list = output.squeeze().tolist()
     y_pred_rounded = y_pred_rounded.reshape(1, -1).squeeze()
@@ -244,6 +245,9 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
     raw_labels = copy.deepcopy(labels)
     # print(raw_labels)
     try:
+        # Dealing with NaN and converting to ints
+        labels = [0 if x != x else x for x in labels]
+        preds = [0 if x != x else x for x in preds]
         labels = [int(round(cl)) for cl in labels]
         preds = [int(round(cl)) for cl in preds]
     except Exception as e:
