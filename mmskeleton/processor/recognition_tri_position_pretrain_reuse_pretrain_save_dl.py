@@ -50,7 +50,7 @@ cluster_model_zoo_base = '/home/asabo/scratch/model_zoo_cnn'
 cluster_workdir_base = '/home/asabo/scratch/mmskel'
 
 local_dataloader_temp = '/home/saboa/data/shared_from_cluster/dataloaders'
-cluster_dataloader_temp = '/home/asabo/scratch/dataloader_temp'
+cluster_dataloader_temp = '/home/asabo/scratch/dataloaders'
 
 
 
