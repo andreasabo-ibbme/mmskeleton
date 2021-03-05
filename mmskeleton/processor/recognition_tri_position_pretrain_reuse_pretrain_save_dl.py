@@ -683,7 +683,7 @@ def pretrain_model(
     #     print(param.data)
 
 
-
+    print("path_to_pretrained_model===============================================================", path_to_pretrained_model)
     if not do_position_pretrain:
         print("SKIPPING PRETRAINING-------------------")
         model = MMDataParallel(model, device_ids=range(gpus)).cuda()
