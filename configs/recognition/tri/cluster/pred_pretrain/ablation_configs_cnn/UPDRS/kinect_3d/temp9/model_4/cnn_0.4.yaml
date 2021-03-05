@@ -22,7 +22,7 @@ processor_cfg:
   group_notes: "120_v2_pred15_ankles_wrists_wing_do_0.1"
   weight_classes: True
   flip_loss: 0
-  launch_from_local: True
+  launch_from_local: False
   wandb_project: "UPDRS_CNN_ABLATION"
   early_stopping: True
   force_run_all_epochs: False

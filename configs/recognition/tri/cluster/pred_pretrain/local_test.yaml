@@ -22,7 +22,7 @@ processor_cfg:
   group_notes: "SAS_10_120_pred_15_do_0.1"
   weight_classes: True
   flip_loss: 0
-  launch_from_local: True
+  launch_from_local: False
   wandb_project: "dev"
   early_stopping: True
   force_run_all_epochs: False

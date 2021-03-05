@@ -22,7 +22,7 @@ processor_cfg:
   group_notes: "TESTv2"
   weight_classes: True
   flip_loss: 0
-  launch_from_local: True
+  launch_from_local: False
   wandb_project: "testing_stop10"
   early_stopping: True
   force_run_all_epochs: False
