@@ -45,7 +45,7 @@ local_output_wandb = '/home/saboa/code/mmskeleton/wandb_dryrun'
 
 local_model_zoo_base = '/home/saboa/data/shared_from_cluster/model_zoo/model_zoo'
 cluster_model_zoo_base = '/home/asabo/projects/def-btaati/asabo/model_zoo_cnn'
-cluster_model_zoo_base = '/home/asabo/scratch/model_zoo_cnn'
+cluster_model_zoo_base = '/home/asabo/scratch/model_zoo'
 
 cluster_workdir_base = '/home/asabo/scratch/mmskel'
 
