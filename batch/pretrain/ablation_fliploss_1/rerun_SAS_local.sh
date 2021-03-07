@@ -11,7 +11,7 @@ cd /home/saboa/code/mmskeleton
 # python mmskl.py configs/recognition/tri/cluster/pred_pretrain/ablation_configs_flip_1/UPDRS/openpose/gait_features/train_cluster_2_120_pred_15_4_joints_do_0.1.yaml
 
 # python mmskl.py configs/recognition/tri/cluster/pred_pretrain/ablation_configs_flip_1/UPDRS/kinect_3d/gait_features/train_cluster_2_120_pred_15_4_joints_do_0.0.yaml
-python mmskl.py configs/recognition/tri/cluster/pred_pretrain/ablation_configs_flip_1/UPDRS/kinect_3d/gait_features/train_cluster_2_120_pred_15_4_joints_do_0.0.yaml
+python mmskl.py configs/recognition/tri/cluster/pred_pretrain/ablation_configs_flip_1/SAS/kinect_3d/gait_features/train_cluster_2_120_pred_15_4_joints_do_0.0.yaml
 # cd /home/asabo/projects/def-btaati/asabo/mmskeleton/batch/pretrain/ablation_fliploss_1/UPDRS/alphapose
 
 # sbatch gait_features/config_1.sh #DONE
