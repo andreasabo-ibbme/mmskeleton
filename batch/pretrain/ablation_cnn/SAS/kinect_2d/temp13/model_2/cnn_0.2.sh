@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --gres=gpu:1              # Number of GPUs (per node)
 #SBATCH --mem=16000               # memory (per node)
-#SBATCH --cpus-per-task=8
+#SBATCH --cpus-per-task=4
 #SBATCH --time=0-11:59            # time (DD-HH:MM)
 #SBATCH --job-name=SAS_kinect_2d_cnn
 #SBATCH --output=%x-%j_32hour.out
