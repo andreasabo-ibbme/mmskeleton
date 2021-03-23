@@ -48,6 +48,7 @@ cluster_model_zoo_base = '/home/asabo/projects/def-btaati/asabo/model_zoo_cnn'
 cluster_model_zoo_base = '/home/asabo/scratch/model_zoo'
 
 cluster_workdir_base = '/home/asabo/scratch/mmskel'
+local_workdir_base = '/home/saboa/data/scratch/mmskel'
 
 local_dataloader_temp = '/home/saboa/data/shared_from_cluster/dataloaders'
 cluster_dataloader_temp = '/home/asabo/scratch/dataloaders'
@@ -153,7 +154,7 @@ def train(
 
     # Correctly set the full data path
     if launch_from_local:
-        work_dir = os.path.join(local_data_base, work_dir)
+        work_dir = os.path.join(local_workdir_base, work_dir)
         wandb_log_local_group = os.path.join(local_output_wandb, wandb_local_id)
 
         model_zoo_root = local_model_zoo_base
@@ -556,7 +557,12 @@ def finetune_model(
     if os.path.isfile(full_dl_path):
         try:
             data_loaders = torch.load(full_dl_path)
+            print("Loaded data size:")
+            for dl in data_loaders:
+                print(len(dl.dataset.data_source))
             load_data = False
+
+
         except:
             print(f'failed to load dataloaders from file: {full_dl_path}, loading from individual files')
 
@@ -588,6 +594,9 @@ def finetune_model(
         # Save for next time
         torch.save(data_loaders, full_dl_path)
         
+        print("Loaded from file data size:")
+        for dl in data_loaders:
+            print(len(dl.dataset.data_source))
 
     workflow = [tuple(w) for w in workflow]
     global balance_classes
