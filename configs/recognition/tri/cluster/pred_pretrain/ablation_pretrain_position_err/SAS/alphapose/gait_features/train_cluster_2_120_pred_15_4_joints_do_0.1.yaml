@@ -15,7 +15,7 @@ argparse_cfg:
 processor_cfg:
   type: 'processor.pretrain_position_ablation.eval'
   workers: 1
-  test_ids: [48, 47] #, 47, 34, 37, 27, 39, 46, 50, 52, 55, 57, 59, 66, 33]
+  test_ids: [48, 47, 34, 37, 27, 39, 46, 50, 52, 55, 57, 59, 66, 33]
   cv: 5
   exclude_cv: True
   notes: "two_part_loss"

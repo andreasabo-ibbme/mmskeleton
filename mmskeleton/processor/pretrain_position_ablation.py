@@ -25,7 +25,7 @@ fast_dev = False
 log_incrementally = True
 log_code = False
 log_conf_mat = False
-os.environ['WANDB_MODE'] = 'dryrun'
+# os.environ['WANDB_MODE'] = 'dryrun'
 
 
 # Global variables
@@ -446,23 +446,28 @@ def eval(
     # else:
     #     final_stats_numbered(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, cv)
     print("done all participants: ")
-    input(len(name_all))
+    print(len(name_all))
 
+    log_vars = log_pretrain_summary(predicted_joint_positions_all, last_joint_position_all, true_future_joint_positions_all, name_all)
 
-    if not log_incrementally:
-        sync_wandb(wandb_log_local_group)
-    else:
-        try:
-            robust_rmtree(wandb_log_local_group)
-        except:
-            pass
+    wandb.init(dir=wandb_log_local_group, name=wandb_group, project=wandb_project)
+    wandb.log(things_to_log)
+    wandb.log(log_vars)
 
-    # Delete the work_dir
-    try:
-        shutil.rmtree(work_dir)
-    except:
-        logging.exception('This: ')
-        print('failed to delete the work_dir folder: ', work_dir)
+    # if not log_incrementally:
+    #     sync_wandb(wandb_log_local_group)
+    # else:
+    #     try:
+    #         robust_rmtree(wandb_log_local_group)
+    #     except:
+    #         pass
+
+    # # Delete the work_dir
+    # try:
+    #     shutil.rmtree(work_dir)
+    # except:
+    #     logging.exception('This: ')
+    #     print('failed to delete the work_dir folder: ', work_dir)
 
 
 def finetune_model(
@@ -798,24 +803,7 @@ def batch_processor_position_pretraining(model, datas, train_mode, loss, num_cla
     # input('c2')
     # print(last_joint_position_ref[0])
     # input('check')
-    # Losses
-    mse_loss_obj = torch.nn.MSELoss()
-    mae_loss_obj = torch.nn.L1Loss()
-    wing_loss_obj = loss
 
-    # print(predicted_joint_positions.shape)
-    # input('p')
-    # print(labels_correct_dim.shape)
-    # input('q')
-    mse_loss_pred = mse_loss_obj(predicted_joint_positions, labels_correct_dim)
-    mae_loss_pred = mae_loss_obj(predicted_joint_positions, labels_correct_dim)
-    wing_loss_pred = wing_loss_obj(predicted_joint_positions, labels_correct_dim)
-
-    mse_loss_last_pos = mse_loss_obj(last_joint_position, labels_correct_dim)
-    mae_loss_last_pos = mae_loss_obj(last_joint_position, labels_correct_dim)
-    wing_loss_last_pos = wing_loss_obj(last_joint_position, labels_correct_dim)
-    # print("mse_loss_pred:", mse_loss_pred, "mae_loss_pred:", mae_loss_pred, "wing_loss_pred:", wing_loss_pred)
-    # print("mse_loss_last_pos:", mse_loss_last_pos, "mae_loss_last_pos:", mae_loss_last_pos, "wing_loss_last_pos:", wing_loss_last_pos)
 
     # input("mse_loss")
 
@@ -829,9 +817,38 @@ def batch_processor_position_pretraining(model, datas, train_mode, loss, num_cla
         label_placeholders = [label_placeholders]
 
     log_vars = dict(loss_pretrain_position=batch_loss.item())
-    output_labels = dict(names=names_clean, predicted_joint_positions=predicted_joint_positions, true=label_placeholders,\
+    output_labels = dict(names=names_clean, predicted_joint_positions=predicted_joint_positions.tolist(), true=label_placeholders,\
                          pred=preds, raw_preds=raw_preds, num_ts=num_ts,\
-                         last_joint_position=last_joint_position, true_future_joint_positions=labels_correct_dim)
+                         last_joint_position=last_joint_position.tolist(), true_future_joint_positions=labels_correct_dim.tolist())
     outputs = dict(predicted_joint_positions=predicted_joint_positions, loss=batch_loss, log_vars=log_vars, num_samples=num_valid_samples)
 
     return outputs, output_labels, batch_loss.item()
+
+
+def log_pretrain_summary(predicted_joint_positions, last_joint_positions, true_future_joint_positions, name):
+    # Losses
+    mse_loss_obj = torch.nn.MSELoss()
+    mae_loss_obj = torch.nn.L1Loss()
+    wing_loss_obj = WingLoss()
+
+    joint_dict = {'all': [0, 1, 2, 3], 'wrists': [0, 1], 'ankles': [2, 3]}
+    log_vars = {}
+
+    # Convert lists back to tensors
+    predicted_joint_positions = torch.tensor(predicted_joint_positions)
+    last_joint_positions = torch.tensor(last_joint_positions)
+    true_future_joint_positions = torch.tensor(true_future_joint_positions)
+
+    for joint_names in joint_dict:
+        joint_ids = joint_dict[joint_names]
+
+        log_vars[joint_names +"_mse_loss_pred_pretrained"] = mse_loss_obj(predicted_joint_positions[:, :, joint_ids, :], true_future_joint_positions[:, :, joint_ids, :])
+        log_vars[joint_names +"_mae_loss_pred_pretrained"] = mae_loss_obj(predicted_joint_positions[:, :, joint_ids, :], true_future_joint_positions[:, :, joint_ids, :])
+        log_vars[joint_names +"_wing_loss_pred_pretrained"] = wing_loss_obj(predicted_joint_positions[:, :, joint_ids, :], true_future_joint_positions[:, :, joint_ids, :])
+
+        log_vars[joint_names +"_mse_loss_pred_last"] = mse_loss_obj(last_joint_positions[:, :, joint_ids, :], true_future_joint_positions[:, :, joint_ids, :])
+        log_vars[joint_names +"_mae_loss_pred_last"] = mae_loss_obj(last_joint_positions[:, :, joint_ids, :], true_future_joint_positions[:, :, joint_ids, :])
+        log_vars[joint_names +"_wing_loss_pred_last"] = wing_loss_obj(last_joint_positions[:, :, joint_ids, :], true_future_joint_positions[:, :, joint_ids, :])
+
+
+    return log_vars

@@ -13,17 +13,17 @@ argparse_cfg:
 
 
 processor_cfg:
-  type: 'processor.recognition_tri_position_pretrain_reuse_pretrain_save_dl.train'
+  type: 'processor.pretrain_position_ablation.eval'
   workers: 1
   test_ids: [48, 47, 34, 37, 27, 39, 46, 50, 52, 55, 57, 59, 66, 33]
   cv: 5
-  exclude_cv: False
+  exclude_cv: True
   notes: "two_part_loss"
   group_notes: "120_v2_pred15_ankles_wrists_wing_do_0.1"
   weight_classes: True
   flip_loss: 1
-  launch_from_local: False
-  wandb_project: "SAS_ABLATION_FLIPLOSS"
+  launch_from_local: True
+  wandb_project: "pretrain_ablation"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 25
@@ -107,7 +107,7 @@ processor_cfg:
         - {type: "datasets.skeleton.transpose", order: [0, 2, 1, 3]}
         - {type: "datasets.skeleton.to_tuple"}
   # dataloader setting
-  batch_size: 100
+  batch_size: 1000
   gpus: 1
 
   # optimizer setting
