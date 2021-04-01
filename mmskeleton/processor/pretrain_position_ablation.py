@@ -147,11 +147,6 @@ def eval(
         model_cfg['use_gait_features'] = dataset_cfg[1]['data_source']['use_gait_feats']
 
 
-
-
-
-
-
     wandb_local_id = wandb.util.generate_id()
 
     # Correctly set the full data path
@@ -215,6 +210,7 @@ def eval(
     true_future_joint_positions_all = []
     name_all = []
 
+    predicted_joint_positions_ref_all, last_joint_position_ref_all, true_future_joint_positions_ref_all = [], [], []
 
     for test_id in test_ids:
         try:
@@ -387,7 +383,7 @@ def eval(
                     # input(simple_work_dir_amb)
                     # input(work_dir_amb)
 
-                    predicted_joint_positions, last_joint_position, true_future_joint_positions, names  = pretrain_model(
+                    predicted_joint_positions, last_joint_position, true_future_joint_positions, predicted_joint_positions_ref, last_joint_position_ref, true_future_joint_positions_ref, names = pretrain_model(
                         work_dir_amb,
                         simple_work_dir_amb,
                         model_cfg,
@@ -418,6 +414,9 @@ def eval(
                     predicted_joint_positions_all.extend(predicted_joint_positions)
                     last_joint_position_all.extend(last_joint_position)
                     true_future_joint_positions_all.extend(true_future_joint_positions)
+                    predicted_joint_positions_ref_all.extend(predicted_joint_positions_ref)
+                    last_joint_position_ref_all.extend(last_joint_position_ref)
+                    true_future_joint_positions_ref_all.extend(true_future_joint_positions_ref)
                     name_all.extend(names)
                    
             # try:
@@ -448,7 +447,9 @@ def eval(
     print("done all participants: ")
     print(len(name_all))
 
-    log_vars = log_pretrain_summary(predicted_joint_positions_all, last_joint_position_all, true_future_joint_positions_all, name_all)
+    log_vars = log_pretrain_summary(predicted_joint_positions_all, last_joint_position_all, \
+        true_future_joint_positions_all, predicted_joint_positions_ref_all, last_joint_position_ref_all,\
+            true_future_joint_positions_ref_all, name_all)
 
     wandb.init(dir=wandb_log_local_group, name=wandb_group, project=wandb_project)
     wandb.log(things_to_log)
@@ -700,6 +701,7 @@ def pretrain_model(
                                         drop_last=False) for d in datasets
         ]
 
+    # input(datasets)
     global balance_classes
     global class_weights_dict
 
@@ -726,10 +728,10 @@ def pretrain_model(
     print('in pretrain workflow: ', workflow)
     workflow = [tuple(w) for w in workflow]
     # [('train', 5), ('val', 1)]
-    predicted_joint_positions, last_joint_position, true_future_joint_positions, names  = runner.eval_pretrain(data_loaders, workflow, 1, loss=loss, supcon_pretraining=True)
+    predicted_joint_positions, last_joint_position, true_future_joint_positions, predicted_joint_positions_ref, last_joint_position_ref, true_future_joint_positions_ref, names  = runner.eval_pretrain(data_loaders, workflow, 1, loss=loss, supcon_pretraining=True)
     # input('done with model pretraining')
 
-    return predicted_joint_positions, last_joint_position, true_future_joint_positions, names 
+    return predicted_joint_positions, last_joint_position, true_future_joint_positions, predicted_joint_positions_ref, last_joint_position_ref, true_future_joint_positions_ref, names
 
 
 def unnormalize_by_resolution(data):
@@ -762,6 +764,10 @@ def batch_processor_position_pretraining(model, datas, train_mode, loss, num_cla
         data = data['data'].type(dtype)
 
     data_all = data.cuda()
+    # print(data_all[0, 0, :, :, :])
+    # print(data_all.shape)
+    # print(name[0])
+    # input('here')
 
     gait_features_all = gait_features.cuda()
 
@@ -792,20 +798,32 @@ def batch_processor_position_pretraining(model, datas, train_mode, loss, num_cla
     # print('labels shape:', label.shape, 'data shape:', data.shape)
     # input('shapes')
 
+    # input(labels_correct_dim)
     last_joint_position = data[:, 0:dim[1], -1, joint_inds, :]
     last_joint_position_ref = copy.deepcopy(last_joint_position)
+    predicted_joint_positions_ref = copy.deepcopy(predicted_joint_positions)
+    labels_correct_dim_ref = copy.deepcopy(labels_correct_dim)
     unnormalize_by_resolution(last_joint_position)
     unnormalize_by_resolution(predicted_joint_positions)
     unnormalize_by_resolution(labels_correct_dim)
-    # input(last_joint_position.shape)
 
-    # print(last_joint_position_unnormed[0])
-    # input('c2')
-    # print(last_joint_position_ref[0])
-    # input('check')
+    # joint_ids = [0, 1, 2, 3]
+    # mae_loss_obj = torch.nn.L1Loss(reduction='none')
+    # mae_loss_overall = torch.nn.L1Loss()
+    # loss_mae = mae_loss_obj(last_joint_position_ref[:, :, joint_ids, :], labels_correct_dim_ref[:, :, joint_ids, :])
+    # loss_mae_overall = mae_loss_overall(last_joint_position_ref[:, :, joint_ids, :], labels_correct_dim_ref[:, :, joint_ids, :])
+    # loss_per_walk = torch.sum(loss_mae, dim=2)
+    # loss_per_walk = torch.sum(loss_per_walk, dim=1)
+    # max_val = torch.max(loss_per_walk)
+    # max_ind = torch.argmax(loss_per_walk)
 
+    # print("loss_mae", max_val)
+    # print("max_ind", max_ind)
+    # print("max_ind", loss_per_walk.shape)
+    # print(names_clean[max_ind])
+    # print("loss_mae_overall", loss_mae_overall.shape)
 
-    # input("mse_loss")
+    # input('pause')
 
     preds = []
     raw_preds = []
@@ -819,13 +837,16 @@ def batch_processor_position_pretraining(model, datas, train_mode, loss, num_cla
     log_vars = dict(loss_pretrain_position=batch_loss.item())
     output_labels = dict(names=names_clean, predicted_joint_positions=predicted_joint_positions.tolist(), true=label_placeholders,\
                          pred=preds, raw_preds=raw_preds, num_ts=num_ts,\
-                         last_joint_position=last_joint_position.tolist(), true_future_joint_positions=labels_correct_dim.tolist())
+                         last_joint_position=last_joint_position.tolist(), true_future_joint_positions=labels_correct_dim.tolist(),\
+                         last_joint_position_ref=last_joint_position_ref.tolist(), true_future_joint_position_ref=labels_correct_dim_ref.tolist(),\
+                         predicted_joint_positions_ref=predicted_joint_positions_ref.tolist())
     outputs = dict(predicted_joint_positions=predicted_joint_positions, loss=batch_loss, log_vars=log_vars, num_samples=num_valid_samples)
 
     return outputs, output_labels, batch_loss.item()
 
 
-def log_pretrain_summary(predicted_joint_positions, last_joint_positions, true_future_joint_positions, name):
+def log_pretrain_summary(predicted_joint_positions, last_joint_positions, true_future_joint_positions, \
+    predicted_joint_positions_ref_all, last_joint_position_ref_all, true_future_joint_positions_ref_all,name):
     # Losses
     mse_loss_obj = torch.nn.MSELoss()
     mae_loss_obj = torch.nn.L1Loss()
@@ -838,17 +859,44 @@ def log_pretrain_summary(predicted_joint_positions, last_joint_positions, true_f
     predicted_joint_positions = torch.tensor(predicted_joint_positions)
     last_joint_positions = torch.tensor(last_joint_positions)
     true_future_joint_positions = torch.tensor(true_future_joint_positions)
+    predicted_joint_positions_ref_all = torch.tensor(predicted_joint_positions_ref_all)
+    last_joint_position_ref_all = torch.tensor(last_joint_position_ref_all)
+    true_future_joint_positions_ref_all = torch.tensor(true_future_joint_positions_ref_all)
 
     for joint_names in joint_dict:
         joint_ids = joint_dict[joint_names]
+        norm_factor_mae = mae_loss_obj(last_joint_positions[:, :, joint_ids, :], true_future_joint_positions[:, :, joint_ids, :]) / \
+            mae_loss_obj(last_joint_position_ref_all[:, :, joint_ids, :], true_future_joint_positions_ref_all[:, :, joint_ids, :])
 
+        norm_factor_mse = mse_loss_obj(last_joint_positions[:, :, joint_ids, :], true_future_joint_positions[:, :, joint_ids, :]) / \
+            mse_loss_obj(last_joint_position_ref_all[:, :, joint_ids, :], true_future_joint_positions_ref_all[:, :, joint_ids, :])
+
+        norm_factor_wing = wing_loss_obj(last_joint_positions[:, :, joint_ids, :], true_future_joint_positions[:, :, joint_ids, :]) / \
+            wing_loss_obj(last_joint_position_ref_all[:, :, joint_ids, :], true_future_joint_positions_ref_all[:, :, joint_ids, :])
+
+        # print("unnormed_last", mae_loss_obj(last_joint_positions[:, :, joint_ids, :], true_future_joint_positions[:, :, joint_ids, :]))
+        # print("unnormed_pretrained", mae_loss_obj(predicted_joint_positions[:, :, joint_ids, :], true_future_joint_positions[:, :, joint_ids, :]))
+        # print("normed_last", mae_loss_obj(last_joint_position_ref_all[:, :, joint_ids, :], true_future_joint_positions_ref_all[:, :, joint_ids, :]))
+        # print("normed_pretrained", mae_loss_obj(predicted_joint_positions_ref_all[:, :, joint_ids, :], true_future_joint_positions_ref_all[:, :, joint_ids, :]))
+
+        # input(norm_factor_mae)
+        # For 3d
+        log_vars[joint_names +"_mse_loss_pred_pretrained"] = mse_loss_obj(predicted_joint_positions_ref_all[:, :, joint_ids, :], true_future_joint_positions_ref_all[:, :, joint_ids, :]) * norm_factor_mae
+        log_vars[joint_names +"_mae_loss_pred_pretrained"] = mae_loss_obj(predicted_joint_positions_ref_all[:, :, joint_ids, :], true_future_joint_positions_ref_all[:, :, joint_ids, :]) * norm_factor_mse
+        log_vars[joint_names +"_wing_loss_pred_pretrained"] = wing_loss_obj(predicted_joint_positions_ref_all[:, :, joint_ids, :], true_future_joint_positions_ref_all[:, :, joint_ids, :]) * norm_factor_wing
+
+        log_vars[joint_names +"_mse_loss_pred_last"] = mse_loss_obj(last_joint_position_ref_all[:, :, joint_ids, :], true_future_joint_positions_ref_all[:, :, joint_ids, :]) * norm_factor_mae
+        log_vars[joint_names +"_mae_loss_pred_last"] = mae_loss_obj(last_joint_position_ref_all[:, :, joint_ids, :], true_future_joint_positions_ref_all[:, :, joint_ids, :]) * norm_factor_mse
+        log_vars[joint_names +"_wing_loss_pred_last"] = wing_loss_obj(last_joint_position_ref_all[:, :, joint_ids, :], true_future_joint_positions_ref_all[:, :, joint_ids, :]) * norm_factor_wing
+
+
+        # For 2D
         log_vars[joint_names +"_mse_loss_pred_pretrained"] = mse_loss_obj(predicted_joint_positions[:, :, joint_ids, :], true_future_joint_positions[:, :, joint_ids, :])
         log_vars[joint_names +"_mae_loss_pred_pretrained"] = mae_loss_obj(predicted_joint_positions[:, :, joint_ids, :], true_future_joint_positions[:, :, joint_ids, :])
-        log_vars[joint_names +"_wing_loss_pred_pretrained"] = wing_loss_obj(predicted_joint_positions[:, :, joint_ids, :], true_future_joint_positions[:, :, joint_ids, :])
-
-        log_vars[joint_names +"_mse_loss_pred_last"] = mse_loss_obj(last_joint_positions[:, :, joint_ids, :], true_future_joint_positions[:, :, joint_ids, :])
+        log_vars[joint_names +"_wing_loss_pred_pretrained"] = wing_loss_obj(predicted_joint_positions[:, :, joint_ids, :], true_future_joint_positions[:, :, joint_ids, :]) 
+        log_vars[joint_names +"_mse_loss_pred_last"] = mse_loss_obj(last_joint_positions[:, :, joint_ids, :], true_future_joint_positions[:, :, joint_ids, :]) 
         log_vars[joint_names +"_mae_loss_pred_last"] = mae_loss_obj(last_joint_positions[:, :, joint_ids, :], true_future_joint_positions[:, :, joint_ids, :])
         log_vars[joint_names +"_wing_loss_pred_last"] = wing_loss_obj(last_joint_positions[:, :, joint_ids, :], true_future_joint_positions[:, :, joint_ids, :])
-
-
+       
+    # input(log_vars)
     return log_vars

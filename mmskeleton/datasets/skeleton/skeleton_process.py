@@ -37,6 +37,7 @@ def normalize_by_resolution(data):
         for i, c in enumerate(channel):
             if c == 'x':
                 np_array[i] = np_array[i] / resolution[0] - 0.5
+                # print('normalizing by resolution')
             if c == 'y':
                 np_array[i] = np_array[i] / resolution[1] - 0.5
     data[data_field] = np_array

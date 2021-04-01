@@ -522,6 +522,10 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
         if self.flip_skels and return_flip:
             return flipped_data
 
+        # print(data['data'][1, :, 0, 0])
+        # print(data['info']['video_name'])
+        # input(data)
+
         return data
 
 
