@@ -555,6 +555,7 @@ class WingLoss(nn.Module):
 
 
 def weights_init_xavier(model):
+    set_seed(0)
     classname = model.__class__.__name__
     if classname.find('Conv1d') != -1:
         torch.nn.init.xavier_uniform_(model.weight)
@@ -574,6 +575,7 @@ def weights_init_xavier(model):
 
 
 def weights_init(model):
+    set_seed(0)
     classname = model.__class__.__name__
     if classname.find('Conv1d') != -1:
         model.weight.data.normal_(0.0, 0.02)
