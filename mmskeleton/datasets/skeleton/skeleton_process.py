@@ -40,6 +40,9 @@ def normalize_by_resolution(data):
                 # print('normalizing by resolution')
             if c == 'y':
                 np_array[i] = np_array[i] / resolution[1] - 0.5
+            if c == 'z':
+                np_array[i] = np_array[i] / resolution[2] - 0.5
+
     data[data_field] = np_array
 
 
@@ -122,6 +125,7 @@ def to_tuple(data):
 
 
 
+
     # print("keys: ", keys)
     tupled_data_list = [data[k] for k in keys]
     data_dict = {}
@@ -135,6 +139,11 @@ def to_tuple(data):
     if 'gait_feats' in data.keys():
         data_dict['gait_feats'] = np.asarray(data['gait_feats'])
     
+    if 'demo_data' in data.keys():
+        # demo_data = {}
+        for k in data['demo_data'].keys():
+            data_dict['demo_data_' + k] = np.asarray(data['demo_data'][k])
+        # data_dict['demo_data'] = data['demo_data']
     tupled_data_list[0] = data_dict
 
     return tuple(tupled_data_list)

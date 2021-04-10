@@ -231,6 +231,8 @@ def train(
 
             datasets = [copy.deepcopy(dataset_cfg[0]) for i in range(len(workflow))]
             datasets[2] = dataset_cfg[1]
+            datasets[2]['pipeline'] = copy.deepcopy(dataset_cfg[0]['pipeline'])
+
             for ds in datasets:
                 ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
 
@@ -243,8 +245,8 @@ def train(
             datasets[2]['data_source']['data_dir'] = test_walks
 
             if fast_dev:
-                datasets[0]['data_source']['data_dir'] = train_walks[:50]
-                datasets[1]['data_source']['data_dir'] = val_walks[:50]
+                datasets[0]['data_source']['data_dir'] = train_walks[:20]
+                datasets[1]['data_source']['data_dir'] = val_walks[:20]
                 datasets[2]['data_source']['data_dir'] = test_walks[:50]
 
 
@@ -309,9 +311,15 @@ def train(
                 )
 
 
+        
+
+
 
             # ================================ STAGE 2 ====================================
             # Make sure we're using the correct dataset
+            for ds in datasets:
+                ds['pipeline'] = dataset_cfg[1]['pipeline']
+
             # datasets = [copy.deepcopy(dataset_cfg[0]) for i in range(len(workflow))]
             # datasets[2] = dataset_cfg[1]
 
@@ -686,15 +694,26 @@ def pretrain_model(
 def batch_processor_position_pretraining(model, datas, train_mode, loss, num_class, **kwargs):
     try:
         data, data_flipped, label, name, num_ts, index, non_pseudo_label = datas
+        # input('here')
     except:
-        data, data_flipped, label, name, num_ts, true_future_ts, index, non_pseudo_label = datas
+        data, data_flipped, label, name, num_ts, index, non_pseudo_label, demo_data = datas
+        # print('there')
+        # input(demo_data)
 
+    # input(name)
     dtype = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor  
     # Even if we have flipped data, we only want to use the original in this stage
     gait_features = np.empty([1, 9])# default value if we dont have any gait features to load in
     if isinstance(data, dict):
+        demo_data = {}
+        for k in data.keys():
+            if k.startswith('demo_data'):
+                demo_data[k] = data[k]
+
         gait_features = data['gait_feats'].type(dtype)
         data = data['data'].type(dtype)
+
+
 
     data_all = data.cuda()
     gait_features_all = gait_features.cuda()
@@ -731,6 +750,6 @@ def batch_processor_position_pretraining(model, datas, train_mode, loss, num_cla
 
     log_vars = dict(loss_pretrain_position=batch_loss.item())
     output_labels = dict(true=label_placeholders, pred=preds, raw_preds=raw_preds, name=name, num_ts=num_ts)
-    outputs = dict(predicted_joint_positions=predicted_joint_positions, loss=batch_loss, log_vars=log_vars, num_samples=num_valid_samples)
+    outputs = dict(predicted_joint_positions=predicted_joint_positions, loss=batch_loss, log_vars=log_vars, num_samples=num_valid_samples, demo_data=)
 
     return outputs, output_labels, batch_loss.item()

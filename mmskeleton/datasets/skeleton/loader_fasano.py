@@ -96,7 +96,7 @@ class SkeletonLoaderFasano(torch.utils.data.Dataset):
                 self.gait_feats = None
 
         if self.cache:
-            print("loading data to cache...")
+            print("loading data to cache - fasano...")
             for index in range(self.__len__()):
                 self.get_item_loc(index)
             # print(self.cached_extreme_inds)
@@ -262,9 +262,6 @@ class SkeletonLoaderFasano(torch.utils.data.Dataset):
                 # clean_walk_name = data_struct['vid_name'][0]
                 cur_vid_name = os.path.split(self.files[file_index])
                 clean_walk_name = cur_vid_name[-1]
-                print(clean_walk_name)
-                print(cur_vid_name)
-                input('in fasano loader')
 
                 # Use the gait features if requested and available
                 if self.gait_feats is not None:
@@ -300,10 +297,11 @@ class SkeletonLoaderFasano(torch.utils.data.Dataset):
                 raise ValueError(f"The layout {self.layout} does not exist")
 
             # print(data_struct)
+            
             try:
                 info_struct = {
-                    "video_name": data_struct['walk_name'][0],
-                    "resolution": [1920, 1080],
+                    "video_name": clean_walk_name,
+                    "resolution": [data_struct['width'][0], data_struct['height'][0]],
                     "num_frame": len(data_struct['time']),
                     "num_keypoints": num_kp,
                     "keypoint_channels": ["x", "y", "score"],
@@ -312,6 +310,8 @@ class SkeletonLoaderFasano(torch.utils.data.Dataset):
             except:
                 print('data_struct', data_struct)            
                 raise ValueError("something is wrong with the data struct", self.files[file_index])
+
+            # input(info_struct)
             # order_of_keypoints = {'Nose', 
             #     'RShoulder', 'RElbow', 'RWrist', 
             #     'LShoulder', 'LElbow', 'LWrist', 
@@ -320,10 +320,10 @@ class SkeletonLoaderFasano(torch.utils.data.Dataset):
             #     'REye', 'LEye', 'REar', 'LEar'}
 
             # If we have belmont data, reverse the order of the resolution parameter since the video is in portrait mode
-            first_char = data_struct['walk_name'][0][0]
-            if first_char.upper() == "B":
-                # print(data_struct['walk_name'][0], len(data_struct['time']))
-                info_struct['resolution'] = [1080, 1920]
+            # first_char = data_struct['walk_name'][0][0]
+            # if first_char.upper() == "B":
+            #     # print(data_struct['walk_name'][0], len(data_struct['time']))
+            #     info_struct['resolution'] = [1080, 1920]
 
             annotations = []
             annotations_flipped = []
@@ -457,14 +457,41 @@ class SkeletonLoaderFasano(torch.utils.data.Dataset):
         info = data['info']
 
 
-
-
         num_frame = info['num_frame']
         num_keypoints = info[
             'num_keypoints'] if self.num_keypoints <= 0 else self.num_keypoints
         channel = info['keypoint_channels']
         num_channel = len(channel)
 
+        dbs = data_struct['DBS'][0]
+        if dbs is "":
+            dbs = -1.0
+
+        meds = data_struct['MEDS'][0]
+        if meds is "":
+            meds = -1.0
+
+        age = data_struct['age'][0]
+        if age is "":
+            age = -1.0
+
+        sex = -1.0
+        if data_struct['sex'][0] == 'Male':
+            sex = 1.0
+        elif data_struct['sex'][0] == 'Female':
+            sex = 0.0
+
+
+        demo_data = {}
+        demo_data['DBS'] = dbs
+        demo_data['MEDS'] = meds
+        demo_data['sex'] = sex
+        demo_data['patient_ID'] = float(data_struct['patient_id'][0][-2:])
+        demo_data['is_backward'] = data_struct['is_backward'][0]
+        demo_data['age'] = age
+        demo_data['num_steps_zeno'] = data_struct['num_steps_zeno'][0]
+
+        data['demo_data'] = demo_data
         # # get data
         data['data'] = np.zeros(
             (num_channel, num_keypoints, num_frame, self.num_track),
