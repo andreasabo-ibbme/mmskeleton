@@ -230,42 +230,32 @@ def train(
             val_walks = [non_test_walks_all[i] for i in val_ids]
 
             datasets = [copy.deepcopy(dataset_cfg[0]) for i in range(len(workflow))]
+            datasets[2] = dataset_cfg[1]
             for ds in datasets:
                 ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
 
-            datasets_stage_1 = datasets
+            print(datasets)
+            # input('a')
             # ================================ STAGE 1 ====================================
             # Stage 1 training
-            datasets_stage_1[0]['data_source']['data_dir'] = train_walks
-            datasets_stage_1[1]['data_source']['data_dir'] = val_walks
-            datasets_stage_1[2]['data_source']['data_dir'] = test_walks
+            datasets[0]['data_source']['data_dir'] = train_walks
+            datasets[1]['data_source']['data_dir'] = val_walks
+            datasets[2]['data_source']['data_dir'] = test_walks
 
             if fast_dev:
-                datasets_stage_1[0]['data_source']['data_dir'] = train_walks[:50]
-                datasets_stage_1[1]['data_source']['data_dir'] = val_walks[:50]
-                datasets_stage_1[2]['data_source']['data_dir'] = test_walks[:50]
+                datasets[0]['data_source']['data_dir'] = train_walks[:50]
+                datasets[1]['data_source']['data_dir'] = val_walks[:50]
+                datasets[2]['data_source']['data_dir'] = test_walks[:50]
 
-
-
-            # datasets_stage_1 = copy.deepcopy(datasets)
-            # datasets_stage_1.pop(2)
 
             workflow_stage_1 = copy.deepcopy(workflow)
-            # workflow_stage_1.pop(2)
-
-            # print(len(datasets_stage_1))
-            # print(len(workflow_stage_1))
-            # input('here')
             loss_cfg_stage_1 = copy.deepcopy(loss_cfg[0])
-
             optimizer_cfg_stage_1 = optimizer_cfg[0]
 
             print('optimizer_cfg_stage_1 ', optimizer_cfg_stage_1)
 
             work_dir_amb = work_dir + "/" + str(test_id)
             simple_work_dir_amb = simple_work_dir + "/" + str(test_id)
-            for ds in datasets:
-                ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
 
             things_to_log = {'num_ts_predicting': model_cfg['num_ts_predicting'], 'es_start_up_1': es_start_up_1, 'es_patience_1': es_patience_1, 'force_run_all_epochs': force_run_all_epochs, 'early_stopping': early_stopping, 'weight_classes': weight_classes, 'keypoint_layout': model_cfg['graph_cfg']['layout'], 'outcome_label': outcome_label, 'num_class': num_class, 'wandb_project': wandb_project, 'wandb_group': wandb_group, 'test_AMBID': num_reps, 'test_AMBID_num': len(test_walks), 'model_cfg': model_cfg, 'loss_cfg': loss_cfg_stage_1, 'optimizer_cfg': optimizer_cfg_stage_1, 'dataset_cfg_data_source': dataset_cfg[0]['data_source'], 'notes': notes, 'batch_size': batch_size, 'total_epochs': total_epochs }
 
@@ -297,7 +287,7 @@ def train(
                 simple_work_dir_amb,
                 model_cfg,
                 loss_cfg_stage_1,
-                datasets_stage_1,
+                datasets,
                 optimizer_cfg_stage_1,
                 batch_size,
                 total_epochs,
@@ -322,22 +312,23 @@ def train(
 
             # ================================ STAGE 2 ====================================
             # Make sure we're using the correct dataset
-            datasets = [copy.deepcopy(dataset_cfg[1]) for i in range(len(workflow))]
-            print(datasets)
-            for ds in datasets:
-                ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
+            # datasets = [copy.deepcopy(dataset_cfg[0]) for i in range(len(workflow))]
+            # datasets[2] = dataset_cfg[1]
+
+            # for ds in datasets:
+            #     ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
 
 
-            # Stage 2 training
-            datasets[0]['data_source']['data_dir'] = train_walks
-            datasets[1]['data_source']['data_dir'] = val_walks
-            datasets[2]['data_source']['data_dir'] = test_walks
+            # # Stage 2 training
+            # datasets[0]['data_source']['data_dir'] = train_walks
+            # datasets[1]['data_source']['data_dir'] = val_walks
+            # datasets[2]['data_source']['data_dir'] = test_walks
 
 
-            if fast_dev:
-                datasets[0]['data_source']['data_dir'] = train_walks[:50]
-                datasets[1]['data_source']['data_dir'] = val_walks[:50]
-                datasets[2]['data_source']['data_dir'] = test_walks[:50]
+            # if fast_dev:
+            #     datasets[0]['data_source']['data_dir'] = train_walks[:50]
+            #     datasets[1]['data_source']['data_dir'] = val_walks[:50]
+            #     datasets[2]['data_source']['data_dir'] = test_walks[:50]
 
 
             # Don't shear or scale the test or val data (also always just take the middle 120 crop)
