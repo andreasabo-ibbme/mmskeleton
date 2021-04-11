@@ -26,6 +26,7 @@ log_incrementally = True
 log_code = False
 log_conf_mat = False
 os.environ['WANDB_MODE'] = 'dryrun'
+num_walks_in_fast = 100
 
 
 # Global variables
@@ -246,8 +247,8 @@ def train(
             datasets[2]['data_source']['data_dir'] = test_walks
 
             if fast_dev:
-                datasets[0]['data_source']['data_dir'] = train_walks[:100]
-                datasets[1]['data_source']['data_dir'] = val_walks[:100]
+                datasets[0]['data_source']['data_dir'] = train_walks[:num_walks_in_fast]
+                datasets[1]['data_source']['data_dir'] = val_walks[:num_walks_in_fast]
                 datasets[2]['data_source']['data_dir'] = test_walks[:100]
 
 
@@ -481,6 +482,7 @@ def finetune_model(
 
         # Normalize by the train scaler
         for d in datasets[1:]:
+            d['data_source']['fit_scaler'] = train_dataloader.dataset.get_fit_scaler()
             d['data_source']['scaler'] = train_dataloader.dataset.get_scaler()
 
         data_loaders = [
@@ -510,8 +512,7 @@ def finetune_model(
     set_seed(0)
     model.module.set_classification_head_size(data_loaders[-1].dataset.data_source.get_num_gait_feats())
     model.module.set_stage_2()
-    print(data_loaders[-1].dataset.data_source.get_num_gait_feats())
-    input('stop')
+    # print(data_loaders[-1].dataset.data_source.get_num_gait_feats())
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.to(device)

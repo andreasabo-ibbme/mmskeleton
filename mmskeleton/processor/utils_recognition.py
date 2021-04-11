@@ -138,19 +138,23 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
     data_all = data.cuda()
     gait_features_all = gait_features.cuda()
     label = label.cuda()
-    print('label', label.shape)
+    # print('label', label.shape)
     # Remove the -1 labels
-    y_true = label.data.reshape(-1, 1).float()
+    y_true_all = label.data.reshape(-1, 1).float()
     non_pseudo_label = non_pseudo_label.data.reshape(-1, 1)
     # print("true labels: ", y_true)
-    condition = y_true >= 0.
+    condition = y_true_all >= 0.
+    # print(len(y_true_all))
+    
     row_cond = condition.all(1)
-    y_true = y_true[row_cond, :]
-    print("non_pseudo_label", non_pseudo_label.shape)
-    print("row_cond", row_cond.shape)
-    print("y_true", y_true.shape)
-    print(model.module.use_gait_features, model.module.gait_feat_num)
-    input('here')
+    y_true = y_true_all[row_cond, :]
+    # input(len(y_true))
+
+    # print("non_pseudo_label", non_pseudo_label.shape)
+    # print("row_cond", row_cond.shape)
+    # print("y_true", y_true.shape)
+    # print(model.module.use_gait_features, model.module.gait_feat_num)
+    # # input('here')
     non_pseudo_label = non_pseudo_label[row_cond, :]
     data = data_all.data[row_cond, :]
     gait_features = gait_features_all.data[row_cond, :]
@@ -176,14 +180,13 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
     loss_flip_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
 
     # Clip the predictions to avoid large loss that would otherwise be dealt with using the raw predictions
-    torch.clamp(output_all, min=-1, max=num_class + 1)
+    # torch.clamp(output_all, min=-1, max=num_class + 1)
     # print("num_class", num_class)
 
     if have_flips:
         loss_flip_tensor = mse_loss(output_all_flipped, output_all)
         if loss_flip_tensor.data > 10:
             pass
-            # print('output_all_flipped', output_all_flipped, 'output_all', output_all)
 
     if not flip_loss_mult:
         loss_flip_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
@@ -212,31 +215,38 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
 
         return outputs, output_labels, loss_flip_tensor.item()
     
-
+    # Calculate the label loss
     non_pseudo_label = non_pseudo_label.reshape(1,-1).squeeze()
     y_true_orig_shape = y_true.reshape(1,-1).squeeze()
+    y_true_all_orig_shape = y_true_all.reshape(1,-1).squeeze()
     losses = loss(output, y_true)
 
-    # print("in batch processorv3"*10)
 
     if balance_classes:
-        # print(type(loss))
         if type(loss) == type(mse_loss):
             losses = weighted_mse_loss(output, y_true, class_weights_dict)
         if type(loss) == type(mae_loss):
             losses = weighted_mae_loss(output, y_true, class_weights_dict)
+
     # Convert the output to classes and clip from 0 to number of classes
     y_pred_rounded = output.detach().cpu().numpy()
     y_pred_rounded = np.nan_to_num(y_pred_rounded)
     output = y_pred_rounded
     output_list = output.squeeze().tolist()
+    output_list = np.clip(np.asarray(output_list), 0, num_class-1).tolist()
     y_pred_rounded = y_pred_rounded.reshape(1, -1).squeeze()
     y_pred_rounded = np.round(y_pred_rounded, 0)
     y_pred_rounded = np.clip(y_pred_rounded, 0, num_class-1)
     preds = y_pred_rounded.squeeze().tolist()
 
+    output_list_all = output_all.detach().cpu().numpy()
+    output_list_all = np.nan_to_num(output_list_all)
+    output_list_all_rounded = np.clip(output_list_all.squeeze(), 0, num_class-1).tolist()
+    output_list_all = output_list_all.squeeze().tolist()
+
     non_pseudo_label  = non_pseudo_label.data.tolist()
     labels = y_true_orig_shape.data.tolist()
+    y_true_all = y_true_all.data.squeeze().tolist()
     # print(labels)
     num_ts = num_ts.data.tolist()
     # Case when we have a single output
@@ -248,12 +258,17 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
         output_list = [output_list]    
     if type(num_ts) is not list:
         num_ts = [num_ts]
+    if type(output_list_all) is not list:
+        output_list_all = [output_list_all]
+
+    if type(y_true_all) is not list:
+        y_true_all = [y_true_all]
 
     if type(non_pseudo_label) is not list:
         non_pseudo_label = [non_pseudo_label]
 
     raw_labels = copy.deepcopy(labels)
-    # print(raw_labels)
+
     try:
         # Dealing with NaN and converting to ints
         labels = [0 if x != x else x for x in labels]
@@ -278,8 +293,10 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
         print('input', torch.sum(torch.isnan(data_all)))
         print('output_all', output_all, 'output_all_flipped', output_all_flipped)
         raise ValueError('stop')
+
     log_vars['mae_rounded'] = mean_absolute_error(labels, preds)
-    output_labels = dict(true=labels, raw_labels=raw_labels, non_pseudo_label=non_pseudo_label, pred=preds, raw_preds=output_list, name=name, num_ts=num_ts)
+    output_labels = dict(true=labels, raw_labels=y_true_all, non_pseudo_label=non_pseudo_label,\
+         pred=preds, raw_preds=output_list, raw_preds_all=output_list_all, round_preds_all=output_list_all_rounded, name=name, num_ts=num_ts)
     outputs = dict(loss=overall_loss, log_vars=log_vars, num_samples=len(labels), demo_data=demo_data)
     # print(type(labels), type(preds))
     # print('this is what we return: ', output_labels)

@@ -29,3 +29,6 @@ class DataPipeline(torch.utils.data.Dataset):
 
     def get_scaler(self):
         return self.data_source.get_scaler()    
+
+    def get_fit_scaler(self):
+        return self.data_source.get_fit_scaler()    

@@ -113,7 +113,7 @@ class ST_GCN_18_ordinal_smaller_10_position_pretrain(nn.Module):
             x[x == float("-Inf")] = torch.finfo(x.dtype).min
             x[x == float("NaN")] = 0
 
-            torch.clamp(x, min=-1, max=self.num_class)
+            # x = torch.clamp(x, min=-1, max=self.num_class)
 
         # Pretraining
         else:

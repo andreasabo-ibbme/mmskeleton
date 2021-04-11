@@ -18,7 +18,7 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
     """
     def __init__(self, data_dir, num_track=1, repeat=1, num_keypoints=-1, 
                 outcome_label='UPDRS_gait', missing_joint_val=0, csv_loader=False, 
-                cache=False, layout='coco', flip_skels=False, belmont_data_mult = 5, use_gait_feats=False, scaler=None):
+                cache=False, layout='coco', flip_skels=False, belmont_data_mult = 5, use_gait_feats=False, fit_scaler=None, scaler=None):
 
         self.data_dir = data_dir
         self.num_track = num_track
@@ -64,7 +64,9 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
         self.num_gait_feats = 0
         self.gait_feats_names = []
         self.use_gait_feats = use_gait_feats
-        self.fit_min_max_scaler = scaler
+        self.fit_min_max_scaler = fit_scaler
+        self.min_max_scaler = scaler
+
         if self.use_gait_feats:
             try:
                 base, _ = os.path.split(self.data_dir[0])
@@ -89,6 +91,8 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
                 df.fillna(0, inplace=True)
                 self.gait_feats = df
                 self.num_gait_feats = len(self.gait_feats_names)
+                # print(df)
+                # input('gait feats')
 
             except Exception as e:
                 print("something went wrong in gait feature load: ", e)
@@ -100,8 +104,11 @@ class SkeletonLoaderTRI(torch.utils.data.Dataset):
                 self.get_item_loc(index)
             # print(self.cached_extreme_inds)
 
-    def get_scaler(self):
+    def get_fit_scaler(self):
         return self.fit_min_max_scaler
+
+    def get_scaler(self):
+        return self.min_max_scaler
 
     def get_num_gait_feats(self):
         return self.num_gait_feats
