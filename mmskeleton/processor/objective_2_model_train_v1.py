@@ -133,7 +133,7 @@ def train(
     # Check if we should use gait features
     if 'use_gait_feats' in dataset_cfg[1]['data_source']:
         model_cfg['use_gait_features'] = dataset_cfg[1]['data_source']['use_gait_feats']
-
+        # input(model_cfg['use_gait_features'])
 
 
     wandb_local_id = wandb.util.generate_id()
@@ -230,8 +230,9 @@ def train(
             val_walks = [non_test_walks_all[i] for i in val_ids]
 
             datasets = [copy.deepcopy(dataset_cfg[0]) for i in range(len(workflow))]
-            datasets[2] = dataset_cfg[1]
+            datasets[2] = copy.deepcopy(dataset_cfg[1])
             datasets[2]['pipeline'] = copy.deepcopy(dataset_cfg[0]['pipeline'])
+            # datasets[2]['data_source']['use_gait_feats'] = False # Don't use gait features for pretraining
 
             for ds in datasets:
                 ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
@@ -245,9 +246,9 @@ def train(
             datasets[2]['data_source']['data_dir'] = test_walks
 
             if fast_dev:
-                datasets[0]['data_source']['data_dir'] = train_walks[:20]
-                datasets[1]['data_source']['data_dir'] = val_walks[:20]
-                datasets[2]['data_source']['data_dir'] = test_walks[:50]
+                datasets[0]['data_source']['data_dir'] = train_walks[:100]
+                datasets[1]['data_source']['data_dir'] = val_walks[:100]
+                datasets[2]['data_source']['data_dir'] = test_walks[:100]
 
 
             workflow_stage_1 = copy.deepcopy(workflow)
@@ -319,6 +320,8 @@ def train(
             # Make sure we're using the correct dataset
             for ds in datasets:
                 ds['pipeline'] = dataset_cfg[1]['pipeline']
+                ds['data_source']['use_gait_feats'] = dataset_cfg[1]['data_source']['use_gait_feats']
+
 
             # datasets = [copy.deepcopy(dataset_cfg[0]) for i in range(len(workflow))]
             # datasets[2] = dataset_cfg[1]
@@ -361,7 +364,10 @@ def train(
 
             # print("final model for fine_tuning is: ", pretrained_model)
             # input("here: " + work_dir_amb)
-            print("starting finetuning", "*" *100)
+            # print("starting finetuning", "*" *100)
+            for ds in datasets:
+                print(ds['pipeline'])
+            # input('before stage 2')
             _, num_epochs = finetune_model(work_dir_amb,
                         pretrained_model,
                         loss_cfg_stage_2,
@@ -454,7 +460,7 @@ def finetune_model(
 
     load_data = True
     base_dl_path = os.path.join(path_to_saved_dataloaders, 'finetuning') 
-    full_dl_path = os.path.join(base_dl_path, 'data.pt')
+    full_dl_path = os.path.join(base_dl_path, 'dataloaders_fine.pt')
     os.makedirs(base_dl_path, exist_ok=True) 
     if os.path.isfile(full_dl_path):
         try:
@@ -502,8 +508,11 @@ def finetune_model(
 
     # Set up model for finetuning
     set_seed(0)
-    model.module.set_classification_head_size(data_loaders[i].dataset.data_source.get_num_gait_feats())
+    model.module.set_classification_head_size(data_loaders[-1].dataset.data_source.get_num_gait_feats())
     model.module.set_stage_2()
+    print(data_loaders[-1].dataset.data_source.get_num_gait_feats())
+    input('stop')
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.to(device)
     # input(model)
@@ -628,7 +637,7 @@ def pretrain_model(
 
     load_data = True
     base_dl_path = os.path.join(path_to_saved_dataloaders, 'finetuning') 
-    full_dl_path = os.path.join(base_dl_path, 'data.pt')
+    full_dl_path = os.path.join(base_dl_path, 'dataloaders_pre.pt')
     os.makedirs(base_dl_path, exist_ok=True)     
     if os.path.isfile(full_dl_path):
         try:
@@ -750,6 +759,6 @@ def batch_processor_position_pretraining(model, datas, train_mode, loss, num_cla
 
     log_vars = dict(loss_pretrain_position=batch_loss.item())
     output_labels = dict(true=label_placeholders, pred=preds, raw_preds=raw_preds, name=name, num_ts=num_ts)
-    outputs = dict(predicted_joint_positions=predicted_joint_positions, loss=batch_loss, log_vars=log_vars, num_samples=num_valid_samples, demo_data=)
+    outputs = dict(predicted_joint_positions=predicted_joint_positions, loss=batch_loss, log_vars=log_vars, num_samples=num_valid_samples, demo_data=demo_data)
 
     return outputs, output_labels, batch_loss.item()

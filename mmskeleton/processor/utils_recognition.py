@@ -127,13 +127,18 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
 
     gait_features = np.empty([1, 9])# default value if we dont have any gait features to load in
     if isinstance(data, dict):
+        demo_data = {}
+        for k in data.keys():
+            if k.startswith('demo_data'):
+                demo_data[k] = data[k]
+
         gait_features = data['gait_feats'].type(dtype)
         data = data['data'].type(dtype)
 
     data_all = data.cuda()
     gait_features_all = gait_features.cuda()
     label = label.cuda()
-
+    print('label', label.shape)
     # Remove the -1 labels
     y_true = label.data.reshape(-1, 1).float()
     non_pseudo_label = non_pseudo_label.data.reshape(-1, 1)
@@ -141,6 +146,11 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
     condition = y_true >= 0.
     row_cond = condition.all(1)
     y_true = y_true[row_cond, :]
+    print("non_pseudo_label", non_pseudo_label.shape)
+    print("row_cond", row_cond.shape)
+    print("y_true", y_true.shape)
+    print(model.module.use_gait_features, model.module.gait_feat_num)
+    input('here')
     non_pseudo_label = non_pseudo_label[row_cond, :]
     data = data_all.data[row_cond, :]
     gait_features = gait_features_all.data[row_cond, :]
@@ -270,7 +280,7 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
         raise ValueError('stop')
     log_vars['mae_rounded'] = mean_absolute_error(labels, preds)
     output_labels = dict(true=labels, raw_labels=raw_labels, non_pseudo_label=non_pseudo_label, pred=preds, raw_preds=output_list, name=name, num_ts=num_ts)
-    outputs = dict(loss=overall_loss, log_vars=log_vars, num_samples=len(labels))
+    outputs = dict(loss=overall_loss, log_vars=log_vars, num_samples=len(labels), demo_data=demo_data)
     # print(type(labels), type(preds))
     # print('this is what we return: ', output_labels)
     # print("returning true: ", output_labels['true'])

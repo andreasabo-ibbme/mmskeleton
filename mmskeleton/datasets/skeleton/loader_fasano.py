@@ -67,33 +67,35 @@ class SkeletonLoaderFasano(torch.utils.data.Dataset):
         self.use_gait_feats = use_gait_feats
         self.fit_min_max_scaler = scaler
         if self.use_gait_feats:
+            # try:
+            base, _ = os.path.split(self.data_dir[0])
+            gait_file = os.path.join(base, "gait_feats", gait_features_file)
+            df = pd.read_csv(gait_file, engine='python')
+            gait_feature_names_2d = ['cadence','avgMOS','avgminMOS','timeoutMOS',  'avgstepwidth',  'CVstepwidth',  'CVsteptime', 'SIStepTime', 'stepsofwalk']
+
+            gait_feature_names_3d = ['walk_speed', 'cadence', 'step_time','step_length','step_width','CV_step_time','CV_step_length','CV_step_width','Symmetry_step_time','Symmetry_step_length' ,'Symmetry_step_width'	,'MOS_average', 'MOS_minimum']
+
             try:
-                base, _ = os.path.split(self.data_dir[0])
-                gait_file = os.path.join(base, "gait_feats", gait_features_file)
-                df = pd.read_csv(gait_file, engine='python')
-                gait_feature_names_2d = ['cadence','avgMOS','avgminMOS','timeoutMOS',  'avgstepwidth',  'CVstepwidth',  'CVsteptime', 'SIStepTime', 'stepsofwalk']
+                x = df[gait_feature_names_2d].values
+                self.gait_feats_names = gait_feature_names_2d
+            except:
+                x = df[gait_feature_names_3d].values
+                self.gait_feats_names = gait_feature_names_3d
+                
+            if self.fit_min_max_scaler is None:
+                self.min_max_scaler = preprocessing.MinMaxScaler()
+                self.fit_min_max_scaler = self.min_max_scaler.fit_transform(x)
+                
+            df_temp = pd.DataFrame(self.fit_min_max_scaler, columns=self.gait_feats_names, index = df.index)
+            df[self.gait_feats_names] = df_temp
+            df.fillna(0, inplace=True)
+            self.gait_feats = df
+            self.num_gait_feats = len(self.gait_feats_names)
 
-                gait_feature_names_3d = ['walk_speed', 'cadence', 'step_time','step_length','step_width','CV_step_time','CV_step_length','CV_step_width','Symmetry_step_time','Symmetry_step_length' ,'Symmetry_step_width'	,'MOS_average', 'MOS_minimum']
-
-                try:
-                    x = df[gait_feature_names_2d].values
-                    self.gait_feats_names = gait_feature_names_2d
-                except:
-                    x = df[gait_feature_names_3d].values
-                    self.gait_feats_names = gait_feature_names_3d
-                    
-                if self.fit_min_max_scaler is None:
-                    self.min_max_scaler = preprocessing.MinMaxScaler()
-                    self.fit_min_max_scaler = self.min_max_scaler.fit_transform(x)
-                df_temp = pd.DataFrame(self.fit_min_max_scaler, columns=self.gait_feats_names, index = df.index)
-                df[self.gait_feats_names] = df_temp
-                df.fillna(0, inplace=True)
-                self.gait_feats = df
-                self.num_gait_feats = len(self.gait_feats_names)
-
-            except Exception as e:
-                print("something went wrong in gait feature load: ", e)
-                self.gait_feats = None
+            # except Exception as e:
+            #     print("something went wrong in gait feature load: ", e)
+            #     self.gait_feats = None
+            #     input('pause')
 
         if self.cache:
             print("loading data to cache - fasano...")
