@@ -19,13 +19,14 @@ import shutil
 from mmskeleton.processor.utils_recognition import *
 from mmskeleton.processor.supcon_loss import *
 import time
+import scipy
 
 turn_off_wd = True
-fast_dev = True
+fast_dev = False
 log_incrementally = True
 log_code = False
 log_conf_mat = False
-os.environ['WANDB_MODE'] = 'dryrun'
+# os.environ['WANDB_MODE'] = 'dryrun'
 num_walks_in_fast = 100
 
 
@@ -200,6 +201,10 @@ def train(
     pd_all_file_names_only.sort()
     all_files_test.sort()
     all_files_test_names_only.sort()
+
+    # final_stats_objective2(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, cv)
+    # return
+
 
     try:
         plt.close('all')
@@ -415,21 +420,195 @@ def train(
             print('failed to delete the participant folder')
 
 
-    # Final stats
-    if exclude_cv:
-        final_stats_numbered(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, 1)
-    else:
-        final_stats_numbered(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, cv)
 
 
-    # Delete the work_dir
-    try:
-        shutil.rmtree(work_dir)
-    except:
-        logging.exception('This: ')
-        print('failed to delete the work_dir folder: ', work_dir)
+    final_stats_objective2(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, cv)
+    
 
 
+
+    # # Final stats
+    # if exclude_cv:
+    #     final_stats_numbered(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, 1)
+    # else:
+    #     final_stats_numbered(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, cv)
+
+
+    # # Delete the work_dir
+    # try:
+    #     shutil.rmtree(work_dir)
+    # except:
+    #     logging.exception('This: ')
+    #     print('failed to delete the work_dir folder: ', work_dir)
+
+
+def final_stats_objective2(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, cv):
+    # work_dir = "/home/saboa/data/OBJECTIVE_2_ML_DATA/data/./work_dir/recognition/tri_all/dataset_example/v2/UPDRS/120_v0_pred15_ankles_wrists_wing/1t4a3yqu_UPDRS_gait_v0_pretrain15_dropout0.0_tempkernel5_batch100"
+    print("work_dir", work_dir)
+    print("wandb_group", wandb_group)
+    print("wandb_project", wandb_project)
+    print("total_epochs", total_epochs)
+    print("num_class", num_class)
+    print("workflow", workflow)
+    print("cv", cv)
+
+    # Load in all the test data from all folds
+    root_result_path = os.path.join(work_dir, 'all_final_eval')
+    root_result_path_1 = os.path.join(root_result_path, '1', 'test.csv')
+    df_all = pd.read_csv(root_result_path_1)
+
+    for i in range(2, cv + 1):
+        root_result_path_temp = os.path.join(root_result_path, str(i), 'test.csv')
+        df_temp = pd.read_csv(root_result_path_temp)
+        df_all = df_all.append(df_temp)
+
+
+    df_all['demo_data_is_flipped'] = df_all.apply(label_flipped, axis=1)
+    df_all['join_id'] = df_all.apply(generate_id_label_DBS, axis=1)
+    print(df_all)
+
+    # Set up the results table
+    # results_df = set_up_results_table_objective_2()
+
+    # Compute stats across all folds
+    results_df, results_dict = compute_obj2_stats(df_all)
+    log_name="ALL"
+    wandb.init(name=log_name, project=wandb_project, group=wandb_group, config = {'wandb_group':wandb_group}, tags=['summary'], reinit=True)
+    wandb.log(results_dict)
+
+    # Compute stats for each fold
+    for i in range(cv):
+        fold_num = i + 1
+        df_test = df_all[df_all['amb'] == fold_num]
+        results_df, results_dict = compute_obj2_stats(df_test)
+        log_name="CV_" + str(fold_num) 
+        wandb.init(name=log_name, project=wandb_project, group=wandb_group, config = {'wandb_group':wandb_group}, tags=['summary'], reinit=True)
+        wandb.log(results_dict)
+
+    return
+
+def set_up_results_table_objective_2():
+    col_names = []
+    ind = ['MEDS', 'DBS']
+    paired = ['unpaired']
+    direction = ['allwalks', 'forwardwalks', 'backwardwalks']
+    stat = ['tstatistic', 'pvalue', 'pos_num_samples', 'neg_num_samples', 'total_num_samples']
+
+    for i in ind:
+        for p in paired:
+            for d in direction:
+                for s in stat:
+                    col_names.append("_".join([i, p, d, s]))
+    print(col_names)
+    df = pd.DataFrame(columns=col_names)
+    return df
+
+
+def label_flipped(row):
+    if 'flipped' in row['walk_name']:
+        return 1
+    return 0
+
+def generate_id_label_DBS(row):
+    data = [row['amb'], row['demo_data_patient_ID'], row['demo_data_patient_ID'], row['demo_data_is_backward'], row['demo_data_is_flipped']] #, row['demo_data_DBS']]
+    data = [str(s) for s in data]
+    return "_".join(data)
+
+def compute_obj2_stats(df_all):
+    results_df= {}
+    ind = ['MEDS', 'DBS']
+    paired = ['unpaired']
+    direction = {'allwalks': '', 'forwardwalks': 'forward', 'backwardwalks': 'backward'}
+    stat = ['tstatistic', 'pvalue', 'pos_num_samples', 'neg_num_samples', 'total_num_samples']
+
+
+    from scipy.stats import ttest_ind  
+    
+    def t_test(x,y,equal_var, alternative='less'):
+            double_t, double_p = ttest_ind(x,y, nan_policy='omit', equal_var = equal_var)
+            if alternative == 'both-sided':
+                pval = double_p
+            elif alternative == 'greater':
+                if np.mean(x) > np.mean(y):
+                    pval = double_p/2.
+                else:
+                    pval = 1.0 - double_p/2.
+            elif alternative == 'less':
+                if np.mean(x) < np.mean(y):
+                    pval = double_p/2.
+                else:
+                    pval = 1.0 - double_p/2.
+            return double_t, pval
+
+    for i in ind:
+        for p in paired:
+            for d in direction:
+
+                search_dir = direction[d]
+                demo_str = "demo_data_" + i
+                # Filter df_all to only extract walks of interest
+                test_df = df_all[df_all['walk_name'].str.contains(search_dir)]
+                test_df = test_df[test_df[demo_str] >= 0]
+
+                off_condition = test_df[test_df[demo_str] == 0]
+                on_condition = test_df[test_df[demo_str] == 1]
+                # print(off_condition)
+                # print(on_condition)
+
+                # comparison_df = off_condition.merge(
+                #     on_condition,
+                #     indicator=True,
+                #     how='inner', 
+                #     on='join_id'
+                # )
+                # # Set ipython's max row display
+                # pd.set_option('display.max_row', 1000)
+                # pd.set_option('display.max_colwidth', None)
+                # print(comparison_df)
+                # ids_unique = comparison_df.join_id.unique()
+                # print(len(ids_unique))
+                # print(comparison_df[comparison_df['join_id'] == ids_unique[0]]['walk_name_y'])
+                # # print(comparison_df[comparison_df['join_id'] == ids_unique[0]])
+                # if p is 'paired':
+                    
+                #     pass
+
+
+                off_condition_vals = off_condition['pred_raw'].to_list()
+                on_condition_vals = on_condition['pred_raw'].to_list()
+                import statistics
+                
+                # print(statistics.mean(off_condition_vals))
+                # print(statistics.mean(on_condition_vals))
+                # print(df_all)
+
+                tstat_welch, p_val_welch = t_test(on_condition_vals, off_condition_vals,equal_var=False) # welch
+                tstat_t, p_val_t = t_test(on_condition_vals, off_condition_vals,equal_var=True) # student's t-test
+                tstat_mw, p_val_mw = scipy.stats.mannwhitneyu(on_condition_vals, off_condition_vals, use_continuity=True, alternative='less') # mann whitney test
+
+
+
+                # Save values to df 
+                stat_base = "_".join([i, p, d])
+                results_df[stat_base + "_welch_tstatistic"] = tstat_welch
+                results_df[stat_base + "_welch_pvalue"] = p_val_welch
+                results_df[stat_base + "_t_tstatistic"] = tstat_t
+                results_df[stat_base + "_t_pvalue"] = p_val_t
+
+                results_df[stat_base + "_mannwhitney_tstatistic"] = tstat_mw
+                results_df[stat_base + "_mannwhitney_pvalue"] = p_val_mw
+
+                results_df[stat_base + "_pos_mean"] = statistics.mean(on_condition_vals)
+                results_df[stat_base + "_neg_mean"] = statistics.mean(off_condition_vals)
+                results_df[stat_base + "_pos_stdev"] = statistics.stdev(on_condition_vals)
+                results_df[stat_base + "_neg_stdev"] = statistics.stdev(off_condition_vals)
+                results_df[stat_base + "_pos_num_samples"] = len(on_condition)
+                results_df[stat_base + "_neg_num_samples"] = len(off_condition)
+                results_df[stat_base + "_total_num_samples"] = len(off_condition) + len(on_condition)
+                results_df[stat_base + "_pos_shapiro_teststat"],  results_df[stat_base + "_pos_shapiro_pval"]= scipy.stats.shapiro(on_condition_vals)
+                results_df[stat_base + "_neg_shapiro_teststat"],  results_df[stat_base + "_neg_shapiro_pval"]= scipy.stats.shapiro(off_condition_vals)
+
+    return pd.DataFrame(results_df, index=[0]), results_df
 
 def finetune_model(
         work_dir,
@@ -694,7 +873,6 @@ def pretrain_model(
     # input('model')
     if path_to_pretrained_model is not None:
         torch.save(pretrained_model.module.state_dict(), checkpoint_file)
-        # print(checkpoint_file)
 
         # input('saved')
     return pretrained_model

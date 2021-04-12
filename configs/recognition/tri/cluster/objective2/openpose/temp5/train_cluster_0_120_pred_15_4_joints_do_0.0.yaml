@@ -87,7 +87,7 @@ processor_cfg:
         type: "datasets.SkeletonLoaderFasano"
         data_dir: fasano_openpose
         gait_features_file: "openpose_DBSCAN.csv"
-        use_gait_feats: True
+        use_gait_feats: False
         num_track: 1
         num_keypoints: 13
         repeat: 1

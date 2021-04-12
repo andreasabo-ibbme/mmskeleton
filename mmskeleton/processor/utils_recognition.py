@@ -242,7 +242,8 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
     output_list_all = output_all.detach().cpu().numpy()
     output_list_all = np.nan_to_num(output_list_all)
     output_list_all_rounded = np.clip(output_list_all.squeeze(), 0, num_class-1).tolist()
-    output_list_all = output_list_all.squeeze().tolist()
+    output_list_all = output_list_all_rounded
+    output_list_all_rounded = np.round(np.asarray(output_list_all_rounded), 0).tolist()
 
     non_pseudo_label  = non_pseudo_label.data.tolist()
     labels = y_true_orig_shape.data.tolist()

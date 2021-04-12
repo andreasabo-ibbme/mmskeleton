@@ -260,14 +260,15 @@ class SkeletonLoaderFasano(torch.utils.data.Dataset):
 
 
             gait_feature_vec = [0.0] * self.num_gait_feats
+            cur_vid_name = os.path.split(self.files[file_index])
+
+            clean_walk_name = cur_vid_name[-1]
 
             # Load in the gait features
             if self.use_gait_feats:
                 # How we clean the walk name depends if we have 2D or 3D data
                 # For 3D data we need to keep the state
                 # clean_walk_name = data_struct['vid_name'][0]
-                cur_vid_name = os.path.split(self.files[file_index])
-                clean_walk_name = cur_vid_name[-1]
 
                 # Use the gait features if requested and available
                 if self.gait_feats is not None:
