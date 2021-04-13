@@ -233,7 +233,7 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
     y_pred_rounded = np.nan_to_num(y_pred_rounded)
     output = y_pred_rounded
     output_list = output.squeeze().tolist()
-    output_list = np.clip(np.asarray(output_list), 0, num_class-1).tolist()
+    output_list = np.clip(np.asarray(output_list), 0, num_class).tolist()
     y_pred_rounded = y_pred_rounded.reshape(1, -1).squeeze()
     y_pred_rounded = np.round(y_pred_rounded, 0)
     y_pred_rounded = np.clip(y_pred_rounded, 0, num_class-1)
@@ -241,7 +241,7 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
 
     output_list_all = output_all.detach().cpu().numpy()
     output_list_all = np.nan_to_num(output_list_all)
-    output_list_all_rounded = np.clip(output_list_all.squeeze(), 0, num_class-1).tolist()
+    output_list_all_rounded = np.clip(output_list_all.squeeze(), 0, num_class).tolist()
     output_list_all = output_list_all_rounded
     output_list_all_rounded = np.round(np.asarray(output_list_all_rounded), 0).tolist()
 

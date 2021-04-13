@@ -403,7 +403,9 @@ def train(
 
         # Done CV
         try:
-            robust_rmtree(work_dir_amb)
+            # robust_rmtree(work_dir_amb)
+            print('failed to delete the participant folder')
+
         except:
             print('failed to delete the participant folder')
 
@@ -415,14 +417,16 @@ def train(
         logging.exception("this went wrong")
         # Done with this participant, we can delete the temp foldeer
         try:
-            robust_rmtree(work_dir_amb)
+            # robust_rmtree(work_dir_amb)
+            print('failed to delete the participant folder')
+
         except:
             print('failed to delete the participant folder')
 
 
 
 
-    final_stats_objective2(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, cv)
+    # final_stats_objective2(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, cv)
     
 
 
@@ -679,7 +683,7 @@ def finetune_model(
         torch.save(data_loaders, full_dl_path)
         
 
-    # return None, 0
+    return None, 0
 
     workflow = [tuple(w) for w in workflow]
     global balance_classes
@@ -836,6 +840,11 @@ def pretrain_model(
                                         drop_last=False) for d in datasets
         ]
 
+
+        # Save for next time
+        torch.save(data_loaders, full_dl_path)
+
+    # return model
     global balance_classes
     global class_weights_dict
 
