@@ -460,6 +460,10 @@ def final_stats_objective2(work_dir, wandb_group, wandb_project, total_epochs, n
     print("cv", cv)
 
     raw_results_dict = {}
+
+    log_name = "CV_ALL"
+    wandb.init(name=log_name, project=wandb_project, group=wandb_group, config = {'wandb_group':wandb_group}, tags=['summary'], reinit=True)
+    wandb.Table.MAX_ROWS =100000
     # Load in all the data from all folds
     for i, flow in enumerate(workflow):
         mode, _ = flow
@@ -477,45 +481,46 @@ def final_stats_objective2(work_dir, wandb_group, wandb_project, total_epochs, n
         df_all['demo_data_is_flipped'] = df_all.apply(label_flipped, axis=1)
         # df_all['join_id'] = df_all.apply(generate_id_label_DBS, axis=1)
         raw_results_dict[mode] = copy.deepcopy(df_all)
-        
 
-        # Set up the results table
-        # results_df = set_up_results_table_objective_2()
 
-        # Compute stats across all folds
-        # df_all = raw_results_dict['test']
+        wandb.log({mode+'_CSV': wandb.Table(dataframe=df_all)})
         reg_fig_DBS, reg_fig_MEDS, con_mat_fig_normed, con_mat_fig = createSummaryPlots(df_all, num_class)
 
-        log_name="ALL"
-        wandb.init(name=log_name, project=wandb_project, group=wandb_group, config = {'wandb_group':wandb_group}, tags=['summary'], reinit=True)
         wandb.log({"confusion_matrix/" + mode + "_final_confusion_matrix.png": con_mat_fig})
         wandb.log({"confusion_matrix/" + mode + "_final_confusion_matrix_normed.png": con_mat_fig_normed})
-        if mode is "test":
+        if mode == "test":
             results_df, results_dict = compute_obj2_stats(df_all)
             wandb.log(results_dict)
 
-            wandb.log({"regression_plot/"+ mode + "_final_regression_DBS.png": reg_fig_DBS})
-            wandb.log({"regression_plot/"+ mode + "_final_regression_MEDS.png": reg_fig_MEDS})
+            wandb.log({"regression_plot/"+ mode + "_final_regression_DBS.png": [wandb.Image(reg_fig_DBS)]})
+            wandb.log({"regression_plot/"+ mode + "_final_regression_MEDS.png": [wandb.Image(reg_fig_MEDS)]})
 
 
+    # Compute stats for each fold
+    for i in range(cv):
+        matplotlib.pyplot.close('all')
+        fold_num = i + 1
+        log_name="CV_" + str(fold_num) 
+        wandb.init(name=log_name, project=wandb_project, group=wandb_group, config = {'wandb_group':wandb_group}, tags=['summary'], reinit=True)
 
-
-        # Compute stats for each fold
-        for i in range(cv):
-            fold_num = i + 1
+        for j, flow in enumerate(workflow):
+            mode, _ = flow
+            df_all = raw_results_dict[mode]
             df_test = df_all[df_all['amb'] == fold_num]
-            log_name="CV_" + str(fold_num) 
-            wandb.init(name=log_name, project=wandb_project, group=wandb_group, config = {'wandb_group':wandb_group}, tags=['summary'], reinit=True)
+
+            # Compute stats across all folds
+
+
 
             reg_fig_DBS, reg_fig_MEDS, con_mat_fig_normed, con_mat_fig = createSummaryPlots(df_test, num_class)
             wandb.log({"confusion_matrix/" + mode + "_final_confusion_matrix.png": con_mat_fig})
             wandb.log({"confusion_matrix/" + mode + "_final_confusion_matrix_normed.png": con_mat_fig_normed})
-            if mode is "test":
+            if mode == "test":
                 results_df, results_dict = compute_obj2_stats(df_all)
                 wandb.log(results_dict)
 
-                wandb.log({"regression_plot/"+ mode + "_final_regression_DBS.png": reg_fig_DBS})
-                wandb.log({"regression_plot/"+ mode + "_final_regression_MEDS.png": reg_fig_MEDS})
+                wandb.log({"regression_plot/"+ mode + "_final_regression_DBS.png": [wandb.Image(reg_fig_DBS)]})
+                wandb.log({"regression_plot/"+ mode + "_final_regression_MEDS.png": [wandb.Image(reg_fig_MEDS)]})
 
 
 def set_up_results_table_objective_2():
@@ -554,8 +559,8 @@ def createSummaryPlots(df_all, num_class):
         dbs_label = df_all['demo_data_DBS']
         meds_label = df_all['demo_data_MEDS']
     except:
-        dbs_label = [0] * len(true_labels)
-        meds_label = [0] * len(true_labels)
+        dbs_label = [-1] * len(true_labels)
+        meds_label = [-1] * len(true_labels)
 
     fig_title = "Regression for unseen participants - DBS"
     reg_fig_DBS = regressionPlotByGroup(true_labels, preds_raw, class_names, fig_title, dbs_label)

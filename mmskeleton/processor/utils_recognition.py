@@ -892,14 +892,14 @@ def regressionPlotByGroup(labels, raw_preds, classes, fig_title, non_pseudo_labe
         # print('non_pseudo_label', len(non_pseudo_label))
         # print('non_pseudo_label', non_pseudo_label)
         non_pseudo_label = np.asarray(non_pseudo_label)
-        one_mask = list(np.argwhere(non_pseudo_label >= 0).squeeze())
-        zero_mask = list(np.argwhere(non_pseudo_label < 0).squeeze()) 
+        one_mask = list(np.argwhere(non_pseudo_label == 1).squeeze())
+        zero_mask = list(np.argwhere(non_pseudo_label == 0).squeeze()) 
         # print('one_mask', one_mask)
         # print('zero_mask', len(zero_mask))
         # print("true_labels_jitter", len(true_labels_jitter))
         plt.plot(true_labels_jitter[one_mask], raw_preds[one_mask], 'bo', markersize=6)
         plt.plot(true_labels_jitter[zero_mask], raw_preds[zero_mask], 'ro', markersize=4)
-
+        print(len(raw_preds[zero_mask]))
 
 
     plt.title(fig_title)
