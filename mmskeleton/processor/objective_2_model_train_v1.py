@@ -375,7 +375,6 @@ def train(
             for ds in datasets:
                 print(ds['pipeline'])
             # input('before stage 2')
-            continue
             _, num_epochs = finetune_model(work_dir_amb,
                         pretrained_model,
                         loss_cfg_stage_2,
@@ -450,7 +449,7 @@ def train(
 
 def final_stats_objective2(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, cv):
     # work_dir = "/home/saboa/data/OBJECTIVE_2_ML_DATA/data/./work_dir/recognition/tri_all/dataset_example/v2/UPDRS/120_v0_pred15_ankles_wrists_wing/1t4a3yqu_UPDRS_gait_v0_pretrain15_dropout0.0_tempkernel5_batch100"
-    work_dir = "/home/saboa/data/OBJECTIVE_2_ML_DATA/data/work_dir/recognition/tri_all/dataset_example/v2/UPDRS/120_v0_pred15_ankles_wrists_wing_do_01/176rgyac_UPDRS_gait_v10_pretrain15_dropout0.5_tempkernel5_batch100"
+    # work_dir = "/home/saboa/data/OBJECTIVE_2_ML_DATA/data/work_dir/recognition/tri_all/dataset_example/v2/UPDRS/120_v0_pred15_ankles_wrists_wing_do_01/176rgyac_UPDRS_gait_v10_pretrain15_dropout0.5_tempkernel5_batch100"
     print("work_dir", work_dir)
     print("wandb_group", wandb_group)
     print("wandb_project", wandb_project)
@@ -498,7 +497,7 @@ def final_stats_objective2(work_dir, wandb_group, wandb_project, total_epochs, n
 
     # Compute stats for each fold
     for i in range(cv):
-        matplotlib.pyplot.close('all')
+        plt.close('all')
         fold_num = i + 1
         log_name="CV_" + str(fold_num) 
         wandb.init(name=log_name, project=wandb_project, group=wandb_group, config = {'wandb_group':wandb_group}, tags=['summary'], reinit=True)
@@ -693,7 +692,7 @@ def finetune_model(
         path_to_saved_dataloaders=None, 
         path_to_pretrained_model=None
 ):
-    print("Starting STAGE 2: Fine-tuning...")
+    print("=============================================================Starting STAGE 2: Fine-tuning...")
 
     load_data = True
     base_dl_path = os.path.join(path_to_saved_dataloaders, 'finetuning') 
