@@ -282,6 +282,7 @@ def train(
 
 
             load_all = flip_loss != 0
+            load_all = False  # Hold over, this is just for location of dataloaders
             path_to_saved_dataloaders = os.path.join(dataloader_temp, outcome_label, model_save_root, str(num_reps), \
                                                     "load_all" + str(load_all), "gait_feats_" + str(model_cfg['use_gait_features']), str(test_id))
             
@@ -374,6 +375,7 @@ def train(
             for ds in datasets:
                 print(ds['pipeline'])
             # input('before stage 2')
+            continue
             _, num_epochs = finetune_model(work_dir_amb,
                         pretrained_model,
                         loss_cfg_stage_2,
@@ -426,7 +428,7 @@ def train(
 
 
 
-    # final_stats_objective2(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, cv)
+    final_stats_objective2(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, cv)
     
 
 
@@ -448,6 +450,7 @@ def train(
 
 def final_stats_objective2(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, cv):
     # work_dir = "/home/saboa/data/OBJECTIVE_2_ML_DATA/data/./work_dir/recognition/tri_all/dataset_example/v2/UPDRS/120_v0_pred15_ankles_wrists_wing/1t4a3yqu_UPDRS_gait_v0_pretrain15_dropout0.0_tempkernel5_batch100"
+    work_dir = "/home/saboa/data/OBJECTIVE_2_ML_DATA/data/work_dir/recognition/tri_all/dataset_example/v2/UPDRS/120_v0_pred15_ankles_wrists_wing_do_01/176rgyac_UPDRS_gait_v10_pretrain15_dropout0.5_tempkernel5_batch100"
     print("work_dir", work_dir)
     print("wandb_group", wandb_group)
     print("wandb_project", wandb_project)
@@ -456,40 +459,64 @@ def final_stats_objective2(work_dir, wandb_group, wandb_project, total_epochs, n
     print("workflow", workflow)
     print("cv", cv)
 
-    # Load in all the test data from all folds
-    root_result_path = os.path.join(work_dir, 'all_final_eval')
-    root_result_path_1 = os.path.join(root_result_path, '1', 'test.csv')
-    df_all = pd.read_csv(root_result_path_1)
+    raw_results_dict = {}
+    # Load in all the data from all folds
+    for i, flow in enumerate(workflow):
+        mode, _ = flow
 
-    for i in range(2, cv + 1):
-        root_result_path_temp = os.path.join(root_result_path, str(i), 'test.csv')
-        df_temp = pd.read_csv(root_result_path_temp)
-        df_all = df_all.append(df_temp)
+        root_result_path = os.path.join(work_dir, 'all_final_eval')
+        root_result_path_1 = os.path.join(root_result_path, '1', mode+'.csv')
+        df_all = pd.read_csv(root_result_path_1)
+
+        for i in range(2, cv + 1):
+            root_result_path_temp = os.path.join(root_result_path, str(i), mode+'.csv')
+            df_temp = pd.read_csv(root_result_path_temp)
+            df_all = df_all.append(df_temp)
 
 
-    df_all['demo_data_is_flipped'] = df_all.apply(label_flipped, axis=1)
-    df_all['join_id'] = df_all.apply(generate_id_label_DBS, axis=1)
-    print(df_all)
+        df_all['demo_data_is_flipped'] = df_all.apply(label_flipped, axis=1)
+        # df_all['join_id'] = df_all.apply(generate_id_label_DBS, axis=1)
+        raw_results_dict[mode] = copy.deepcopy(df_all)
+        
 
-    # Set up the results table
-    # results_df = set_up_results_table_objective_2()
+        # Set up the results table
+        # results_df = set_up_results_table_objective_2()
 
-    # Compute stats across all folds
-    results_df, results_dict = compute_obj2_stats(df_all)
-    log_name="ALL"
-    wandb.init(name=log_name, project=wandb_project, group=wandb_group, config = {'wandb_group':wandb_group}, tags=['summary'], reinit=True)
-    wandb.log(results_dict)
+        # Compute stats across all folds
+        # df_all = raw_results_dict['test']
+        reg_fig_DBS, reg_fig_MEDS, con_mat_fig_normed, con_mat_fig = createSummaryPlots(df_all, num_class)
 
-    # Compute stats for each fold
-    for i in range(cv):
-        fold_num = i + 1
-        df_test = df_all[df_all['amb'] == fold_num]
-        results_df, results_dict = compute_obj2_stats(df_test)
-        log_name="CV_" + str(fold_num) 
+        log_name="ALL"
         wandb.init(name=log_name, project=wandb_project, group=wandb_group, config = {'wandb_group':wandb_group}, tags=['summary'], reinit=True)
-        wandb.log(results_dict)
+        wandb.log({"confusion_matrix/" + mode + "_final_confusion_matrix.png": con_mat_fig})
+        wandb.log({"confusion_matrix/" + mode + "_final_confusion_matrix_normed.png": con_mat_fig_normed})
+        if mode is "test":
+            results_df, results_dict = compute_obj2_stats(df_all)
+            wandb.log(results_dict)
 
-    return
+            wandb.log({"regression_plot/"+ mode + "_final_regression_DBS.png": reg_fig_DBS})
+            wandb.log({"regression_plot/"+ mode + "_final_regression_MEDS.png": reg_fig_MEDS})
+
+
+
+
+        # Compute stats for each fold
+        for i in range(cv):
+            fold_num = i + 1
+            df_test = df_all[df_all['amb'] == fold_num]
+            log_name="CV_" + str(fold_num) 
+            wandb.init(name=log_name, project=wandb_project, group=wandb_group, config = {'wandb_group':wandb_group}, tags=['summary'], reinit=True)
+
+            reg_fig_DBS, reg_fig_MEDS, con_mat_fig_normed, con_mat_fig = createSummaryPlots(df_test, num_class)
+            wandb.log({"confusion_matrix/" + mode + "_final_confusion_matrix.png": con_mat_fig})
+            wandb.log({"confusion_matrix/" + mode + "_final_confusion_matrix_normed.png": con_mat_fig_normed})
+            if mode is "test":
+                results_df, results_dict = compute_obj2_stats(df_all)
+                wandb.log(results_dict)
+
+                wandb.log({"regression_plot/"+ mode + "_final_regression_DBS.png": reg_fig_DBS})
+                wandb.log({"regression_plot/"+ mode + "_final_regression_MEDS.png": reg_fig_MEDS})
+
 
 def set_up_results_table_objective_2():
     col_names = []
@@ -517,6 +544,27 @@ def generate_id_label_DBS(row):
     data = [row['amb'], row['demo_data_patient_ID'], row['demo_data_patient_ID'], row['demo_data_is_backward'], row['demo_data_is_flipped']] #, row['demo_data_DBS']]
     data = [str(s) for s in data]
     return "_".join(data)
+
+def createSummaryPlots(df_all, num_class):
+    true_labels = df_all['true_score']
+    preds = df_all['pred_round']
+    preds_raw = df_all['pred_raw']
+    class_names = [str(i) for i in range(num_class)]
+    try:
+        dbs_label = df_all['demo_data_DBS']
+        meds_label = df_all['demo_data_MEDS']
+    except:
+        dbs_label = [0] * len(true_labels)
+        meds_label = [0] * len(true_labels)
+
+    fig_title = "Regression for unseen participants - DBS"
+    reg_fig_DBS = regressionPlotByGroup(true_labels, preds_raw, class_names, fig_title, dbs_label)
+    fig_title = "Regression for unseen participants - MEDS"
+    reg_fig_MEDS = regressionPlotByGroup(true_labels, preds_raw, class_names, fig_title, meds_label)
+    con_mat_fig_normed = plot_confusion_matrix( true_labels,preds, class_names, num_class, True)
+    con_mat_fig= plot_confusion_matrix( true_labels,preds, class_names, num_class, False)
+
+    return reg_fig_DBS, reg_fig_MEDS, con_mat_fig_normed, con_mat_fig
 
 def compute_obj2_stats(df_all):
     results_df= {}
@@ -645,6 +693,7 @@ def finetune_model(
     load_data = True
     base_dl_path = os.path.join(path_to_saved_dataloaders, 'finetuning') 
     full_dl_path = os.path.join(base_dl_path, 'dataloaders_fine.pt')
+    print("expecting dataloaders here:", full_dl_path)
     os.makedirs(base_dl_path, exist_ok=True) 
     if os.path.isfile(full_dl_path):
         try:
@@ -682,8 +731,6 @@ def finetune_model(
         # Save for next time
         torch.save(data_loaders, full_dl_path)
         
-
-    return None, 0
 
     workflow = [tuple(w) for w in workflow]
     global balance_classes

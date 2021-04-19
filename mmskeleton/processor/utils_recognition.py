@@ -197,23 +197,25 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
     # if we don't have any valid labels for this batch...
     # print("num_valid samples is: ", num_valid_samples)
 
-    if num_valid_samples < 1:
-        labels = []
-        preds = []
-        raw_preds = []
-        # loss_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
-        # loss_tensor = loss_tensor.cuda()
+    # if num_valid_samples < 1:
+    #     labels = []
+    #     preds = []
+    #     raw_preds = []
+    #     # loss_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
+    #     # loss_tensor = loss_tensor.cuda()
 
-        if type(num_ts) is not list:
-            num_ts = [num_ts]
+    #     if type(num_ts) is not list:
+    #         num_ts = [num_ts]
 
-        log_vars = dict(loss_label=0, loss_flip = loss_flip_tensor.item(), loss_all=loss_flip_tensor.item())
-        log_vars['mae_raw'] = 0
-        log_vars['mae_rounded'] = 0
-        output_labels = dict(true=labels, pred=preds, raw_preds=raw_preds, name=name, num_ts=num_ts)
-        outputs = dict(loss=loss_flip_tensor, log_vars=log_vars, num_samples=0)
-
-        return outputs, output_labels, loss_flip_tensor.item()
+    #     log_vars = dict(loss_label=0, loss_flip = loss_flip_tensor.item(), loss_all=loss_flip_tensor.item())
+    #     log_vars['mae_raw'] = 0
+    #     log_vars['mae_rounded'] = 0
+    #     output_labels = dict(true=labels, pred=preds, raw_preds=raw_preds, name=name, num_ts=num_ts)
+    #     outputs = dict(loss=loss_flip_tensor, log_vars=log_vars, num_samples=0)
+    #     print(num_valid_samples)
+    #     print(output_labels)
+    #     input("num_valid_samples")
+    #     return outputs, output_labels, loss_flip_tensor.item()
     
     # Calculate the label loss
     non_pseudo_label = non_pseudo_label.reshape(1,-1).squeeze()
@@ -289,13 +291,16 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
 
     try:
         log_vars['mae_raw'] = mean_absolute_error(labels, output)
-    except:
-        print("labels: ", labels, "output", output)
-        print('input', torch.sum(torch.isnan(data_all)))
-        print('output_all', output_all, 'output_all_flipped', output_all_flipped)
-        raise ValueError('stop')
+        log_vars['mae_rounded'] = mean_absolute_error(labels, preds)
 
-    log_vars['mae_rounded'] = mean_absolute_error(labels, preds)
+    except:
+        log_vars['mae_raw'] = math.nan
+        log_vars['mae_rounded'] = math.nan
+        # print("labels: ", labels, "output", output)
+        # print('input', torch.sum(torch.isnan(data_all)))
+        # print('output_all', output_all, 'output_all_flipped', output_all_flipped)
+        # raise ValueError('stop')
+
     output_labels = dict(true=labels, raw_labels=y_true_all, non_pseudo_label=non_pseudo_label,\
          pred=preds, raw_preds=output_list, raw_preds_all=output_list_all, round_preds_all=output_list_all_rounded, name=name, num_ts=num_ts)
     outputs = dict(loss=overall_loss, log_vars=log_vars, num_samples=len(labels), demo_data=demo_data)
@@ -872,6 +877,40 @@ def plot_confusion_matrix( y_true, y_pred, classes, max_label, normalize=False,t
 #                     color="white" if cm[i, j] > thresh else "black")
 #     fig.tight_layout()
 #     return fig
+
+def regressionPlotByGroup(labels, raw_preds, classes, fig_title, non_pseudo_label=None):
+    labels = np.asarray(labels)
+    raw_preds = np.asarray(raw_preds)
+    true_labels_jitter = labels + np.random.random_sample(labels.shape)/6
+    
+    fig = plt.figure()
+
+    if non_pseudo_label is None:
+        plt.plot(true_labels_jitter, raw_preds, 'bo', markersize=6)
+    else:
+        # Plot the pseudo labels in red 
+        # print('non_pseudo_label', len(non_pseudo_label))
+        # print('non_pseudo_label', non_pseudo_label)
+        non_pseudo_label = np.asarray(non_pseudo_label)
+        one_mask = list(np.argwhere(non_pseudo_label >= 0).squeeze())
+        zero_mask = list(np.argwhere(non_pseudo_label < 0).squeeze()) 
+        # print('one_mask', one_mask)
+        # print('zero_mask', len(zero_mask))
+        # print("true_labels_jitter", len(true_labels_jitter))
+        plt.plot(true_labels_jitter[one_mask], raw_preds[one_mask], 'bo', markersize=6)
+        plt.plot(true_labels_jitter[zero_mask], raw_preds[zero_mask], 'ro', markersize=4)
+
+
+
+    plt.title(fig_title)
+
+    plt.xlim(-0.5, 4.5)
+    plt.ylim(-0.5, 4.5)
+
+    plt.xlabel("True Label")
+    plt.ylabel("Regression Value")
+    return fig
+
 
 def regressionPlot(labels, raw_preds, classes, fig_title):
     labels = np.asarray(labels)
