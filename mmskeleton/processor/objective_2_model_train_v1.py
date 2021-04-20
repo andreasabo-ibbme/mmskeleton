@@ -463,6 +463,8 @@ def final_stats_objective2(work_dir, wandb_group, wandb_project, total_epochs, n
     log_name = "CV_ALL"
     wandb.init(name=log_name, project=wandb_project, group=wandb_group, config = {'wandb_group':wandb_group}, tags=['summary'], reinit=True)
     wandb.Table.MAX_ROWS =100000
+    results_table = set_up_results_table(workflow, num_class)
+
     # Load in all the data from all folds
     for i, flow in enumerate(workflow):
         mode, _ = flow
@@ -485,10 +487,13 @@ def final_stats_objective2(work_dir, wandb_group, wandb_project, total_epochs, n
         wandb.log({mode+'_CSV': wandb.Table(dataframe=df_all)})
         reg_fig_DBS, reg_fig_MEDS, con_mat_fig_normed, con_mat_fig = createSummaryPlots(df_all, num_class)
 
+        log_vars = computeSummaryStats(df_all, num_class, mode)
+        wandb.log(log_vars)
+
         wandb.log({"confusion_matrix/" + mode + "_final_confusion_matrix.png": con_mat_fig})
         wandb.log({"confusion_matrix/" + mode + "_final_confusion_matrix_normed.png": con_mat_fig_normed})
         if mode == "test":
-            results_df, results_dict = compute_obj2_stats(df_all)
+            _, results_dict = compute_obj2_stats(df_all)
             wandb.log(results_dict)
 
             wandb.log({"regression_plot/"+ mode + "_final_regression_DBS.png": [wandb.Image(reg_fig_DBS)]})
@@ -502,25 +507,29 @@ def final_stats_objective2(work_dir, wandb_group, wandb_project, total_epochs, n
         log_name="CV_" + str(fold_num) 
         wandb.init(name=log_name, project=wandb_project, group=wandb_group, config = {'wandb_group':wandb_group}, tags=['summary'], reinit=True)
 
-        for j, flow in enumerate(workflow):
+        for _, flow in enumerate(workflow):
             mode, _ = flow
             df_all = raw_results_dict[mode]
             df_test = df_all[df_all['amb'] == fold_num]
 
             # Compute stats across all folds
-
-
+            log_vars = computeSummaryStats(df_test, num_class, mode)
+            wandb.log(log_vars)
+            df = pd.DataFrame(log_vars, index=[0])
+            results_table = results_table.append(df)
 
             reg_fig_DBS, reg_fig_MEDS, con_mat_fig_normed, con_mat_fig = createSummaryPlots(df_test, num_class)
             wandb.log({"confusion_matrix/" + mode + "_final_confusion_matrix.png": con_mat_fig})
             wandb.log({"confusion_matrix/" + mode + "_final_confusion_matrix_normed.png": con_mat_fig_normed})
             if mode == "test":
-                results_df, results_dict = compute_obj2_stats(df_all)
+                _, results_dict = compute_obj2_stats(df_all)
                 wandb.log(results_dict)
 
                 wandb.log({"regression_plot/"+ mode + "_final_regression_DBS.png": [wandb.Image(reg_fig_DBS)]})
                 wandb.log({"regression_plot/"+ mode + "_final_regression_MEDS.png": [wandb.Image(reg_fig_MEDS)]})
 
+
+    final_stats_variance(results_table, wandb_group, wandb_project, total_epochs, num_class, workflow)
 
 def set_up_results_table_objective_2():
     col_names = []
@@ -569,6 +578,43 @@ def createSummaryPlots(df_all, num_class):
     con_mat_fig= plot_confusion_matrix( true_labels,preds, class_names, num_class, False)
 
     return reg_fig_DBS, reg_fig_MEDS, con_mat_fig_normed, con_mat_fig
+
+def computeSummaryStats(df_all, num_class, mode):
+    class_names_int = [int(i) for i in range(num_class)]
+
+    # Only use labelled walks to calculate metrics
+    true_labels = df_all.loc[df_all['true_score'] >= 0, 'true_score']
+    preds = df_all.loc[df_all['true_score'] >= 0, 'pred_round']
+    preds_raw = df_all.loc[df_all['true_score'] >= 0, 'pred_raw']
+
+    log_vars = {}
+     # Calculate the mean metrics across classes
+    average_types = ['macro', 'micro', 'weighted']
+    average_metrics_to_log = ['precision', 'recall', 'f1score', 'support']
+    prefix_name = mode + '/'
+    for av in average_types:
+        results_tuple = precision_recall_fscore_support(true_labels, preds, average=av)
+        for m in range(len(average_metrics_to_log)):      
+            log_vars[prefix_name +  average_metrics_to_log[m] +'_average_' + av] = results_tuple[m]
+
+
+    # Calculate metrics per class
+    results_tuple = precision_recall_fscore_support(true_labels, preds, average=None, labels=class_names_int)
+
+    for c in range(len(average_metrics_to_log)):
+        cur_metrics = results_tuple[c]
+        # print(cur_metrics)
+        for s in range(len(class_names_int)):
+            log_vars[prefix_name + str(class_names_int[s]) + '_'+ average_metrics_to_log[c]] = cur_metrics[s]
+
+
+    # Keep the original metrics for backwards compatibility
+    log_vars[prefix_name + 'mae_rounded'] = mean_absolute_error(true_labels, preds)
+    log_vars[prefix_name + 'mae_raw'] = mean_absolute_error(true_labels, preds_raw)
+    log_vars[prefix_name + 'accuracy'] = accuracy_score(true_labels, preds)
+
+    return log_vars
+
 
 def compute_obj2_stats(df_all):
     results_df= {}

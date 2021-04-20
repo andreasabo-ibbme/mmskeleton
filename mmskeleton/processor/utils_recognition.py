@@ -319,7 +319,7 @@ def set_up_results_table(workflow, num_class):
         # Calculate the mean metrics across classes
         average_types = ['macro', 'micro', 'weighted']
         average_metrics_to_log = ['precision', 'recall', 'f1score', 'support']
-        prefix_name = 'final/'+ mode + '/'
+        prefix_name =  mode + '/'
         for av in average_types:
             for m in average_metrics_to_log:
                 col_names.append(prefix_name + m +'_average_' + av)
@@ -395,10 +395,8 @@ def final_stats_per_trial(final_results_local_path, wandb_group, wandb_project, 
 
 def final_stats_variance(results_df, wandb_group, wandb_project, total_epochs, num_class, workflow):
     wandb.init(name="ALL_var", project=wandb_project, group=wandb_group, tags=['summary'], reinit=True)
-    print(results_df)
     stdev = results_df.std().to_dict()
     means = results_df.mean().to_dict()
-    print(means)
     all_stats = dict()
     for k,v in stdev.items():
         all_stats[k + "_stdev"] = stdev[k]
