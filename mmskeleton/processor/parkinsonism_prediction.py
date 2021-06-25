@@ -244,7 +244,7 @@ def train(
                 ds['data_source']['layout'] = model_cfg['graph_cfg']['layout']
 
             print(datasets)
-
+            # input('a')
             # ================================ STAGE 1 ====================================
             # Stage 1 training
             datasets[0]['data_source']['data_dir'] = train_walks
