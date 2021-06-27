@@ -23,7 +23,7 @@ processor_cfg:
   weight_classes: True
   flip_loss: 0
   launch_from_local: True
-  wandb_project: "UPDRS_3_trackers"
+  wandb_project: "UPDRS_3trackers_jun27"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 25
@@ -41,10 +41,10 @@ processor_cfg:
     in_channels: 2
     num_class: 3
     edge_importance_weighting: True
-    dropout: 0.0
+    dropout: 0.4
     num_ts_predicting: 1
     num_joints_predicting: 4
-    temporal_kernel_size: 13
+    temporal_kernel_size: 9
     graph_cfg:
       layout: 'coco_simplified_head'
       strategy: 'spatial'

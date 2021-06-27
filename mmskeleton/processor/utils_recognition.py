@@ -329,12 +329,18 @@ def statsByTracker(names, output_list_all, output_list_all_rounded, y_true_all, 
     mae_loss = torch.nn.L1Loss()
 
     for det in unique_dets:
+        all_out = {}
         det_dict = {}
         ids = [i for i, j in enumerate(dets) if j == det]
         
         cur_output = np.array(output_list_all)[ids]
         cur_preds = np.array(output_list_all_rounded)[ids]
         cur_labels = np.array(y_true_all)[ids]
+        all_out['all_true'] = cur_labels
+        all_out['all_pred_round'] = cur_preds
+        all_out['raw_preds'] = cur_output
+
+        det_dict['all_out'] = all_out
 
         condition = cur_labels >= 0.      
         row_cond = np.where(condition)
@@ -349,6 +355,7 @@ def statsByTracker(names, output_list_all, output_list_all_rounded, y_true_all, 
         rounded_preds_with_label = torch.from_numpy(rounded_preds_with_label).cuda()
         cur_output = torch.from_numpy(cur_output).cuda()
 
+        cur_names = [names[i] for i in ids]
 
         # Calculate label loss
         # print(raw_preds_with_label)
@@ -400,6 +407,7 @@ def statsByTracker(names, output_list_all, output_list_all_rounded, y_true_all, 
         det_dict['raw_preds'] = raw_preds_with_label
         det_dict['true'] = labels_with_label
         det_dict['pred'] = rounded_preds_with_label
+        det_dict['names'] = cur_names
         # det_dict['num_preds_labelled'] = len(raw_preds_with_label)
         # det_dict['num_preds_all'] = len(output_list_all)
 
@@ -553,70 +561,29 @@ def final_stats_worker(work_dir, folder_count, wandb_group, wandb_project, total
         preds = df['pred_round']
         preds_raw = df['pred_raw']
 
-        # Last check to make sure that the preds are in the correct range
-        preds[preds > (num_class - 1)] = num_class - 1
-
-        # Calculate the mean metrics across classes
-        average_types = ['macro', 'micro', 'weighted']
-        average_metrics_to_log = ['precision', 'recall', 'f1score', 'support']
-        average_dict = {}
-        prefix_name = 'final/'+ mode + '/'
-        for av in average_types:
-            results_tuple = precision_recall_fscore_support(true_labels, preds, average=av)
-            for m in range(len(average_metrics_to_log)):      
-                average_dict[prefix_name + '_'+ average_metrics_to_log[m] +'_average_' + av] = results_tuple[m]
-
-        wandb.log(average_dict)
-
-        # Calculate metrics per class
-        results_tuple = precision_recall_fscore_support(true_labels, preds, average=None, labels=class_names_int)
-
-        per_class_stats = {}
-        for c in range(len(average_metrics_to_log)):
-            cur_metrics = results_tuple[c]
-            print(cur_metrics)
-            for s in range(len(class_names_int)):
-                per_class_stats[prefix_name + str(class_names_int[s]) + '_'+ average_metrics_to_log[c]] = cur_metrics[s]
-
-        wandb.log(per_class_stats)
-
-
-        # Keep the original metrics for backwards compatibility
-        log_vars['early_stop_eval/'+mode+ '/mae_rounded'] = mean_absolute_error(true_labels, preds)
-        log_vars['early_stop_eval/'+mode+ '/mae_raw'] = mean_absolute_error(true_labels, preds_raw)
-        log_vars['early_stop_eval/'+mode+ '/accuracy'] = accuracy_score(true_labels, preds)
-        wandb.log(log_vars)
-
-        fig = plot_confusion_matrix( true_labels,preds, class_names, max_label)
-        wandb.log({"confusion_mat_earlystop/" + mode + "_final_confusion_matrix.png": fig})
-
-        try:
-            fig_normed = plot_confusion_matrix( true_labels,preds, class_names, max_label, True)
-            wandb.log({"confusion_mat_earlystop/" + mode + "_final_normed_confusion_matrix.png": fig_normed})
-        except:
-            pass
+        # Stats for all
+        tracker = 'all'
+        dict_for_table = calculateStatsForWandb(preds, num_class, mode, true_labels, class_names_int, \
+                           preds_raw, log_vars, class_names, max_label, dict_for_table, df, tracker)
         
-        fig_title = "Regression for ALL unseen participants"
-        reg_fig = regressionPlot(true_labels, preds_raw, class_names, fig_title)
-        try:
-            wandb.log({"regression_plot_earlystop/" + mode + "_final_regression_plot.png": [wandb.Image(reg_fig)]})
-        except:
-            try:
-                wandb.log({"regression_plot_earlystop/" + mode + "_final_regression_plot.png": reg_fig})
-            except:
-                print("failed to log regression plot")
+        
+        names = df['walk_name'].to_list()
+        dets = [splitall(s_name)[-3] for s_name in names]
+        unique_dets = list(set(dets))
+        # Stats by tracker
+        for det in unique_dets:
+            cur_df = df[df['walk_name'].str.contains(det)]
+            true_labels = cur_df['true_score']
+            preds = cur_df['pred_round']
+            preds_raw = cur_df['pred_raw']
 
-        # Log the final dataframe to wandb for future analysis
-        header = ['amb', 'walk_name', 'num_ts', 'true_score', 'pred_round', 'pred_raw']
-        try:
-            wandb.log({"final_results_csv/"+mode: wandb.Table(data=df.values.tolist(), columns=header)})
-        except: 
-            logging.exception("Could not save final table =================================================\n")
+            dict_for_table = calculateStatsForWandb(preds, num_class, mode, true_labels, class_names_int, \
+                    preds_raw, log_vars, class_names, max_label, dict_for_table, cur_df, det)
 
 
-        dict_for_table.update(log_vars)
-        dict_for_table.update(per_class_stats)
-        dict_for_table.update(average_dict)
+
+
+
     if results_table is not None:
         df = pd.DataFrame(dict_for_table, index=[0])
         results_table = results_table.append(df)
@@ -630,6 +597,77 @@ def final_stats_worker(work_dir, folder_count, wandb_group, wandb_project, total
     except:
         pass
     return results_table
+
+
+def calculateStatsForWandb(preds, num_class, mode, true_labels, class_names_int, \
+                           preds_raw, log_vars, class_names, max_label, dict_for_table, df, tracker):
+    # Last check to make sure that the preds are in the correct range
+    preds[preds > (num_class - 1)] = num_class - 1
+
+    # Calculate the mean metrics across classes
+    average_types = ['macro', 'micro', 'weighted']
+    average_metrics_to_log = ['precision', 'recall', 'f1score', 'support']
+    average_dict = {}
+    prefix_name = 'final/'+ mode + '/' + tracker + '/'
+    for av in average_types:
+        results_tuple = precision_recall_fscore_support(true_labels, preds, average=av)
+        for m in range(len(average_metrics_to_log)):      
+            average_dict[prefix_name + average_metrics_to_log[m] +'_average_' + av] = results_tuple[m]
+
+    wandb.log(average_dict)
+
+    # Calculate metrics per class
+    results_tuple = precision_recall_fscore_support(true_labels, preds, average=None, labels=class_names_int)
+
+    per_class_stats = {}
+    for c in range(len(average_metrics_to_log)):
+        cur_metrics = results_tuple[c]
+        print(cur_metrics)
+        for s in range(len(class_names_int)):
+            per_class_stats[prefix_name + str(class_names_int[s]) + '_'+ average_metrics_to_log[c]] = cur_metrics[s]
+
+    wandb.log(per_class_stats)
+
+
+    # Keep the original metrics for backwards compatibility
+    # log_vars['early_stop_eval/'+mode+ '/mae_rounded'] = mean_absolute_error(true_labels, preds)
+    # log_vars['early_stop_eval/'+mode+ '/mae_raw'] = mean_absolute_error(true_labels, preds_raw)
+    # log_vars['early_stop_eval/'+mode+ '/accuracy'] = accuracy_score(true_labels, preds)
+    wandb.log(log_vars)
+
+    fig = plot_confusion_matrix( true_labels,preds, class_names, max_label)
+    wandb.log({"confusion_mat_earlystop/" + mode + "_" + tracker + "_final_confusion_matrix.png": fig})
+
+    try:
+        fig_normed = plot_confusion_matrix( true_labels,preds, class_names, max_label, True)
+        wandb.log({"confusion_mat_earlystop/" + mode + "_" + tracker + "_final_normed_confusion_matrix.png": fig_normed})
+    except:
+        pass
+    
+    fig_title = "Regression for ALL unseen participants"
+    reg_fig = regressionPlot(true_labels, preds_raw, class_names, fig_title)
+    try:
+        wandb.log({"regression_plot_earlystop/" + mode + "_" + tracker +"_final_regression_plot.png": [wandb.Image(reg_fig)]})
+    except:
+        try:
+            wandb.log({"regression_plot_earlystop/" + mode + "_" + tracker + "_final_regression_plot.png": reg_fig})
+        except:
+            print("failed to log regression plot")
+
+    # Log the final dataframe to wandb for future analysis
+    header = ['amb', 'walk_name', 'num_ts', 'true_score', 'pred_round', 'pred_raw']
+    try:
+        wandb.log({"final_results_csv/"+mode+ "_" + tracker: wandb.Table(data=df.values.tolist(), columns=header)})
+    except: 
+        logging.exception("Could not save final table =================================================\n")
+
+
+    dict_for_table.update(log_vars)
+    dict_for_table.update(per_class_stats)
+    dict_for_table.update(average_dict)
+
+
+    return dict_for_table
 
 
 def final_stats(work_dir, wandb_group, wandb_project, total_epochs, num_class, workflow, num_self_train_iter=0, wandb_log_local_group=None):

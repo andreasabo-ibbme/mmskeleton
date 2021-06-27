@@ -19,11 +19,11 @@ processor_cfg:
   cv: 5
   exclude_cv: False
   notes: "two_part_loss"
-  group_notes: "120_v0_pred15_ankles_wrists_wing_do_0.1"
+  group_notes: "120_v0_pred15_ankles_wrists_wing"
   weight_classes: True
   flip_loss: 0
-  launch_from_local: False
-  wandb_project: "UPDRS_3_trackers"
+  launch_from_local: True
+  wandb_project: "UPDRS_3trackers_jun27"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 25
@@ -33,7 +33,7 @@ processor_cfg:
   freeze_encoder: False
   head: "stgcn"
   train_extrema_for_epochs: 25
-  do_position_pretrain: False
+  do_position_pretrain: True
   model_save_root: "three_trackers" 
   # model setting
   model_cfg:
@@ -44,7 +44,7 @@ processor_cfg:
     dropout: 0.2
     num_ts_predicting: 1
     num_joints_predicting: 4
-    temporal_kernel_size: 13
+    temporal_kernel_size: 5
     graph_cfg:
       layout: 'coco_simplified_head'
       strategy: 'spatial'
@@ -59,7 +59,7 @@ processor_cfg:
     - type: "datasets.DataPipeline"
       data_source:
         type: "datasets.SkeletonLoaderTRI"
-        data_dir: skel_data_alphapose/stgcn_normalized_100_center_all_no_norm_plus_belmont
+        data_dir: skel_data_*/stgcn_normalized_100_center_all_no_norm_plus_belmont
         num_track: 1
         num_keypoints: 13
         repeat: 1
@@ -84,7 +84,7 @@ processor_cfg:
     - type: "datasets.DataPipeline"
       data_source:
         type: "datasets.SkeletonLoaderTRI"
-        data_dir: skel_data_alphapose/stgcn_normalized_100_center_pd_no_norm
+        data_dir: skel_data_*/stgcn_normalized_100_center_pd_no_norm
         use_gait_feats: False
         num_track: 1
         num_keypoints: 13
@@ -124,7 +124,7 @@ processor_cfg:
 
   # runtime setting
   workflow: [['train', 1], ['val', 1], ['test', 1]]
-  work_dir: ./work_dir/recognition/tri_all/dataset_example/v2/UPDRS/120_v0_pred15_ankles_wrists_wing_do_01
+  work_dir: ./work_dir/recognition/tri_all/three_tracker
   total_epochs: 1000
   training_hooks:
   training_hooks:
