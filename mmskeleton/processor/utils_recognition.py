@@ -2,6 +2,7 @@ from collections import OrderedDict
 import torch
 import logging
 import numpy as np
+from torch.functional import unique
 from mmskeleton.utils import call_obj, import_obj, load_checkpoint
 from mmcv.runner import Runner
 from mmcv import Config, ProgressBar
@@ -131,7 +132,6 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
         for k in data.keys():
             if k.startswith('demo_data'):
                 demo_data[k] = data[k]
-
         gait_features = data['gait_feats'].type(dtype)
         data = data['data'].type(dtype)
 
@@ -168,7 +168,8 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
         data_all_flipped = data_all_flipped.data 
         output_all_flipped = model_2(data_all_flipped, gait_features_all)
         torch.clamp(output_all_flipped, min=-1, max=num_class+1)
-
+    else:
+        output_all_flipped = 0
     # print("in batch processorv2"*10)
 
     # Get predictions from the model
@@ -307,8 +308,123 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
     # print(type(labels), type(preds))
     # print('this is what we return: ', output_labels)
     # print("returning true: ", output_labels['true'])
+
+    outputs_by_tracker = statsByTracker(name, output_list_all, output_list_all_rounded, y_true_all, balance_classes, class_weights_dict, loss, have_flips, flip_loss_mult, output_all_flipped)
+    outputs['out_by_tracker'] = outputs_by_tracker
+
+    # Note that "outputs" get logged to wandb, so put the necessary info here to  
     return outputs, output_labels, overall_loss
 
+
+def statsByTracker(names, output_list_all, output_list_all_rounded, y_true_all, balance_classes, class_weights_dict, loss, have_flips, flip_loss_mult, output_all_flipped):
+    # Sample name format: /home/saboa/data/shared_from_cluster/data/skel_data_openpose/stgcn_normalized_100_center_pd_no_norm/2017_12_20__15_26_10_ID_37_state_2.csv
+    dets = [splitall(s_name)[-3] for s_name in names]
+    unique_dets = list(set(dets))
+    # print(labels)
+    # print(len(preds), len(output), len(labels))
+    # input("balance classes")
+    output_by_tracker = dict()
+
+    mse_loss = torch.nn.MSELoss()
+    mae_loss = torch.nn.L1Loss()
+
+    for det in unique_dets:
+        det_dict = {}
+        ids = [i for i, j in enumerate(dets) if j == det]
+        
+        cur_output = np.array(output_list_all)[ids]
+        cur_preds = np.array(output_list_all_rounded)[ids]
+        cur_labels = np.array(y_true_all)[ids]
+
+        condition = cur_labels >= 0.      
+        row_cond = np.where(condition)
+        labels_with_label = cur_labels[row_cond]
+        raw_preds_with_label = cur_output[row_cond]
+        rounded_preds_with_label = cur_preds[row_cond]
+
+        dtype = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor  
+
+        labels_with_label = torch.from_numpy(labels_with_label).cuda()
+        raw_preds_with_label = torch.from_numpy(raw_preds_with_label).cuda()
+        rounded_preds_with_label = torch.from_numpy(rounded_preds_with_label).cuda()
+        cur_output = torch.from_numpy(cur_output).cuda()
+
+
+        # Calculate label loss
+        # print(raw_preds_with_label)
+        # print("-" * 100)
+        # input(labels_with_label)
+
+        # print(type(raw_preds_with_label))
+        # input('andrea')
+        losses = loss(raw_preds_with_label, labels_with_label)
+
+
+        if balance_classes:
+            if type(loss) == type(mse_loss):
+                losses = weighted_mse_loss(raw_preds_with_label, labels_with_label, class_weights_dict)
+            if type(loss) == type(mae_loss):
+                losses = weighted_mae_loss(raw_preds_with_label, labels_with_label, class_weights_dict)
+
+
+        # Calculate the flip loss
+        loss_flip_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
+
+
+        if have_flips:
+            loss_flip_tensor = mse_loss(raw_preds_with_label, cur_output)
+            if loss_flip_tensor.data > 10:
+                pass
+
+        if not flip_loss_mult:
+            loss_flip_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
+            loss_flip_tensor = loss_flip_tensor.cuda()
+        else:
+            loss_flip_tensor = loss_flip_tensor * flip_loss_mult
+
+        overall_loss = losses + loss_flip_tensor
+
+        det_dict["loss_label"] = losses.item()
+        det_dict["loss_flip"] = loss_flip_tensor.item()
+        det_dict["loss_all"] = overall_loss.item()
+
+
+        try:
+            det_dict['mae_raw'] = mean_absolute_error(labels_with_label.detach().cpu().numpy(), raw_preds_with_label.detach().cpu().numpy())
+            det_dict['mae_rounded'] = mean_absolute_error(labels_with_label.detach().cpu().numpy(), rounded_preds_with_label.detach().cpu().numpy())
+        except:
+            det_dict['mae_raw'] = math.nan
+            det_dict['mae_rounded'] = math.nan
+
+
+        det_dict['raw_preds'] = raw_preds_with_label
+        det_dict['true'] = labels_with_label
+        det_dict['pred'] = rounded_preds_with_label
+        # det_dict['num_preds_labelled'] = len(raw_preds_with_label)
+        # det_dict['num_preds_all'] = len(output_list_all)
+
+        output_by_tracker[det] = det_dict
+
+    # print("statsByTracker")
+    # print(output_by_tracker)
+    # input(dets)
+
+    return output_by_tracker
+# https://www.oreilly.com/library/view/python-cookbook/0596001673/ch04s16.html
+def splitall(path):
+    allparts = []
+    while 1:
+        parts = os.path.split(path)
+        if parts[0] == path:  # sentinel for absolute paths
+            allparts.insert(0, parts[0])
+            break
+        elif parts[1] == path: # sentinel for relative paths
+            allparts.insert(0, parts[1])
+            break
+        else:
+            path = parts[0]
+            allparts.insert(0, parts[1])
+    return allparts
 
 def set_up_results_table(workflow, num_class):
     col_names = []
@@ -660,17 +776,18 @@ def weighted_mse_loss(input, target, weights):
         numerator += weights[key]
     try:
         # print("weights: ", weights)
-
         weights_list = [numerator / weights[int(round((i.data.tolist()[0])))]  for i in target]
-    except Exception as e:
-        print("target: ", target)
-        print("weights: ", weights)
-        print("target length: ", len(target))
-        print("error here is: ", e)
 
-    # print("target: ", target)
-    # print("weights list: ", weights_list)
-    # print("weights ", weights)
+    except Exception as e:
+        try:
+            weights_list = [numerator / weights[int(i.data.tolist())] for i in target]
+        except Exception as e:
+            print("target2: ", target)
+            print("weights2: ", weights)
+            print("target length2: ", len(target))
+            print("error here is2: ", e)
+
+
 
     # print("numerator: ", numerator)
     weight_tensor = torch.FloatTensor(weights_list)
