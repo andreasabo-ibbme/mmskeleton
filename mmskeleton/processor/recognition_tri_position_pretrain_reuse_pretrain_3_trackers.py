@@ -593,9 +593,8 @@ def finetune_model(
     print("Starting STAGE 2: Fine-tuning...")
 
     load_data = True
-    base_dl_path = os.path.join(path_to_saved_dataloaders, 'finetuning') 
-    full_dl_path = os.path.join(base_dl_path, 'data.pt')
-    os.makedirs(base_dl_path, exist_ok=True) 
+    full_dl_path = os.path.join(path_to_saved_dataloaders, 'dataloaders_fine.pt') 
+    os.makedirs(path_to_saved_dataloaders, exist_ok=True) 
     if os.path.isfile(full_dl_path):
         try:
             data_loaders = torch.load(full_dl_path)
@@ -767,9 +766,9 @@ def pretrain_model(
 
 
     load_data = True
-    base_dl_path = os.path.join(path_to_saved_dataloaders, 'finetuning') 
-    full_dl_path = os.path.join(base_dl_path, 'data.pt')
-    os.makedirs(base_dl_path, exist_ok=True)     
+    full_dl_path = os.path.join(path_to_saved_dataloaders, 'dataloaders_pretrain.pt') 
+    os.makedirs(path_to_saved_dataloaders, exist_ok=True) 
+  
     if os.path.isfile(full_dl_path):
         try:
             data_loaders = torch.load(full_dl_path)
@@ -786,6 +785,9 @@ def pretrain_model(
                                         num_workers=workers,
                                         drop_last=False) for d in datasets
         ]
+
+        # Save for next time
+        torch.save(data_loaders, full_dl_path)
 
     global balance_classes
     global class_weights_dict

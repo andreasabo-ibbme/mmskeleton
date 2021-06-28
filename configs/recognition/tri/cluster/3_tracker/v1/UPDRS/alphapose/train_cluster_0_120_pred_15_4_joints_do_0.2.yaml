@@ -23,7 +23,7 @@ processor_cfg:
   weight_classes: True
   flip_loss: 0
   launch_from_local: True
-  wandb_project: "UPDRS_3trackers_jun27"
+  wandb_project: "UPDRS_3trackers_jun27_dev"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 25
