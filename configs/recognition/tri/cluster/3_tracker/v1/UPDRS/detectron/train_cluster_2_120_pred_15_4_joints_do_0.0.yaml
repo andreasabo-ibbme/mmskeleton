@@ -21,9 +21,9 @@ processor_cfg:
   notes: "two_part_loss"
   group_notes: "120_v0_pred15_ankles_wrists_wing"
   weight_classes: True
-  flip_loss: 0
+  flip_loss: 1
   launch_from_local: True
-  wandb_project: "UPDRS_3trackers_jun27"
+  wandb_project: "UPDRS_3trackers_jun27_flip"
   early_stopping: True
   force_run_all_epochs: False
   es_patience_1: 25
@@ -34,7 +34,7 @@ processor_cfg:
   head: "stgcn"
   train_extrema_for_epochs: 25
   do_position_pretrain: True
-  model_save_root: "three_trackers" 
+  model_save_root: "three_trackers_batch100" 
   # model setting
   model_cfg:
     type: 'models.backbones.ST_GCN_18_ordinal_smaller_2_position_pretrain'

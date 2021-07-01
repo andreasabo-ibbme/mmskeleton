@@ -162,14 +162,15 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
     num_valid_samples = data.shape[0]
     # print("data shape is: ", data.shape)
     if have_flips:
-        model_2 = copy.deepcopy(model)
+        # model_2 = copy.deepcopy(model)
         data_all = data_all.data
         data_all_flipped = data_flipped.cuda()
         data_all_flipped = data_all_flipped.data 
-        output_all_flipped = model_2(data_all_flipped, gait_features_all)
+        output_all_flipped = model(data_all_flipped, gait_features_all)
         torch.clamp(output_all_flipped, min=-1, max=num_class+1)
     else:
         output_all_flipped = 0
+        output_all_flipped_list = []
     # print("in batch processorv2"*10)
 
     # Get predictions from the model
@@ -244,9 +245,16 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
 
     output_list_all = output_all.detach().cpu().numpy()
     output_list_all = np.nan_to_num(output_list_all)
-    output_list_all_rounded = np.clip(output_list_all.squeeze(), 0, num_class).tolist()
-    output_list_all = output_list_all_rounded
-    output_list_all_rounded = np.round(np.asarray(output_list_all_rounded), 0).tolist()
+    output_list_all_clipped = np.clip(output_list_all.squeeze(), 0, num_class).tolist()
+    output_list_all = output_list_all_clipped
+    output_list_all_rounded = np.round(np.asarray(output_list_all_clipped), 0).tolist()
+
+    if have_flips:
+        output_all_flipped_list = output_all_flipped.detach().cpu().numpy()
+        output_all_flipped_list = np.nan_to_num(output_all_flipped_list)
+        output_all_flipped_list = np.clip(output_all_flipped_list.squeeze(), 0, num_class).tolist()
+
+
 
     non_pseudo_label  = non_pseudo_label.data.tolist()
     labels = y_true_orig_shape.data.tolist()
@@ -309,7 +317,7 @@ def batch_processor(model, datas, train_mode, loss, num_class, **kwargs):
     # print('this is what we return: ', output_labels)
     # print("returning true: ", output_labels['true'])
 
-    outputs_by_tracker = statsByTracker(name, output_list_all, output_list_all_rounded, y_true_all, balance_classes, class_weights_dict, loss, have_flips, flip_loss_mult, output_all_flipped)
+    outputs_by_tracker = statsByTracker(name, output_list_all, output_list_all_rounded, y_true_all, balance_classes, class_weights_dict, loss, have_flips, flip_loss_mult, output_all_flipped_list)
     outputs['out_by_tracker'] = outputs_by_tracker
 
     # Note that "outputs" get logged to wandb, so put the necessary info here to  
@@ -339,6 +347,7 @@ def statsByTracker(names, output_list_all, output_list_all_rounded, y_true_all, 
         all_out['all_true'] = cur_labels
         all_out['all_pred_round'] = cur_preds
         all_out['raw_preds'] = cur_output
+        cur_output_flipped = np.array(output_all_flipped)[ids]
 
         det_dict['all_out'] = all_out
 
@@ -354,6 +363,7 @@ def statsByTracker(names, output_list_all, output_list_all_rounded, y_true_all, 
         raw_preds_with_label = torch.from_numpy(raw_preds_with_label).cuda()
         rounded_preds_with_label = torch.from_numpy(rounded_preds_with_label).cuda()
         cur_output = torch.from_numpy(cur_output).cuda()
+        cur_output_flipped = torch.from_numpy(cur_output_flipped).cuda()
 
         cur_names = [names[i] for i in ids]
 
@@ -379,12 +389,11 @@ def statsByTracker(names, output_list_all, output_list_all_rounded, y_true_all, 
 
 
         if have_flips:
-            loss_flip_tensor = mse_loss(raw_preds_with_label, cur_output)
+            loss_flip_tensor = mse_loss(cur_output_flipped, cur_output)
             if loss_flip_tensor.data > 10:
                 pass
 
         if not flip_loss_mult:
-            loss_flip_tensor = torch.tensor([0.], dtype=torch.float, requires_grad=True) 
             loss_flip_tensor = loss_flip_tensor.cuda()
         else:
             loss_flip_tensor = loss_flip_tensor * flip_loss_mult
